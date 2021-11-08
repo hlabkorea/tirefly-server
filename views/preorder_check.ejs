@@ -1,0 +1,36 @@
+<html>
+<head>
+    <title>사전예약 확인</title>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js" ></script>
+	<script>
+		function deleteUser(id){
+			jQuery.ajax({
+			       url: "http://api.motifme.io:3001/preorder/" + id,
+			       method: "DELETE",
+			       headers: { "Content-Type": "application/json" }
+			   });
+		}
+	</script>
+</head>
+<body>
+	<table border="1">
+		<th>이름</th>
+		<th>지역</th>
+		<th>성별</th>
+		<th>나이</th>
+		<th>마케팅 옵션</th>
+		<th>등록 날짜</th>
+		    <% for(var i = 0; i < result.length; i++){ %>
+			<tr>
+				<td> <%=result[i].userEmail%> </td>
+				<td> <%=result[i].userRegion%> </td>
+				<td> <%=result[i].userGender%> </td>
+				<td> <%=result[i].userAge%> </td>
+				<td> <%=result[i].marketingOpt%> </td>
+				<td> <%=result[i].regDate.toDateString()%> </td>
+			</tr>
+		    <%}%>
+
+	
+</body>
+</html>

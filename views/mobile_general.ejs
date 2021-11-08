@@ -1,0 +1,19 @@
+<html>
+<head>
+    <title>KG 이니시스 결제 결과</title>
+    <!-- jQuery -->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js" ></script>
+</head>
+<body>
+	<p id="buyerName"> 주문자 이름: <%=data.buyer_name%> </p>
+	<p id="buyerEmail"> 주문자 이메일: <%=data.buyer_email%> </p>
+	<p id="name"> 상품명: <%=data.name%> </p>
+	<p id="amount"> 상품 가격: <%=data.amount%> </p>
+	<p id="receiptUrl"> 거래 매출 전표: <%=data.receipt_url%> </p>
+
+	var statusValue = document.getElementById("statusValue");
+	var data = document.getElementById("data");
+	var message = document.getElementById("message");
+	window.opener.postMessage({status: parseInt(statusValue.value), data: data.value, message: message.value}, '*');
+	window.close();
+</html>

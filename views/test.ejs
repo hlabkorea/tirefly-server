@@ -1,0 +1,19 @@
+<html>
+<head>
+    <title>사전예약 확인</title>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js" ></script>
+	<script>
+		function deleteUser(id){
+			jQuery.ajax({
+			       url: "http://api.motifme.io:3001/membership_group/" + id,
+			       data: JSON.stringify({ownerUID: 1}),
+			       method: "DELETE",
+			       headers: { "Content-Type": "application/json" }
+			   });
+		}
+	</script>
+</head>
+<body>
+	<input type="button" id="button1" onclick="deleteUser(2);" value="삭제 테스트" />
+</body>
+</html>

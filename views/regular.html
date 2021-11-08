@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- jQuery -->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js" ></script>
+    <!-- iamport.payment.js -->
+    <script type="text/javascript" src="https://cdn.iamport.kr/js/iamport.payment-1.1.8.js"></script>
+</head>
+<body>
+    <button onclick="requestPay()">정기결제 결제하기</button>
+    <script>
+    function requestPay() {
+        var IMP = window.IMP; // 생략 가능
+        IMP.init("imp28049815");
+
+        var customer_uid = "gildong_0001_1234";
+        var merchant_uid = "2" + Date.now().toString(); // 정기 결제 처음 할 때는 앞자리 2
+	
+        // IMP.request_pay(param, callback) 결제창 호출
+        IMP.request_pay({ // param
+            pg: "html5_inicis.INIBillTst",
+            pay_method: "card",
+            merchant_uid: merchant_uid,
+            name: "single 멤버십", // 이름
+            amount: 100, // 가격
+            customer_uid : customer_uid,
+            buyer_name: "홍길동", // 수령인 성함
+            buyer_tel : '010-1111-2222' // 연락처
+        }, function (rsp) { // callback
+            if (rsp.success) {
+				jQuery.ajax({
+				   url: "http://api.motifme.io:3001/payment/billings",
+				   method: "POST",
+				   headers: { "Content-Type": "application/json" },
+				   data: JSON.stringify({
+					   customer_uid: customer_uid, // 카드(빌링키)와 1:1로 대응하는 값
+					   merchant_uid: merchant_uid
+				   }),
+				   success : function(data) {
+					   jQuery.ajax({
+						   url: "http://api.motifme.io:3001/payment/complete/mobile",
+						   method: "GET",
+						   headers: { "Content-Type": "application/json" },
+						   data: {
+							   imp_uid: rsp.imp_uid, // 카드(빌링키)와 1:1로 대응하는 값
+							   merchant_uid: rsp.merchant_uid
+						   },
+						   success : function(paymentData) {
+							   console.log(paymentData);
+							   window.location.href = 'http://api.motifme.io:3001/mobile.html';
+						   },
+						   error : function(paymentError) {
+							   alert("paymentError");
+						   }
+					   });
+				   },
+				   error : function(error) {
+					   alert("Error!");
+				   },
+			   });
+            } else {
+                console.log(rsp);
+            }
+        });
+    }
+    </script>
+</body>
+</html>

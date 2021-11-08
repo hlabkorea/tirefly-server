@@ -1,0 +1,26 @@
+<!--
+/********************************************************************************************************************************************
+		NICE평가정보 Copyright(c) KOREA INFOMATION SERVICE INC. ALL RIGHTS RESERVED
+		
+		서비스명 : 본인인증 (CheckPlus) 서비스
+		페이지명 : 본인인증 (CheckPlus) 호출 페이지
+*********************************************************************************************************************************************/
+-->   
+<html>
+<head>
+    <title>NICE평가정보 - CheckPlus 본인인증 테스트</title>
+</head>
+<body>
+    <input id="statusValue" value=<%=status%> hidden/>
+    <input id="data" value=<%=data%> hidden/>
+    <input id="message" value=<%=message%> hidden/>
+    
+    <script>
+        var statusValue = document.getElementById("statusValue");
+	var data = document.getElementById("data");
+	var message = document.getElementById("message");
+        window.opener.postMessage({status: parseInt(statusValue.value), data: data.value, message: message.value}, '*');
+        window.close();
+    </script>	
+</body>
+</html>

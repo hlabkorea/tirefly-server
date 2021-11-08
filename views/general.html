@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- jQuery -->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js" ></script>
+    <!-- iamport.payment.js -->
+    <script type="text/javascript" src="https://cdn.iamport.kr/js/iamport.payment-1.1.8.js"></script>
+</head>
+<body>
+    <button onclick="requestPay()">일반결제 결제하기</button>
+    <script>
+    function requestPay() {
+        var IMP = window.IMP; // 생략 가능
+        IMP.init("imp28049815");
+
+        // IMP.request_pay(param, callback) 결제창 호출
+        IMP.request_pay({ // param
+            pg: "html5_inicis",
+            pay_method: "card",
+            merchant_uid: "1" + Date.now().toString(), //일반 결제는 앞자리 1
+            name: "모티프 미러 (Motif Mirror)",
+            amount: 100, // 가격
+            buyer_name: "홍길동", // 수령인 성함
+            buyer_tel : '010-1111-2222', // 연락처
+			m_redirect_url: "http://api.motifme.io:3001/payment/complete/mobile"
+        }, function (rsp) { // callback
+            if (rsp.success) {
+                console.log("성공");
+				// 이 부분에 성공했을 때 어떻게 할 것인지 추가
+                console.log(rsp);
+            } else {
+                console.log("실패");
+                console.log(rsp);
+            }
+        });
+    }
+    </script>
+</body>
+</html>
