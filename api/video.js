@@ -264,7 +264,7 @@ api.get('/category/:categoryUID',
         function (req, res) {
           const errors = getError(req, res);
 			    if(errors.isEmpty()){
-            var sql = "select video.UID, video.contentsPath, teacher.teacherImg, video.videoName, teacher.teacherNickname, category.categoryName, video.videoLevel, video.playTimeValue, acc.actImgPath as imgPath "
+            var sql = "select video.UID, video.contentsPath, teacher.teacherImg, video.videoName, teacher.teacherNickname, category.categoryName, video.videoLevel, video.playTimeValue, acc.rectImgPath as imgPath "
                     + "from video "
                     + "join teacher on video.teacherUID = teacher.UID "
                     + "join category on video.categoryUID = category.UID "
