@@ -134,7 +134,7 @@ api.get('/favorite', verifyToken, function (req, res) {
 
 // vod 검색
 api.get('/search', verifyToken, function (req, res) {
-  var sql = "select video.UID, teacher.teacherImg, video.videoName, teacher.teacherNickName as teacherName, video.contentsPath, category.categoryName, video.videoLevel, video.playTimeValue, acc.actImgPath as imgPath "
+  var sql = "select video.UID, teacher.teacherImg, video.videoName, teacher.teacherNickName as teacherName, video.contentsPath, category.categoryName, video.videoLevel, video.playTimeValue, acc.rectImgPath as imgPath "
           + "from video "
           + "join category on video.categoryUID = category.UID "
           + "join teacher on video.teacherUID = teacher.UID "
