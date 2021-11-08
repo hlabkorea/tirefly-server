@@ -13,7 +13,6 @@ const {getError} = require('./config/requestError.js');
 const {sendMail} = require('./config/mail.js');
 const {maskEmail} = require('./config/masking');
 const {toHypenDateFormat} = require('./config/date.js');
-const {sendAttachedImgMail} = require('./config/mail.js'); // 테스트하고 삭제
 
 // 회원가입
 api.post('/join', 
@@ -62,6 +61,7 @@ api.post('/join',
 							db.query(token_insert_sql, token_insert_data, function (err, result) {
 								if (err) throw err;
 
+								// 멤버십 그룹에 초대된 사용자라면 membership_group 의 userUID 업데이트
 								var membership_sql = "select UID from membership_group where email = ?";
 								db.query(membership_sql, email, function (err, result) {
 									if (err) throw err;

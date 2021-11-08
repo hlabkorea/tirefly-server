@@ -3,22 +3,22 @@ const db = require('./config/database.js');
 const api = express.Router();
 const {upload} = require('./config/uploadFile.js');
 const {getPageInfo} = require('./config/paging.js'); 
-const {verifyToken} = require("./config/authCheck.js");
+const {verifyToken, verifyAdminToken} = require("./config/authCheck.js");
 const {check} = require('express-validator');
 const {getError} = require('./config/requestError.js');
+const userPageCnt = 10;
 
 // 문의 조회
-// 관리자만 할 수 있게
-api.get("/", verifyToken, function(req, res) {
+api.get("/", verifyAdminToken, function(req, res) {
     var countSql = "select count(*) as totalPost from inquiry;";
-    var sql = "select * from inquiry limit ?, 10";
+    var sql = "select * from inquiry limit ?, " + userPageCnt;
     var currentPage = req.query.page ? parseInt(req.query.page) : 1;
-    var data = (parseInt(currentPage) - 1) * 10;
+    var data = (parseInt(currentPage) - 1) * userPageCnt;
 
     db.query(countSql+sql, data, function (err, result) {
       if (err) throw err;
       
-      var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0][0].totalPost);
+      var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0][0].totalPost, userPageCnt);
       res.status(200).json({status:200, 
                 data: {
                   paging: {startPage: startPage, endPage: endPage, totalPage: totalPage},
@@ -65,9 +65,9 @@ api.put("/file/:inquiryUID", upload.single("file"), function(req, res) {
     });
 });
 
-// 관리자만 할 수 있게 권한 체크
+// 문의 완료하기
 api.put("/complete/:inquiryUID", 
-        verifyToken, 
+        verifyAdminToken, 
         [
           check("type", "type is required").not().isEmpty(),
           check("title", "title is required").not().isEmpty(),

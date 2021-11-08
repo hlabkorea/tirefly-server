@@ -76,3 +76,5 @@ app.use('/my_basket', require('./api/my_basket.js'));
 app.use('/main_slide', require('./api/main_slide.js'));
 app.use('/newsletter', require('./api/newsletter.js'));
 
+app.use('/admin', require('./api/admin.js'));
+app.use('/adminLogin', require('./api/adminLogin.js'));

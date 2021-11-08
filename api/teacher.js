@@ -5,7 +5,7 @@ const api = express.Router();
 
 // 강사 목록 조회
 api.get('/', verifyToken, function (req, res) {
-  var sql = "select UID as teacherUID, teacherNickName as teacherName from teacher";
+  var sql = "select UID as teacherUID, teacherName, teacherNickName from teacher";
 
   db.query(sql, function (err, result, fields) {
 		if (err) throw err;
@@ -24,10 +24,6 @@ api.get('/:teacherUID', verifyToken, function (req, res) {
 
   db.query(sql, data, function (err, result, fields) {
 		if (err) throw err;
-
-		if(result.length > 0){
-			result[0].teacherCareer = result[0].teacherCareer.replace(/\r/gi, "\n");
-		}
 
 		res.status(200).json({
                           status:200,

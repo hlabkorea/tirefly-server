@@ -2,9 +2,10 @@ const express = require("express");
 const db = require('./config/database.js');
 const api = express.Router();
 const {getPageInfo} = require('./config/paging.js'); 
-const {verifyToken} = require("./config/authCheck.js");
+const {verifyToken, verifyAdminToken} = require("./config/authCheck.js");
 const {check} = require('express-validator');
 const {getError} = require('./config/requestError.js');
+const pageCnt10 = 10;
 
 // 웹에서 faq 조회와 검색
 // 검색은 무조건 전체에서 (카테고리 상관 없음)
@@ -39,14 +40,14 @@ api.get("/web", function(req, res) {
 
     var countSql = sql + ";";
 
-    sql += " limit ?, 10";
+    sql += " limit ?, " + pageCnt10;
     var currentPage = req.query.page ? parseInt(req.query.page) : 1;
-    sqlData.push((parseInt(currentPage) - 1) * 10);
+    sqlData.push((parseInt(currentPage) - 1) * pageCnt10);
 
     db.query(countSql+sql, countSqlData.concat(sqlData), function (err, result) {
       if (err) throw err;
 
-      var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length);
+      var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length, pageCnt10);
       res.status(200).json({status:200, 
                 data: {
                   paging: {startPage: startPage, endPage: endPage, totalPage: totalPage},
@@ -71,10 +72,9 @@ api.get("/app", verifyToken, function(req, res) {
     });
 });
 
-// 관리자만 할 수 있게 권한 체크
 // faq 추가
 api.post("/", 
-        verifyToken, 
+        verifyAdminToken, 
         [
           check("category", "category is required").not().isEmpty(),
           check("question", "question is required").not().isEmpty(),
@@ -95,10 +95,9 @@ api.post("/",
         }
 );
 
-// 관리자만 할 수 있게 권한 체크
 // faq 수정
 api.put("/:faqUID", 
-        verifyToken, 
+        verifyAdminToken, 
         [
           check("category", "category is required").not().isEmpty(),
           check("question", "question is required").not().isEmpty(),

@@ -1,6 +1,5 @@
-function getPageInfo(page, totalPost){
-    const maxPost = 10;
-    const maxPage = 10;
+function getPageInfo(page, totalPost, maxPost){
+	var maxPage = 100;
     var currentPage = page ? parseInt(page) : 1;
     const totalPage = Math.ceil(totalPost / maxPost);
     const startPage = Math.floor((currentPage - 1) / maxPage) * maxPage + 1; 

@@ -44,12 +44,6 @@ api.post('/',
 			var gender = req.body.gender;
 			var age = req.body.age;
 			var marketingOpt = req.body.marketingOpt;
-			
-			/* 나중에 폰트 적용 (google 은 폰트 적용 불가능)
-			var css = "<style>"
-					 + "<link href='https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap' rel='stylesheet' type='text/css'>"
-					 + '<link href="https://spoqa.github.io/spoqa-han-sans/css/SpoqaHanSansNeo.css" rel="stylesheet" type="text/css">';
-			*/
 
 			var html = '<div style="text-align: center; color: black;">'
 					 + '<br><br>'

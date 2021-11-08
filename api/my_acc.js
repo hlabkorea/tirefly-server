@@ -20,7 +20,6 @@ api.post('/',
                 db.query(sql, req.body.userId, function (err, result, fields) {
                     if (err) throw err;
 
-                    console.log(result +"delete");
                     var data = [];
                     var acc = JSON.parse(req.body.acc);
 
@@ -32,7 +31,6 @@ api.post('/',
                     db.query(sql, [data], function (err, result, fields) {
                         if (err) throw err;
 
-                        console.log(result +"insert")
                         res.status(200).send({status:200, data: "true", message:"success"});
                     });
                 });

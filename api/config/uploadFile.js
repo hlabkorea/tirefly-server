@@ -11,6 +11,17 @@ const storage = multer.diskStorage({
     }
 });
 
-const upload = multer({storage: storage});
+const onlyUploadStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, path.join('..', 'motif-server', 'views', 'files'));
+    },
+    filename: (req, file, cb) => {
+        cb(null, file.originalname);
+    }
+});
 
-module.exports = {upload};
+const upload = multer({storage: storage});
+const onlyUpload = multer({storage: onlyUploadStorage});
+
+module.exports.upload = upload;
+module.exports.onlyUpload = onlyUpload;
