@@ -336,14 +336,52 @@ api.put('/image/:userUID',
 				} catch(err){
 					throw err;
 				}
+
+				var filename = req.file.filename;
+				var userUID = req.params.userUID;
 				var sql = "update user set profileImg = ? where UID = ?";
-				var data = [req.file.filename, req.params.userUID];
+				var data = [filename, userUID];
 				console.log(data);
 				db.query(sql, data, function (err, result, fields) {
 					if (err) throw err;
 
 					res.status(200).json({status:200, data:"true", message: "success"});
 				});
+			}
+		}
+);
+
+// 프로필 이미지 삭제
+api.delete('/image/:userUID', 
+		verifyToken,
+		[
+			check("filename", "filename is required").not().isEmpty()
+		], 
+		function (req, res) {
+			const errors = getError(req, res);
+			if(errors.isEmpty()){
+				var filename = req.body.filename;
+				var userUID = req.params.userUID;
+
+				try{
+					var filePath = '../motif-server/views/files/';
+					// 파일이 존재하면 삭제
+					fs.exists(filePath + filename, function (exists) {
+						if(exists){							
+							fs.unlink(filePath + filename, function (err) {
+								if (err) throw err;
+								
+								var sql = "update user set profileImg = '' where UID = ?";
+								db.query(sql, userUID, function (err, result, fields) {
+									if (err) throw err;
+								});
+							});
+						}
+					});
+					res.status(200).json({status:200, data:"true", message: "success"});
+				} catch(err){
+					throw err;
+				}
 			}
 		}
 );

@@ -95,27 +95,37 @@ api.get('/:userUID', verifyToken, function (req, res) {
 			}
         });*/
 
-		var sql = "select level, startDate, endDate from membership where userUID = ?";
+		var sql = "select level, startDate, endDate from membership where userUID = ? order by startDate desc";
 		var userUID = req.params.userUID;
 		db.query(sql, userUID, function (err, result) {
 			if (err) throw err;
 			
 			var maxCount = 0;
 			if(result.length != 0) {
-				switch(result[0].level){
-					case "single": 
-						maxCount = 1;
-						break;
-					case "friends":
-						maxCount = 3;
-						break;
-					case "family":
-						maxCount = 5;
-						break;
-				}
+				var endDate = result[0].endDate;
+				endDate = toHypenDateFormat(endDate);
+				var currentDateTime = getCurrentDateTime();
 
-				result[0].maxCount = maxCount;
-				res.status(200).json({status:200,  data: result[0], message:"success"});
+				if(currentDateTime > endDate){
+					res.status(200).json({status:200,  data: "normal", message:"success"});
+				}
+				else{
+					switch(result[0].level){
+						case "single": 
+							maxCount = 1;
+							break;
+						case "friends":
+							maxCount = 3;
+							break;
+						case "family":
+							maxCount = 5;
+							break;
+					}
+
+					result[0].maxCount = maxCount;
+					res.status(200).json({status:200,  data: result[0], message:"success"});
+				}
+				
 			}
 			else{
 				res.status(200).json({status:200,  data: "normal", message:"success"});
