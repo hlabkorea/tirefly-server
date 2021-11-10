@@ -36,38 +36,60 @@ api.post('/',
                   if(result[0].nickName.length > 0)
                     redirect = "contents";
 
-				  var membership_sql = "select membership.level, membership.endDate "
-									 + "from membership "
-									 + "left join membership_group on membership.UID = membership_group.ownerUID "
-									 + "where membership_group.userUID = ? or membership.userUID = ?"
-				  var membership_data = [userUID, userUID];
+				  var membership_sql = "select level, endDate from membership "
+									 + "where date_format(membership.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') and userUID = ?";
 
-				  db.query(membership_sql, membership_data, function (err, result, fields) {
+				  db.query(membership_sql, userUID, function (err, result, fields) {
 					if (err) throw err;
   
 					var auth = "normal";
 					var endDate = 0;
-					if(result.length != 0){
-						var endDate = result[0].endDate;
-						endDate = toHypenDateFormat(endDate);
-						var currentDateTime = getCurrentDateTime();
 
-						if(currentDateTime <= endDate){
-							auth = result[0].level;
-						}
+					// 멤버십 결제자
+					if (result.length != 0){
+						auth = result[0].level;
+						endDate = result[0].endDate;
+						token = jwt.sign({
+						  userUID: userUID,
+						  auth: auth
+						},
+						secretObj.secret ,    // 비밀 키
+						{
+							expiresIn: '30d'
+						  //expiresIn: '1440m'    // 유효 시간은 1440분
+						});
+
+						res.status(200).send({status: 200, data: {UID: userUID ,token: token, redirect: redirect, auth: auth, endDate: endDate}});
 					}
+					else {
+						var membership_group_sql = "select membership.endDate "
+												 + "from membership_group "
+												 + "join membership on membership.userUID = membership_group.ownerUID "
+												 + "where date_format(membership.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') and membership_group.userUID = ? "
+												 + "order by membership.endDate desc "
+												 + "limit 1";
+						 db.query(membership_group_sql, userUID, function (err, result, fields) {
+							if (err) throw err;
+							
+							if (result.length != 0){
+								auth = "invited";
+								endDate = result[0].endDate;
+							}
+							token = jwt.sign({
+							  userUID: userUID,
+							  auth: auth
+							},
+							secretObj.secret ,    // 비밀 키
+							{
+								expiresIn: '30d'
+							  //expiresIn: '1440m'    // 유효 시간은 1440분
+							});
 
-				    token = jwt.sign({
-				  	  userUID: userUID,
-					  auth: auth
-				    },
-					secretObj.secret ,    // 비밀 키
-				    {
-						expiresIn: '30d'
-					  //expiresIn: '1440m'    // 유효 시간은 1440분
-				    });
+							res.status(200).send({status: 200, data: {UID: userUID ,token: token, redirect: redirect, auth: auth, endDate: endDate}});
 
-				    res.status(200).send({status: 200, data: {UID: userUID ,token: token, redirect: redirect, auth: auth, endDate: endDate}});
+						 });
+					}
+					
 				  });
   
                   var token_check_sql = "select token from user_log where userUID = ? "

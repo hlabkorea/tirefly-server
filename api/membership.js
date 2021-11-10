@@ -95,7 +95,7 @@ api.get('/:userUID', verifyToken, function (req, res) {
 			}
         });*/
 
-		var sql = "select level, startDate, endDate from membership where userUID = ? order by startDate desc";
+		var sql = "select level, startDate, endDate from membership where userUID = ? order by endDate";
 		var userUID = req.params.userUID;
 		db.query(sql, userUID, function (err, result) {
 			if (err) throw err;
@@ -107,7 +107,7 @@ api.get('/:userUID', verifyToken, function (req, res) {
 				var currentDateTime = getCurrentDateTime();
 
 				if(currentDateTime > endDate){
-					res.status(200).json({status:200,  data: {level: "normal", startDate: "0000-01-01 00:00:00", endDate: "0000-01-01 00:00:00", maxCount: 0}, message:"success"});
+					res.status(200).json({status:200,  data: {level: "normal", startDate: "", endDate: "", maxCount: 0}, message:"success"});
 				}
 				else{
 					switch(result[0].level){

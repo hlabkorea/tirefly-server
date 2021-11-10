@@ -5,7 +5,7 @@ const api = express.Router();
 const {check} = require('express-validator');
 const {getError} = require('./config/requestError.js');
 const {getPageInfo} = require('./config/paging.js'); 
-const {onlyUpload} = require('./config/uploadFile.js');
+const {upload} = require('./config/uploadFile.js');
 const pageCnt15 = 15;
 
 // cms - vod 정보 조회
@@ -84,11 +84,21 @@ api.post('/', verifyAdminToken, function (req, res) {
 });
 
 // cms - 영상 이미지 업로드
-api.post('/image', 
+api.put('/image/:videoUID', 
 		verifyAdminToken,
-		onlyUpload.single("img"), 
+		upload.single("img"), 
 		function (req, res) {
-			res.status(200).json({status:200, data:"true", message: "success"});
+			var videoUID = req.params.videoUID;
+			var filename = req.file.filename;
+			//var imgType = req.body.imgType;
+			var imgType = "videoThumbnail";
+			var sql = "update video set " + imgType + " = ? where UID = ?";
+			var data = [filename, videoUID];
+			db.query(sql, data, function (err, result, fields) {
+				if (err) throw err;
+
+				res.status(200).json({status:200, data:"true", message: "success"});
+			});
 		}
 );
 

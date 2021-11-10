@@ -133,7 +133,7 @@ api.get('/members/:ownerUID',
 		verifyToken,
 		function (req, res, next){
 			var ownerUID = req.params.ownerUID;
-			var sql = "select UID as groupUID, email from membership_group where ownerUID = ?";
+			var sql = "select UID as groupUID, email from membership_group where ownerUID = ? order by email";
 			db.query(sql, ownerUID, function (err, result) {
 				if (err) throw err;
 
@@ -150,10 +150,10 @@ api.get('/owners/:userUID',
 			var sql = "select user.email, membership.level, membership.startDate, membership.endDate "
 					+ "from membership_group "
 					+ "join user on membership_group.ownerUID = user.UID "
-					+ "join membership on membership_group.ownerUId = membership.userUID "
+					+ "join membership on membership_group.ownerUID = membership.userUID "
 					+ "where membership_group.userUID = ? "
 					+ "group by membership_group.ownerUID "
-					+ "order by membership_group.regDate desc";
+					+ "order by membership_group.email";
 
 			db.query(sql, userUID, function (err, result) {
 				if (err) throw err;
