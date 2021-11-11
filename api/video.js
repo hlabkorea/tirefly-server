@@ -257,7 +257,7 @@ api.get('/live',
 api.get('/recommend/:userUID', verifyToken, function (req, res) {
   var sql = "select video.UID, video.videoThumbnail "
           + "from video "
-		  + "left join my_category on video.categoryUID = my_category.categoryUID "
+		  + "join my_category on video.categoryUID = my_category.categoryUID "
           + "where my_category.userUID = ? and video.status = 'act' "
           + "order by video.regDate desc "
 		  + "limit 20";
