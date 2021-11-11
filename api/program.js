@@ -12,34 +12,39 @@ api.get('/:programUID',
           check("userUID", "userUID is required").not().isEmpty()
         ],
         function (req, res) {
-          const errors = getError(req, res);
-			    if(errors.isEmpty()){
-            var sql = "select programName, programContents, contentsPath, programLevel, weekNumber "
-                    + "from program left join my_program on program.UID = my_program.programUID "
-                    + "where program.UID = ?";
-            var data = [req.params.programUID, req.query.userUID];
-            var responseData = {};
+            const errors = getError(req, res);
+			if(errors.isEmpty()){
+				var programUID = req.params.programUID;
+				var userUID = req.query.userUID;
+				
+				// 프로그램 정보 조회
+				var sql = "select programName, programContents, contentsPath, programLevel, weekNumber "
+						+ "from program left join my_program on program.UID = my_program.programUID "
+						+ "where program.UID = ?";
+				var data = [programUID, userUID];
+				var responseData = {};
 
-            db.query(sql, data[0], function (err, result) {
-              if (err) throw err;   
+				db.query(sql, programUID, function (err, result) {
+				  if (err) throw err;   
 
-              responseData = result[0];
-            });
+				  responseData = result[0];
 
-            sql = "select UID from my_program where programUID = ? and userUID = ?";
+				  // 프로그램을 신청했는지 확인
+				  sql = "select UID from my_program where programUID = ? and userUID = ?";
 
-            db.query(sql, data, function (err, result) {
-              if (err) throw err;   
+				  db.query(sql, data, function (err, result) {
+					if (err) throw err;   
 
-              var isRegister = true;
-              if(result.length == 0)
-                isRegister = false;
-                responseData.register = isRegister;
+					var isRegister = true;
+					if(result.length == 0)
+						isRegister = false;
+						responseData.register = isRegister;
 
-              res.status(200).json({status:200,  data: responseData, message:"success"});
-            });
-          }
-        }
+					res.status(200).json({status:200,  data: responseData, message:"success"});
+				  });
+				});
+			}
+        }	
 );
 
 module.exports = api;

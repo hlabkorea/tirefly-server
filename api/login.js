@@ -20,6 +20,7 @@ api.post('/',
             var email= req.body.email;
             var password= req.body.password;
   
+			// 아이디 비밀번호 확인
             var sql = "select * from user where email=? and password=?";
             var data = [email, sha256(password)];
             var userUID = 0;
@@ -35,7 +36,8 @@ api.post('/',
                   var redirect = "setting";
                   if(result[0].nickName.length > 0)
                     redirect = "contents";
-
+				  
+				  // 멤버십에 초대되어있었는지 확인
 				  var membership_sql = "select level, endDate from membership "
 									 + "where date_format(membership.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') and userUID = ?";
 
@@ -45,7 +47,7 @@ api.post('/',
 					var auth = "normal";
 					var endDate = 0;
 
-					// 멤버십 결제자
+					// 멤버십 결제자인지 확인
 					if (result.length != 0){
 						auth = result[0].level;
 						endDate = result[0].endDate;
@@ -61,7 +63,7 @@ api.post('/',
 
 						res.status(200).send({status: 200, data: {UID: userUID ,token: token, redirect: redirect, auth: auth, endDate: endDate}});
 					}
-					else {
+					else { // Invited 유저인지 확인
 						var membership_group_sql = "select membership.endDate "
 												 + "from membership_group "
 												 + "join membership on membership.userUID = membership_group.ownerUID "
@@ -92,6 +94,7 @@ api.post('/',
 					
 				  });
   
+				  // 토큰 이력 추가
                   var token_check_sql = "select token from user_log where userUID = ? "
                                 + "order by regDate desc "
                                 + "limit 1";

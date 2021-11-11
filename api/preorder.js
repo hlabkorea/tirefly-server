@@ -81,17 +81,4 @@ api.post('/',
         }
 );
 
-// 사전예약 정보 조회
-api.get('/check', 
-        function (req, res, next) {
-			var sql = "select * from preorder";
-
-			db.query(sql, function (err, result) {
-				if (err) throw err;
-
-				res.render("preorder_check", {result: result});
-			});
-        }
-);
-
 module.exports = api;

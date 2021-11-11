@@ -29,7 +29,7 @@ api.put('/:videoUID',
                     if(result.length != 0){
                         var videoHistoryUID = result[0].UID;
                         
-                        if(clientPlayTime > result[0].playTime){
+                        if(clientPlayTime > result[0].playTime){ // 현재 저장된 시간보다 더 시청했을 때 이력 업데이트
                             if(clientComplete){
                                 sql = "update video_history set playTime = ?, complete = ? where UID=?";
                                 data = [clientPlayTime, clientComplete, videoHistoryUID];
@@ -40,7 +40,7 @@ api.put('/:videoUID',
                         } else {
                             changed = false;
                         }
-                    } else{
+                    } else{ // 현재 저장된 이력이 없다면 저장
                         sql = "insert into video_history(userUID, videoUID, playTime, complete) values(?, ?, ?, ?)";
                         data.push(clientPlayTime);
                         data.push(clientComplete);

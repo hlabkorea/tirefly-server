@@ -47,16 +47,17 @@ api.get('/', verifyAdminToken, function (req, res) {
 		var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length, pageCnt15);
 
 		res.status(200).json({status:200, 
-									  data: {
-									    paging: {startPage: startPage, endPage: endPage, totalPage: totalPage},
-									    result: result[1]
-									  }, 
-									  message:"success"});
+							  data: {
+								paging: {startPage: startPage, endPage: endPage, totalPage: totalPage},
+								result: result[1]
+							  }, 
+							  message:"success"});
 	});
 });
 
 // cms - 영상 업로드
 api.post('/', verifyAdminToken, function (req, res) {
+	var adminUID = req.adminUID;
 	var teacherUID = req.body.teacherUID;
 	var categoryUID = req.body.categoryUID;
 	var videoName = req.body.videoName;
@@ -65,17 +66,15 @@ api.post('/', verifyAdminToken, function (req, res) {
 	var playContents = req.body.playContents;
 	var playTimeValue = req.body.playTimeValue;
 	var status = req.body.status;
-	var videoThumbnail = req.body.videoThumbnail;
-	var contentsPath = req.body.contentsPath;
 	var videoType = req.body.videoType;
 	var videoURL = req.body.videoURL;
 	var isPlayBGM = req.body.isPlayBGM;
 	var liveStartDate = req.body.liveStartDate;
 	var liveEndDate = req.body.liveEndDate;
 
-	var sql = "insert video(teacherUID, categoryUID, videoName, videoLevel, totalPlayTime, playContents, playTimeValue, status, videoThumbnail, contentsPath, videoType, videoURL, isPlayBGM, liveStartDate, liveEndDate) "
-			+ "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-	var data = [teacherUID, categoryUID, videoName, videoLevel, totalPlayTime, playContents, playTimeValue, status, videoThumbnail, contentsPath, videoType, videoURL, isPlayBGM, liveStartDate, liveEndDate];
+	var sql = "insert video(teacherUID, categoryUID, videoName, videoLevel, totalPlayTime, playContents, playTimeValue, status, videoType, videoURL, isPlayBGM, liveStartDate, liveEndDate, regUID) "
+			+ "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+	var data = [teacherUID, categoryUID, videoName, videoLevel, totalPlayTime, playContents, playTimeValue, status, videoType, videoURL, isPlayBGM, liveStartDate, liveEndDate, adminUID];
 	db.query(sql, data, function (err, result, fields) {
 		if (err) throw err;
 
@@ -90,15 +89,15 @@ api.put('/image/:videoUID',
 		function (req, res) {
 			var videoUID = req.params.videoUID;
 			var filename = req.file.filename;
-			//var imgType = req.body.imgType;
-			var imgType = "videoThumbnail";
+			var imgType = req.body.imgType;
 			var sql = "update video set " + imgType + " = ? where UID = ?";
 			var data = [filename, videoUID];
-			db.query(sql, data, function (err, result, fields) {
+			const exec = db.query(sql, data, function (err, result, fields) {
 				if (err) throw err;
 
 				res.status(200).json({status:200, data:"true", message: "success"});
 			});
+			console.log(exec.sql);
 		}
 );
 
@@ -144,109 +143,111 @@ api.get('/favorite', verifyToken, function (req, res) {
 
 // vod 검색
 api.get('/search', verifyToken, function (req, res) {
-  var sql = "select video.UID, teacher.teacherImg, video.videoName, teacher.teacherNickName as teacherName, video.contentsPath, category.categoryName, video.videoLevel, video.playTimeValue, acc.rectImgPath as imgPath "
-          + "from video "
-          + "join category on video.categoryUID = category.UID "
-          + "join teacher on video.teacherUID = teacher.UID "
-          + "left join video_acclist on video.UID = video_acclist.videoUID "
-          + "left join acc on video_acclist.accUID = acc.UID "
-		  + "where video.status='act' ";
-          
-  var data = [];
-  var isOption = false;
-  var categoryUIDs = req.query.categoryUIDs;
-  var videoLevels = req.query.videoLevels;
-  var playTimeValues = req.query.playTimeValues;
-  var teacherUIDs = req.query.teacherUIDs;
+	var sql = "select video.UID, teacher.teacherImg, video.videoName, teacher.teacherNickName as teacherName, video.contentsPath, category.categoryName, video.videoLevel, video.playTimeValue, acc.rectImgPath as imgPath "
+		    + "from video "
+		    + "join category on video.categoryUID = category.UID "
+		    + "join teacher on video.teacherUID = teacher.UID "
+		    + "left join video_acclist on video.UID = video_acclist.videoUID "
+		    + "left join acc on video_acclist.accUID = acc.UID "
+		    + "where video.status='act' ";
+		  
+	var data = [];
+	var isOption = false;
+	var categoryUIDs = req.query.categoryUIDs;
+	var videoLevels = req.query.videoLevels;
+	var playTimeValues = req.query.playTimeValues;
+	var teacherUIDs = req.query.teacherUIDs;
 
-  if(categoryUIDs.length != 0){
-    sql += "and category.UID in (?) ";
+	if(categoryUIDs.length != 0){
+		sql += "and category.UID in (?) ";
 
-    data.push(categoryUIDs.split(','));
-  }
-  
-  if(videoLevels.length != 0){
-    sql += "and video.videoLevel in (?) ";
-    data.push(videoLevels.split(','));
-  }
-  
-  if(playTimeValues.length != 0){
-    sql += "and video.playTimeValue in (?) ";
-    data.push(playTimeValues.split(','));
-  }
+		data.push(categoryUIDs.split(','));
+	}
 
-  if(teacherUIDs.length != 0){
-    sql += "and teacher.UID in (?) ";
-    data.push(teacherUIDs.split(','));
-  }
+	if(videoLevels.length != 0){
+		sql += "and video.videoLevel in (?) ";
+		data.push(videoLevels.split(','));
+	}
 
-  sql += "and video.videoType = ? "
-  data.push(req.query.videoType);
+	if(playTimeValues.length != 0){
+		sql += "and video.playTimeValue in (?) ";
+		data.push(playTimeValues.split(','));
+	}
 
-  sql += "order by video.regDate desc, video.UID desc";
+	if(teacherUIDs.length != 0){
+		sql += "and teacher.UID in (?) ";
+		data.push(teacherUIDs.split(','));
+	}
 
-  var responseData = [];
-  var obj = {};
+	sql += "and video.videoType = ? "
+	data.push(req.query.videoType);
 
-  const execSql = db.query(sql, data, function (err, result, fields) {
-		if (err) throw err;
+	sql += "order by video.regDate desc, video.UID desc";
 
-		var rowIdx = -1;
+	var responseData = [];
+	var obj = {};
 
-      if(result.length > 0){
-        for(var i in result){
-          if(result[i].UID != rowIdx){
-            if(rowIdx != -1)
-              responseData.push(obj);
+	db.query(sql, data, function (err, result, fields) {
+	  if (err) throw err;
 
-            obj = {};
-            rowIdx = result[i].UID;
-            obj.videoUID = result[i].UID;
+	  var rowIdx = -1;
+
+	  // 비디오마다 운동기구 리스트 추가
+	  if(result.length > 0){
+		for(var i in result){
+		  if(result[i].UID != rowIdx){
+			if(rowIdx != -1)
+			  responseData.push(obj);
+
+			obj = {};
+			rowIdx = result[i].UID;
+			obj.videoUID = result[i].UID;
 			obj.contentsPath = result[i].contentsPath;
-            obj.teacherImg = result[i].contentsPath;
-            obj.teacherName = result[i].teacherName;
-            obj.videoName = result[i].videoName;
-            obj.categoryName = result[i].categoryName;
-            obj.videoLevel = result[i].videoLevel;
-            obj.playTimeValue = result[i].playTimeValue;
-            obj.accImgPath = [];
-          }
+			obj.teacherImg = result[i].contentsPath;
+			obj.teacherName = result[i].teacherName;
+			obj.videoName = result[i].videoName;
+			obj.categoryName = result[i].categoryName;
+			obj.videoLevel = result[i].videoLevel;
+			obj.playTimeValue = result[i].playTimeValue;
+			obj.accImgPath = [];
+		  }
 
-          if(result[i].imgPath != null)
-            obj.accImgPath.push(result[i].imgPath);
-        }
+		  if(result[i].imgPath != null)
+			obj.accImgPath.push(result[i].imgPath);
+		}
 
-        responseData.push(obj);
-      }
+		responseData.push(obj);
+	  }
 
-      res.status(200).send({status:200, data: responseData, message:"success"});
-  });
-
-  console.log(execSql.sql);
+	  res.status(200).send({status:200, data: responseData, message:"success"});
+	});
 });
 
 // 라이브 일정 조회
 api.get('/live', 
         verifyToken, 
         [
-          check("date", "date is required").not().isEmpty()
+          check("startDate", "startDate is required").not().isEmpty(),
+		  check("endDate", "endDate is required").not().isEmpty()
         ],
         function (req, res) {
-          const errors = getError(req, res);
-			    if(errors.isEmpty()){
-            var sql = "select video.liveStartDate, teacher.teacherImg, video.videoName, teacher.teacherName, video.videoLevel, video.playTimeValue "
-                    + "from video "
-                    + "join teacher on teacher.UID = video.teacherUID "
-                    + "where videoType = 'live' and date(video.liveStartDate) = ? and video.status = 'act' "
-                    + "order by liveStartDate";
-            var data = req.query.date;
+			const errors = getError(req, res);
+			if(errors.isEmpty()){
+				var startDate = req.query.startDate;
+				var endDate = req.query.endDate;
+				var sql = "select video.liveStartDate, teacher.teacherImg, video.videoName, teacher.teacherName, video.videoLevel, video.playTimeValue "
+						+ "from video "
+						+ "join teacher on teacher.UID = video.teacherUID "
+						+ "where videoType = 'live' and (date_format(video.liveStartDate, '%Y-%m-%d') between ? and ?) and video.status = 'act' "
+						+ "order by liveStartDate";
+				var data = [startDate, endDate];
 
-            db.query(sql, data, function (err, result, fields) {
-              if (err) throw err;
+				db.query(sql, data, function (err, result, fields) {
+				  if (err) throw err;
 
-              res.status(200).json({status:200, data: result, message:"success"});
-            });
-          }
+				  res.status(200).json({status:200, data: result, message:"success"});
+				});
+			  }
         }
 );
 
@@ -291,7 +292,8 @@ api.get('/category/:categoryUID',
                 if (err) throw err;
 
                 var rowIdx = -1;
-
+				
+				// 비디오마다 운동기구 리스트 추가
                 if(result.length > 0){
                   for(var i in result){
 					  console.log(rowIdx);
@@ -327,8 +329,8 @@ api.get('/category/:categoryUID',
 
 // 상세보기 - 비디오 설명
 api.get('/:videoUID', verifyToken, function (req, res) {
-  var sql = "select video.UID, video.videoType, video.videoName, category.categoryName, video.videoLevel, video.totalPlayTime, video.playTimeValue, video.videoThumbnail, video.contentsPath, video.playContents, "
-          + "video.teacherUID, video.videoURL, video.liveStartDate, video.liveEndDate, calorie.consume, video.isPlayBGM "
+  var sql = "select video.UID, video.videoType, video.videoName, video.categoryUID, category.categoryName, video.videoLevel, video.totalPlayTime, video.playTimeValue, video.videoThumbnail, video.contentsPath, "
+		  + "video.playContents, video.teacherUID, video.videoURL, video.liveStartDate, video.liveEndDate, calorie.consume, video.isPlayBGM, video.status "
           + "from video "
           + "join category on video.categoryUID = category.UID "
           + "join calorie on category.UID = calorie.categoryUID "

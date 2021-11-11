@@ -47,41 +47,32 @@ api.post('/join',
 					});
 
 					sendJoinEmail(email);
-
-					var token_check_sql = "select token from user_log where userUID = ? "
-							+ "order by regDate desc "
-							+ "limit 1";
-
-					db.query(token_check_sql, userUID, function (err, result, fields) {
+					
+					// 토큰 이력 추가
+					var token_insert_sql = "insert into user_log(userUID, token) values(?, ?)";
+					var token_insert_data = [userUID, token];
+					db.query(token_insert_sql, token_insert_data, function (err, result) {
 						if (err) throw err;
 
-						if(token != result[0]){
-							var token_insert_sql = "insert into user_log(userUID, token) values(?, ?)";
-							var token_insert_data = [userUID, token];
-							db.query(token_insert_sql, token_insert_data, function (err, result) {
-								if (err) throw err;
+						// 멤버십 그룹에 초대된 사용자라면 membership_group 의 userUID 업데이트
+						var membership_sql = "select UID from membership_group where email = ?";
+						db.query(membership_sql, email, function (err, result) {
+							if (err) throw err;
 
-								// 멤버십 그룹에 초대된 사용자라면 membership_group 의 userUID 업데이트
-								var membership_sql = "select UID from membership_group where email = ?";
-								db.query(membership_sql, email, function (err, result) {
+							if(result.length > 0){
+								var update_sql = "update membership_group set userUID = ? where UID = ?";
+								var update_data = [userUID, result[0].UID];
+
+								db.query(update_sql, update_data, function (err, result) {
 									if (err) throw err;
 
-									if(result.length > 0){
-										var update_sql = "update membership_group set userUID = ? where UID = ?";
-										var update_data = [userUID, result[0].UID];
-
-										db.query(update_sql, update_data, function (err, result) {
-											if (err) throw err;
-
-											res.status(200).json({status:200, data: {UID: userUID, token: token}, message:"success"});
-										});
-									} else {
-										res.status(200).json({status:200, data: {UID: userUID, token: token}, message:"success"});
-									}
-									
+									res.status(200).json({status:200, data: {UID: userUID, token: token}, message:"success"});
 								});
-							});
-						}
+							} else {
+								res.status(200).json({status:200, data: {UID: userUID, token: token}, message:"success"});
+							}
+							
+						});
 					});
 				});
 			}
@@ -137,26 +128,24 @@ api.post('/overlapEmail',
 
 // 이메일 존재 확인
 api.post('/existEmail',
-			[
-							check("email", "email is required").not().isEmpty()
-						],
-			function (req, res) {
-							const errors = getError(req, res);
-							if(errors.isEmpty()){
-												var sql = "select count(email) as cnt from user where email = ?";
-												var data = req.body.email;
-												console.log(req.body.email);
-												db.query(sql, data, function (err, result, fields) {
-																		if (err) throw err;
+		[
+			check("email", "email is required").not().isEmpty()
+		],
+		function (req, res) {
+			const errors = getError(req, res);
+			if(errors.isEmpty()){
+				var sql = "select count(email) as cnt from user where email = ?";
+				var data = req.body.email;
+				db.query(sql, data, function (err, result, fields) {
+					if (err) throw err;
 
-																		if(result[0].cnt > 0){
-																									res.status(200).json({status:200, data: "true", message:"success"});
-																								}else{
-																															res.status(403).json({status:403, data: "false", message:"가입된 계정이 아니에요!"});
-																														}
-																	});
-											}
-						}
+					if(result[0].cnt > 0)
+						res.status(200).json({status:200, data: "true", message:"success"});
+					else
+						res.status(403).json({status:403, data: "false", message:"가입된 계정이 아니에요!"});
+				});
+			}
+		}
 );
 
 // 닉네임 중복 체크
@@ -222,6 +211,7 @@ api.put('/password',
 				db.query(sql, data, function (err, updateResult, fields) {
 					if (err) throw err;
 
+					// 원래의 token 무효화
 					var selectSql = "select user_log.token "
 								  + "from user_log "
 								  + "join user on user_log.userUID = user.UID "
@@ -351,18 +341,16 @@ api.put('/image/:userUID',
 		}
 );
 
-// 프로필 이미지 삭제
-api.delete('/image/:userUID', 
+// 프로필 이미지 삭제하여 기본 이미지로 변경
+api.put('/basic_img/:userUID', 
 		verifyToken,
-		[
-			check("filename", "filename is required").not().isEmpty()
-		], 
 		function (req, res) {
-			const errors = getError(req, res);
-			if(errors.isEmpty()){
-				var filename = req.body.filename;
-				var userUID = req.params.userUID;
-
+			var userUID = req.params.userUID;
+			
+			var sql = "select profileImg from user where UID = ?";
+			db.query(sql, userUID, function (err, result, fields) {
+				if (err) throw err;
+				var filename = result[0].profileImg;
 				try{
 					var filePath = '../motif-server/views/files/';
 					// 파일이 존재하면 삭제
@@ -370,19 +358,19 @@ api.delete('/image/:userUID',
 						if(exists){							
 							fs.unlink(filePath + filename, function (err) {
 								if (err) throw err;
-								
-								var sql = "update user set profileImg = '' where UID = ?";
-								db.query(sql, userUID, function (err, result, fields) {
-									if (err) throw err;
-								});
 							});
 						}
+					});
+					var sql = "update user set profileImg = '' where UID = ?";
+					db.query(sql, userUID, function (err, result, fields) {
+						if (err) throw err;
 					});
 					res.status(200).json({status:200, data:"true", message: "success"});
 				} catch(err){
 					throw err;
 				}
-			}
+
+			});
 		}
 );
 
@@ -390,6 +378,7 @@ api.delete('/image/:userUID',
 api.get('/:userUID', verifyToken, function (req, res) {
 	var responseData = {};
 
+	// 사용자 정보 조회
 	var info_sql = "select profileImg, email, cellNumber, nickName, birthday, gender, height, weight, purpose, intensity, frequency, theHours, momentum "
 				+ "from user "
 				+ "where UID = ?";
@@ -404,6 +393,7 @@ api.get('/:userUID', verifyToken, function (req, res) {
 		}
 	});
 
+	// 관심운동 조회
 	var category_sql = "select category.UID as UID, category.categoryName "
 					+ "from my_category "
 					+ "join category on my_category.categoryUID = category.UID "
@@ -416,6 +406,7 @@ api.get('/:userUID', verifyToken, function (req, res) {
 			responseData.categories = result;
 	});
 
+	// 보유장비 조회
 	var acc_sql = "select acc.UID as accUID, accName, acc.imgPath "
 				+ "from my_acc "
 				+ "join acc on my_acc.accUID = acc.UID "

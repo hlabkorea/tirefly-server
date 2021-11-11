@@ -5,7 +5,7 @@ const api = express.Router();
 const {check} = require('express-validator');
 const {getError} = require('./config/requestError.js');
 
-// 프로그램 신청하기 / 취소하기
+// 프로그램 신청하기 / 취소하기 (기존데이터 삭제후 새로운 데이터 삽입)
 api.put('/:programUID', 
         verifyToken, 
         [

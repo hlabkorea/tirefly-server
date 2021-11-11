@@ -11,9 +11,9 @@ const userPageCnt = 10;
 // 문의 조회
 api.get("/", verifyAdminToken, function(req, res) {
     var countSql = "select count(*) as totalPost from inquiry;";
-    var sql = "select * from inquiry limit ?, " + userPageCnt;
+    var sql = "select * from inquiry limit ?, ?";
     var currentPage = req.query.page ? parseInt(req.query.page) : 1;
-    var data = (parseInt(currentPage) - 1) * userPageCnt;
+    var data = [(parseInt(currentPage) - 1) * userPageCnt, userPageCnt];
 
     db.query(countSql+sql, data, function (err, result) {
       if (err) throw err;

@@ -29,8 +29,9 @@ api.post('/join',
 				{
 					expiresIn: '1440m'    // 유효 시간은 1440분
 				});
-
-				/*var token_check_sql = "select token from user_log where userUID = ? "
+				
+				// 토큰 이력 추가
+				var token_check_sql = "select token from user_log where userUID = ? "
 									+ "order by regDate desc "
 									+ "limit 1";
 
@@ -44,7 +45,7 @@ api.post('/join',
 							if (err) throw err;
 						});
 					}
-				});*/
+				});
 
 				res.status(200).json({status:200, data: {UID: userUID, token: token}, message:"success"});
 			});

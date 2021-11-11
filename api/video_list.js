@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('./config/database.js');
-const {verifyToken, verifyAdminToken} = require("./config/authCheck.js");const api = express.Router();
+const {verifyToken, verifyAdminToken} = require("./config/authCheck.js");
+const api = express.Router();
 
 // 비디오 운동 리스트 조회
 api.get('/:videoUID', verifyToken, function (req, res) {
@@ -14,14 +15,15 @@ api.get('/:videoUID', verifyToken, function (req, res) {
 	});
 });
 
+// cms - 비디오 리스트 추가
 api.put('/:videoUID', verifyAdminToken, function (req, res) {
+	var adminUID = req.adminUID;
 	var videoUID = req.params.videoUID;
 	var data = [];
-	//var videoList = req.body.videoList;
-	var videoList = JSON.parse(req.body.videoList);
+	var videoList = req.body.videoList;
 
 	for(var i in videoList){
-		data.push([videoUID, videoList[i].listName, videoList[i].order, videoList[i].listStartTime, videoList[i].listPlayTime]);
+		data.push([videoUID, videoList[i].listName, videoList[i].order, videoList[i].listStartTime, videoList[i].listPlayTime, adminUID]);
 	}
 
 	var selectSql = "select UID from video_list where videoUID = ?";
@@ -41,7 +43,7 @@ api.put('/:videoUID', verifyAdminToken, function (req, res) {
 			});
 		}
 
-		var sql = "insert into video_list(videoUID, listName, video_list.order, listStartTime, listPlayTime) values ?;";
+		var sql = "insert into video_list(videoUID, listName, video_list.order, listStartTime, listPlayTime, regUID) values ?;";
 		db.query(sql, [data], function (err, result, fields) {
 			if (err) throw err;
 

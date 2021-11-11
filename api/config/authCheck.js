@@ -46,8 +46,10 @@ exports.verifyAdminToken = (req, res, next) => {
 
         if (decoded) {
             console.log('admin token success');
-			if(decoded.auth == "admin")
+			if(decoded.auth == "admin"){
+				req.adminUID = decoded.adminUID;
 				next();
+			}
 			else
 				res.status(403).json({"status":403, "data":[], message:"관리자 계정에 대한 권한이 존재하지 않습니다."});
             

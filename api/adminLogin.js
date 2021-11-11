@@ -22,7 +22,7 @@ api.post('/',
   
             var sql = "select * from admin where email=? and password=?";
             var data = [email, sha256(password)];
-            var userUID = 0;
+            var adminUID = 0;
             var token = '';
             
             db.query(sql, data, function (err, result) {
@@ -31,10 +31,10 @@ api.post('/',
                 if(!result[0]){
                     res.status(403).send({status: 403, data: [], message: "비밀번호가 맞지 않아요!"});
                 } else{
-                    userUID = result[0].UID;
+                    adminUID = result[0].UID;
 
 					token = jwt.sign({
-					  userUID: userUID,
+					  adminUID: adminUID,
 					  auth: "admin"
 					},
 					secretObj.secret ,    // 비밀 키
@@ -42,23 +42,7 @@ api.post('/',
 					  expiresIn: '1440m'    // 유효 시간은 1440분
 					});
 
-					res.status(200).send({status: 200, data: {UID: userUID ,token: token}});
-  
-					/*var token_check_sql = "select token from user_log where userUID = ? "
-								+ "order by regDate desc "
-								+ "limit 1";
-
-					db.query(token_check_sql, userUID, function (err, result, fields) {
-					if (err) throw err;
-
-					if(token != result[0]){
-					  var token_insert_sql = "insert into user_log(userUID, token) values(?, ?)";
-					  var data = [userUID, token];
-					  db.query(token_insert_sql, data, function (err, result, fields) {
-						if (err) throw err;
-					  });
-					}
-					});*/
+					res.status(200).send({status: 200, data: {UID: adminUID ,token: token}});
                 }
             });
           }

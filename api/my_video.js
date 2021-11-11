@@ -49,7 +49,7 @@ api.get('/:userUID', verifyToken, function (req, res) {
   });
 });
 
-// 좋아요 하기 / 취소하기
+// 좋아요 하기 / 취소하기 (기존데이터 삭제후 새로운 데이터 삽입)
 api.put('/:videoUID', 
         verifyToken, 
         [

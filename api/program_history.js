@@ -30,7 +30,7 @@ api.put('/:programUID',
                     if(result.length != 0){
                         var programHistoryUID = result[0].UID;
                         
-                        if(clientPlayTime > result[0].playTime){
+                        if(clientPlayTime > result[0].playTime){ // 현재 저장된 시간보다 더 시청했을 때 이력 업데이트
                             if(clientComplete){
                                 sql = "update program_history set playTime = ?, complete = ? where UID = ?";
                                 data = [clientPlayTime, clientComplete, programHistoryUID];
@@ -41,7 +41,7 @@ api.put('/:programUID',
                         } else {
                             changed = false;
                         }
-                    } else{
+                    } else{ // 현재 저장된 이력이 없다면 저장
                         sql = "insert into program_history(userUId, videoUID, programUID, playTime, complete) values(?, ?, ?, ?, ?)";
                         data.push(clientPlayTime);
                         data.push(clientComplete);
@@ -65,7 +65,7 @@ api.get('/proceeding/:userUID', verifyToken, function (req, res) {
             + "from program_history "
             + "right join my_program on program_history.programUID = my_program.programUID and program_history.userUID = my_program.userUID "
 			+ "where my_program.userUID = ?"
-            + "group by program_history.programUID "
+            + "group by my_program.programUID "
             + "order by my_program.regDate desc";
     var data = req.params.userUID;
 

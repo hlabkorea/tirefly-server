@@ -151,7 +151,7 @@ api.get('/owners/:userUID',
 					+ "from membership_group "
 					+ "join user on membership_group.ownerUID = user.UID "
 					+ "join membership on membership_group.ownerUID = membership.userUID "
-					+ "where membership_group.userUID = ? "
+					+ "where membership_group.userUID = ? and date_format(membership.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d')"
 					+ "group by membership_group.ownerUID "
 					+ "order by membership_group.email";
 

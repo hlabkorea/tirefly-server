@@ -73,15 +73,12 @@ function showPassAuth(res, successReturnUrl){
         sEncData += data;
     });
 
-    console.log(sEncData);
-
     child.on("close", function() {   
         res.render("checkplus_main", {sEncData, sRtnMSG});
     });
 }
 
 function sendResponse(work, res, sEncData){
-    console.log("getMobileNo");
     var cmd = "";
 
     if( /^0-9a-zA-Z+\/=/.test(sEncData) == true){

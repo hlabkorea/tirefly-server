@@ -19,18 +19,20 @@ api.get('/:videoUID', verifyToken, function (req, res) {
 
 // cms - 비디오에 대한 운동 기구 추가
 api.put('/:videoUID', verifyAdminToken, function (req, res) {
+	var adminUID = req.adminUID;
 	var videoUID = req.params.videoUID;
 	var data = [];
-	var acc = JSON.parse(req.body.acc);
+	var acc = req.body.acc;
+	var acc = req.body.acc;
 
 	for(var i in acc){
-		data.push([videoUID, acc[i]]);
+		data.push([videoUID, acc[i], adminUID]);
 	}
 
-	var selectSql = "select UID from video_acclist where videoUID = ?";
+	var selectSql = "select UID, regUID from video_acclist where videoUID = ?";
 	db.query(selectSql, videoUID, function (err, selectResult, fields) {
 		if (err) throw err;
-
+		
 		// 이미 video에 대한 운동 기구들이 존재하면 삭제
 		if(selectResult.length != 0){
 			var deleteData = [];
@@ -43,13 +45,15 @@ api.put('/:videoUID', verifyAdminToken, function (req, res) {
 				if (err) throw err;
 			});
 		}
-
-		var insertSql = "insert into video_acclist(videoUID, accUID) values ?;";
-		db.query(insertSql, [data], function (err, result, fields) {
+		
+		var insertSql = "insert into video_acclist(videoUID, accUID, regUID) values ?;";
+		const exec = db.query(insertSql, [data], function (err, result, fields) {
 			if (err) throw err;
 
 			res.status(200).send({status:200, data: "true", message:"success"});
 		});
+
+		console.log(exec.sql);
 	});
 });
 

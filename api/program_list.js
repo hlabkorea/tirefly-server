@@ -29,7 +29,11 @@ api.get('/week/:programUID',
         function (req, res) {
                 const errors = getError(req, res);
                 if(errors.isEmpty()){
-                        var sql = "select video.UID as videoUID, program_list.day, program_list.isRest, teacher.teacherImg, video.contentsPath, video.videoName, teacher.teacherName, category.categoryName, video.videoLevel, video.playTimeValue "
+						var programUID = req.params.programUID;
+						var weekly = req.query.weekly;
+                        var sql = "select ifnull(video.UID, 0) as videoUID, program_list.day, program_list.isRest, ifnull(teacher.teacherImg, '') as teacherImg, ifnull(video.contentsPath, '') as contentsPath, "
+								+ "ifnull(video.videoName, '') as videoName, ifnull(teacher.teacherName, '') as teacherName, ifnull(category.categoryName, '') as categoryName, "
+								+ "ifnull(video.videoLevel, '') as videoLevel, ifnull(video.playTimeValue, '') as playTimeValue "
                                 + "from program_list "
                                 + "left join video on program_list.videoUID = video.UID "
                                 + "left join category on video.categoryUID = category.UID "
@@ -37,7 +41,7 @@ api.get('/week/:programUID',
                                 + "where program_list.programUID = ? and weekly = ? "
                                 + "order by program_list.day";
 
-                        var data = [req.params.programUID, req.query.weekly];
+                        var data = [programUID, weekly];
 
                         db.query(sql, data, function (err, result) {
                                 if (err) throw err;
