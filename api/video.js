@@ -260,7 +260,7 @@ api.get('/recommend/:userUID', verifyToken, function (req, res) {
 		  + "left join my_category on video.categoryUID = my_category.categoryUID "
           + "where my_category.userUID = ? and video.status = 'act' "
           + "order by video.regDate desc "
-		  + "limit 30";
+		  + "limit 20";
   var data = req.params.userUID;
 
   db.query(sql, data, function (err, result, fields) {
