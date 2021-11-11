@@ -117,7 +117,7 @@ api.put('/status/:videoUID', verifyAdminToken, function (req, res) {
 
 // 최신 업로드 영상 조회
 api.get('/latest', verifyToken, function (req, res) {
-	var sql = "select UID as videoUID, videoThumbnail from video where videoType='vod' and status='act' order by regDate desc";
+	var sql = "select UID as videoUID, videoThumbnail from video where videoType='vod' and status='act' order by regDate desc limit 20";
 
 	db.query(sql, function (err, result, fields) {
 		if (err) throw err;
@@ -129,10 +129,12 @@ api.get('/latest', verifyToken, function (req, res) {
 // 요즘 인기있는 영상 조회
 api.get('/favorite', verifyToken, function (req, res) {
   var sql = "select video.UID as videoUID, video.videoThumbnail "
-          + "from video_history join video on video.UID = video_history.videoUID "
+          + "from video_history "
+		  + "right join video on video.UID = video_history.videoUID "
 		  + "where video.status = 'act' "
-          + "group by video_history.videoUID "
-          + "order by video_history.updateDate desc, count(video_history.videoUID) desc";
+          + "group by video.UID "
+          + "order by video_history.updateDate desc, count(video_history.videoUID) desc "
+		  + "limit 20";
 
   db.query(sql, function (err, result, fields) {
 		if (err) throw err;
