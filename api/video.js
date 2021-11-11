@@ -256,9 +256,11 @@ api.get('/live',
 // 추천 영상 조회
 api.get('/recommend/:userUID', verifyToken, function (req, res) {
   var sql = "select video.UID, video.videoThumbnail "
-          + "from video join my_category on video.categoryUID = my_category.categoryUID "
+          + "from video "
+		  + "left join my_category on video.categoryUID = my_category.categoryUID "
           + "where my_category.userUID = ? and video.status = 'act' "
-          + "order by video.regDate desc ";
+          + "order by video.regDate desc "
+		  + "limit 30";
   var data = req.params.userUID;
 
   db.query(sql, data, function (err, result, fields) {
