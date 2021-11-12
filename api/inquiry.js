@@ -5,6 +5,7 @@ const {upload} = require('./config/uploadFile.js');
 const {getPageInfo} = require('./config/paging.js'); 
 const {verifyToken, verifyAdminToken} = require("./config/authCheck.js");
 const {check} = require('express-validator');
+const {sendMail} = require('./config/mail.js');
 const {getError} = require('./config/requestError.js');
 const userPageCnt = 10;
 
@@ -40,14 +41,47 @@ api.post("/",
         function(req, res) {
           const errors = getError(req, res);
           if(errors.isEmpty()){
+			var type = req.body.type;
+			var title = req.body.title;
+			var name = req.body.name;
+			var email = req.body.email;
+			var group = req.body.group;
+			var cellNumber = req.body.cellNumber;
+			var contents = req.body.contents;
+
+			var html = '<div style="color: black;">'
+					 + '<br><br>'
+					 + '<img src="https://api.motifme.io/files/motif_logo.png"><br><br>'
+					 + '<br>'
+					 + '<div style="font-size:14px;">'
+					 + `<b>문의 타입 : </b> <span> ${type} </span> <br>`
+					 + '<br>'
+					 + `<b>문의 제목 : </b> <span> ${title} </span> <br>`
+					 + '<br>'
+					 + `<b>성함 : </b> <span> ${name} </span> <br>`
+					 + '<br>'
+					 + `<b>이메일 : </b> <span> ${email} </span> <br>`
+					 + '<br>'
+					 + `<b>문의 내용 : </b> <span> ${contents} </span> <br>`
+					 + '<br>';
+			if(type == "제휴/제안")
+				html += `<b>소속 : </b> <span> ${contents} </span> <br>`
+					 + '<br>'
+					 + `<b>전화번호 : </b> <span> ${contents} </span> <br>`
+					 + '<br>'
+			html += '</div>'
+				 + '</div>';
+			var hlabEmail = "support@motifme.io";
+			sendMail(hlabEmail, `[문의 - ${type}] ` + title, html);
+
             var sql = 'insert inquiry(inquiryType, inquiryTitle, userName, userEmail, userGroup, userCellNumber, inquiryContents, inquiryComplete) '
                     + 'values (?, ?, ?, ?, ?, ?, ?, 0);';
-            var data = [req.body.type, req.body.title, req.body.name, req.body.email, req.body.group, req.body.cellNumber, req.body.contents];
+            var data = [type, title, name, email, group, cellNumber, contents];
 
             db.query(sql, data, function (err, result) {
               if (err) throw err;
 
-              res.status(200).json({status:200, data: result.insertId, message:"success"});
+              res.status(200).json({status:200, data: "true", message:"success"});
             });
           }
         }

@@ -247,6 +247,366 @@ api.get('/sales_status',
 		}
 );
 
+// 미러를 구매한 사용자인지 조회
+api.get('/check/:userUID', 
+		verifyToken,
+        function (req, res, next) {
+			var userUID = req.params.userUID;
+			var sql = "select payment.UID "
+					+ "from payment "
+					+ "join payment_product_list on payment.UID = payment_product_list.paymentUID "
+					+ "where userUID = ? and payment_product_list.productUID = 1 and payment.paymentStatus != 'cancelled'";
+
+			db.query(sql, userUID, function (err, result) {
+				if (err) throw err;
+
+				if(result.length > 0)
+					res.status(200).json({status:200, data: "true", message:"success"});	
+				else
+					res.status(200).json({status:200, data: "false", message:"fail"});	
+			});
+        }
+);
+
+// 멤버십을 무료로 구매할 수 있는 사용자인지 조회
+api.get('/check/free/:userUID',
+		verifyToken,
+		function (req, res, next) {
+			var userUID = req.params.userUID;
+			var sql = "select payment.UID "
+					+ "from payment "
+					+ "join payment_product_list on payment.UID = payment_product_list.paymentUID "
+					+ "where userUID = ? and payment.paymentStatus != 'cancelled' and orderStatus = '결제완료' and payment.type = 'product' and payment_product_list.productUID = 1 "
+					+ "order by payment.regDate "
+					+ "limit 1";
+			db.query(sql, userUID, function (err, result) {
+				if (err) throw err;
+
+				if(result.length > 0){
+					var checkAuthSql = "select UID from membership where userUID = ?";
+					db.query(checkAuthSql, userUID, function (err, result) {
+						if (err) throw err;
+						
+						if(result.length == 0)
+							res.status(200).json({status:200, data: "true", message:"success"});
+						else
+							res.status(200).json({status:200, data:"false", message:"fail"});
+					});
+				}	
+				else
+					res.status(200).json({status:200, data: "false", message:"fail"});	
+			});
+		}
+);
+
+// 멤버십 구매 내역 조회
+api.get('/membership/:userUID', 
+		verifyToken,
+        function (req, res, next) {
+			var userUID = req.params.userUID;
+			var sql = "select payment.name, payment.amount, payment.payMethod, payment.regDate, payment_product_list.membershipEndDate "
+					+ "from payment "
+					+ "join payment_product_list on payment.UID = payment_product_list.paymentUID "
+					+ "where payment.userUID = ? and payment.type = 'membership' "
+					+ "order by payment.regDate desc ";
+			var data = [userUID, userUID];
+			
+			var countSql = sql + ";";
+
+			sql += " limit ?, 10";
+			var currentPage = req.query.page ? parseInt(req.query.page) : 1;
+			data.push((parseInt(currentPage) - 1) * 10);
+
+			db.query(countSql+sql, data, function (err, result) {
+				if (err) throw err;
+
+				var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length);
+				res.status(200).json({status:200, 
+									  data: {
+									    paging: {startPage: startPage, endPage: endPage, totalPage: totalPage},
+									    result: result[1]
+									  }, 
+									  message:"success"});
+			});
+        }
+);
+
+// 결제한 상품의 정보 조회
+api.get('/product/info/:paymentUID', 
+		verifyToken,
+        function (req, res, next) {
+			var paymentUID = req.params.paymentUID;
+			var sql = "select product_img_list.imgPath, product.korName, product.engName, product.originPrice, product.discountRate, product.discountPrice, product_option_list.optionName, payment.regDate, payment.merchantUid, "
+					+ "payment.amount, payment_product_list.count, payment.orderStatus, payment.shippingStatus "
+					+ "from payment "
+					+ "join payment_product_list on payment.UID = payment_product_list.paymentUID "
+					+ "join product on payment_product_list.productUID = product.UID "
+					+ "join product_option_list on product.UID = product_option_list.productUID "
+					+ "join product_img_list on product.UID = product_img_list.productUID "
+					+ "where payment.UID = ? "
+					+ "group by payment.UID "
+					+ "order by payment.regDate desc, product_img_list.UID ";
+
+			db.query(sql, paymentUID, function (err, result) {
+				if (err) throw err;
+
+				res.status(200).json({status:200, data: result, message:"success"});	
+			});
+        }
+);
+
+// 사용자가 구매한 상품들 조회
+api.get('/product/:userUID', 
+		verifyToken,
+        function (req, res, next) {
+			var userUID = req.params.userUID;
+			var sql = "select payment.UID as paymentUID, product_img_list.imgPath, product.korName, product.engName, product.originPrice, product.discountRate, product.discountPrice, product_option_list.optionName, payment.regDate, payment.merchantUid, "
+					+ "payment.amount, payment_product_list.count, payment.orderStatus, payment.shippingStatus "
+					+ "from payment "
+					+ "join payment_product_list on payment.UID = payment_product_list.paymentUID "
+					+ "join product on payment_product_list.productUID = product.UID "
+					+ "join product_option_list on product.UID = product_option_list.productUID "
+					+ "join product_img_list on product.UID = product_img_list.productUID "
+					+ "where payment.userUID = ? and payment.type = 'product' "
+					+ "group by payment.UID "
+					+ "order by payment.regDate desc, product_img_list.UID ";
+			
+			var data = [userUID, userUID];
+			
+			var countSql = sql + ";";
+
+			sql += " limit ?, 10";
+			var currentPage = req.query.page ? parseInt(req.query.page) : 1;
+			data.push((parseInt(currentPage) - 1) * 10);
+
+			db.query(countSql+sql, data, function (err, result) {
+				if (err) throw err;
+
+				var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length);
+				res.status(200).json({status:200, 
+									  data: {
+									    paging: {startPage: startPage, endPage: endPage, totalPage: totalPage},
+									    result: result[1]
+									  }, 
+									  message:"success"});
+			});
+        }
+);
+
+async function scheduleMembership(access_token, customer_uid, laterNum, amount, name, custom_data){
+	axios({
+		url: "https://api.iamport.kr/subscribe/payments/schedule",
+		method: "post",
+		headers: { "Authorization": access_token }, 
+		data: {
+		  customer_uid: customer_uid, // 카드(빌링키)와 1:1로 대응하는 값
+		  schedules: [
+			{
+			  merchant_uid: getNewMerchantUid("3", name), // 새로 생성한 예약용 주문 번호 주문 번호
+			  schedule_at: getNextDateTime(laterNum), // 결제 시도 시각 in Unix Time Stamp
+			  amount: amount,
+			  name: name,
+			  custom_data: custom_data
+			}
+		  ]
+		}
+	  });
+}
+async function appendFreeMembership(imp_uid, access_token, customer_uid, name, custom_data){
+	delete custom_data.payType;
+
+	var amount = 9900;
+	const laterNum = 5;
+	
+	await scheduleMembership(access_token, customer_uid, laterNum, amount, name, custom_data);
+}
+
+async function payForMembership(access_token, customer_uid, name, amount, custom_data){
+	// 재결제
+	const paymentResult = await axios({
+        url: 'https://api.iamport.kr/subscribe/payments/again',
+        method: "post",
+        headers: { "Authorization": access_token },
+        data: {
+          customer_uid: customer_uid,
+          merchant_uid: getNewMerchantUid("2", name), // 새로 생성한 결제(재결제)용 주문 번호
+          amount: amount,
+          name: name,
+        }
+      });
+
+	const { code, message } = paymentResult.data;
+	if (code === 0) { // 카드사 통신에 성공(실제 승인 성공 여부는 추가 판단이 필요함)
+        if ( paymentResult.data.response.status == "paid" ) { //카드 정상 승인
+		  // 새로운 결제 예약
+		  const laterNum = 1;
+		  scheduleMembership(access_token, customer_uid, laterNum, amount, name, custom_data);
+		  
+		  return {status: 200, data: "true", message: "결제 승인 성공"};
+
+        } else { 
+			console.log(message);
+		  return {status: 403, data: "false", message: "승인 결제 실패"}; //카드 승인 실패 (예: 고객 카드 한도초과, 거래정지카드, 잔액부족 등)
+        }
+      } 
+	else {
+		return {status: 403, data: "false", message: "카드사 요청 실패"}; // 카드사 요청에 실패 (paymentResult is null)
+    }
+}
+
+// 정기결제 관해서 이니시스에 결제 요청
+api.post("/billings", async (req, res) => {
+    try {
+      const { customer_uid, merchant_uid, imp_uid } = req.body; 
+
+      // 인증 토큰 발급 받기
+      const getToken = await axios({
+        url: "https://api.iamport.kr/users/getToken",
+        method: "post", // POST method
+        headers: { "Content-Type": "application/json" }, 
+        data: {
+          imp_key: imp_key,
+          imp_secret: imp_secret
+        }
+      });
+      const { access_token } = getToken.data.response; 
+
+	  // imp_uid로 아임포트 서버에서 결제 정보 조회
+      const getPaymentData = await axios({
+        url: `https://api.iamport.kr/payments/${imp_uid}`,
+        method: "get", // GET method
+        headers: { "Authorization": access_token } 
+      });
+
+	  var paymentData = getPaymentData.data.response; // 조회한 결제 정보
+	  var custom_data = paymentData.custom_data ? JSON.parse(paymentData.custom_data): '';
+	  var name = paymentData.name ? paymentData.name : '';
+	  var amount = paymentData.amount ? parseInt(paymentData.amount) : 0;
+	  var payType =  custom_data.payType;
+
+	  if(payType == "coupon" && name == "single"){
+		  // 앱 출시 이후에는 첫 달만 무료이고 그 이후부터는 정기 구독료 납부해야하므로 이 코드 실행
+		  //appendFreeMembership(imp_uid, access_token, customer_uid, name, amount, custom_data);
+		  res.status(200).json({status: 200, data: "true", message: "결제 승인 성공"});
+	  }
+	  else{
+		  var result = await payForMembership(access_token, customer_uid, name, amount, custom_data);
+		  if(result.status == 200)
+			  res.status(200).json(result);
+		  else
+			  res.status(403).json(result);
+	  }
+    } catch (e) {
+      res.status(400).send(e);
+    }
+});
+
+function refundOrder(amount, merchantUid){
+	var sql = "update payment set refundAmount = ?, paymentStatus = 'cancelled', orderStatus = '취소승인' where merchantUid = ?";
+	var data = [amount, merchantUid];
+	db.query(sql, data, function (err, result){
+		if (err) throw err;
+	});
+}
+
+// 이니시스에 환불 요청
+api.post("/refund", async (req, res) => {
+    try {
+	  console.log("refund 호출");
+      const { imp_uid, merchant_uid, reason, cancel_request_amount } = req.body;
+	  
+      // 인증 토큰 발급 받기
+      const getToken = await axios({
+        url: "https://api.iamport.kr/users/getToken",
+        method: "post", // POST method
+        headers: { "Content-Type": "application/json" }, 
+        data: {
+          imp_key: imp_key,
+          imp_secret: imp_secret
+        }
+      });
+      const { access_token } = getToken.data.response; 
+	  var cancelableAmount = 100;
+	  const getCancelData = await axios({
+          url: "https://api.iamport.kr/payments/cancel",
+          method: "post",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": access_token // 아임포트 서버로부터 발급받은 엑세스 토큰
+          },
+          data: {
+            reason, // 가맹점 클라이언트로부터 받은 환불사유
+            imp_uid, // imp_uid를 환불 `unique key`로 입력
+            amount: cancel_request_amount, // 가맹점 클라이언트로부터 받은 환불금액
+            checksum: cancelableAmount // [권장] 환불 가능 금액 입력
+          }
+        });
+
+		const refundData = getCancelData.data.response;
+		var amount = refundData.cancel_amount;
+		var merchantUid = refundData.merchant_uid;
+		
+		refundOrder(amount, merchantUid);
+    } catch (e) {
+      res.status(400).send(e);
+    }
+});
+
+// 멤버십 예약 취소
+api.post("/membership/unschedule", async (req, res) => {
+    try {
+	  console.log("membership unschedule 호출");
+      const { customer_uid } = req.body;
+	  
+      // 인증 토큰 발급 받기
+      const getToken = await axios({
+        url: "https://api.iamport.kr/users/getToken",
+        method: "post", // POST method
+        headers: { "Content-Type": "application/json" }, 
+        data: {
+          imp_key: imp_key,
+          imp_secret: imp_secret
+        }
+      });
+
+	  const { access_token } = getToken.data.response; 
+
+	  // 3개월 내에 예약된 정기결제 조회
+	  const getScheduledData = await axios({
+		  url: `https://api.iamport.kr/subscribe/payments/schedule/customers/${customer_uid}`,
+		  method: "get", // GET method
+		  headers: { "Authorization": access_token },
+		  data: {
+			from: 1636690235, // 가맹점 클라이언트로부터 받은 환불사유
+			to: 1639318259 // imp_uid를 환불 `unique key`로 입력
+		  }
+	  });
+
+	  console.log("axios 호출 끝");
+
+	  const scheduledData = getScheduledData.data.response;
+	  var merchant_uid = scheduledData.list[0].merchant_uid;
+	  consoel.log(merchant_uid);
+
+	  // 스케쥴 취소
+	  /*const getCancelData = await axios({
+          url: "https://api.iamport.kr/subscribe/payments/unschedule",
+          method: "post",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": access_token // 아임포트 서버로부터 발급받은 엑세스 토큰
+          },
+          data: {
+            customer_uid, // 가맹점 클라이언트로부터 받은 환불사유
+            merchant_uid, // imp_uid를 환불 `unique key`로 입력
+          }
+        });*/
+    } catch (e) {
+      res.status(400).send(e);
+    }
+});
+
+
 // 취소정보 조회
 api.get('/refund', 
 		verifyAdminToken, 
@@ -366,302 +726,6 @@ api.get('/refund_status',
 		}
 );
 
-// 미러를 구매한 사용자인지 조회
-api.get('/check/:userUID', 
-		verifyToken,
-        function (req, res, next) {
-			var userUID = req.params.userUID;
-			var sql = "select payment.UID "
-					+ "from payment "
-					+ "join payment_product_list on payment.UID = payment_product_list.paymentUID "
-					+ "where userUID = ? and payment_product_list.productUID = 1 and payment.paymentStatus != 'cancelled'";
-
-			db.query(sql, userUID, function (err, result) {
-				if (err) throw err;
-
-				if(result.length > 0)
-					res.status(200).json({status:200, data: "true", message:"success"});	
-				else
-					res.status(200).json({status:200, data: "false", message:"fail"});	
-			});
-        }
-);
-
-// 멤버십을 무료로 구매할 수 있는 사용자인지 조회
-api.get('/check/free/:userUID',
-		verifyToken,
-		function (req, res, next) {
-			var userUID = req.params.userUID;
-			var sql = "select payment.UID "
-					+ "from payment "
-					+ "join payment_product_list on payment.UID = payment_product_list.paymentUID "
-					+ "where userUID = ? and payment.paymentStatus != 'cancelled' and orderStatus = '결제완료' and payment.type = 'product' and payment_product_list.productUID = 1 "
-					+ "order by payment.regDate "
-					+ "limit 1";
-			db.query(sql, userUID, function (err, result) {
-				if (err) throw err;
-
-				if(result.length > 0){
-					var checkAuthSql = "select UID from membership where userUID = ?";
-					db.query(checkAuthSql, userUID, function (err, result) {
-						if (err) throw err;
-						
-						if(result.length == 0)
-							res.status(200).json({status:200, data: "true", message:"success"});
-						else
-							res.status(200).json({status:200, data:"false", message:"fail"});
-					});
-				}	
-				else
-					res.status(200).json({status:200, data: "false", message:"fail"});	
-			});
-		}
-);
-
-// 멤버십 구매 내역 조회
-api.get('/membership/:userUID', 
-		verifyToken,
-        function (req, res, next) {
-			var userUID = req.params.userUID;
-			var sql = "select payment.name, payment.amount, payment.payMethod, payment.regDate, payment_product_list.membershipEndDate "
-					+ "from payment "
-					+ "join payment_product_list on payment.UID = payment_product_list.paymentUID "
-					+ "where payment.userUID = ? and payment.type = 'membership' "
-					+ "order by payment.regDate desc ";
-			var data = [userUID, userUID];
-			
-			var countSql = sql + ";";
-
-			sql += " limit ?, " + pageCnt10;
-			var currentPage = req.query.page ? parseInt(req.query.page) : 1;
-			data.push((parseInt(currentPage) - 1) * pageCnt10);
-
-			db.query(countSql+sql, data, function (err, result) {
-				if (err) throw err;
-
-				var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length, pageCnt10);
-				res.status(200).json({status:200, 
-									  data: {
-									    paging: {startPage: startPage, endPage: endPage, totalPage: totalPage},
-									    result: result[1]
-									  }, 
-									  message:"success"});
-			});
-        }
-);
-
-// 결제한 상품의 정보 조회
-api.get('/product/info/:paymentUID', 
-		verifyToken,
-        function (req, res, next) {
-			var paymentUID = req.params.paymentUID;
-			var sql = "select product_img_list.imgPath, product.korName, product.engName, product.originPrice, product.discountRate, product.discountPrice, product_option_list.optionName, payment.regDate, payment.merchantUid, "
-					+ "payment.amount, payment_product_list.count, payment.orderStatus, payment.shippingStatus "
-					+ "from payment "
-					+ "join payment_product_list on payment.UID = payment_product_list.paymentUID "
-					+ "join product on payment_product_list.productUID = product.UID "
-					+ "join product_option_list on product.UID = product_option_list.productUID "
-					+ "join product_img_list on product.UID = product_img_list.productUID "
-					+ "where payment.UID = ? "
-					+ "group by payment.UID "
-					+ "order by payment.regDate desc, product_img_list.UID ";
-
-			db.query(sql, paymentUID, function (err, result) {
-				if (err) throw err;
-
-				res.status(200).json({status:200, data: result, message:"success"});	
-			});
-        }
-);
-
-// 사용자가 구매한 상품들 조회
-api.get('/product/:userUID', 
-		verifyToken,
-        function (req, res, next) {
-			var userUID = req.params.userUID;
-			var sql = "select payment.UID as paymentUID, product_img_list.imgPath, product.korName, product.engName, product.originPrice, product.discountRate, product.discountPrice, product_option_list.optionName, payment.regDate, payment.merchantUid, "
-					+ "payment.amount, payment_product_list.count, payment.orderStatus, payment.shippingStatus "
-					+ "from payment "
-					+ "join payment_product_list on payment.UID = payment_product_list.paymentUID "
-					+ "join product on payment_product_list.productUID = product.UID "
-					+ "join product_option_list on product.UID = product_option_list.productUID "
-					+ "join product_img_list on product.UID = product_img_list.productUID "
-					+ "where payment.userUID = ? and payment.type = 'product' "
-					+ "group by payment.UID "
-					+ "order by payment.regDate desc, product_img_list.UID ";
-			
-			var data = [userUID, userUID];
-			
-			var countSql = sql + ";";
-
-			sql += " limit ?, " + pageCnt10;
-			var currentPage = req.query.page ? parseInt(req.query.page) : 1;
-			data.push((parseInt(currentPage) - 1) * pageCnt10);
-
-			db.query(countSql+sql, data, function (err, result) {
-				if (err) throw err;
-
-				var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length, pageCnt10);
-				res.status(200).json({status:200, 
-									  data: {
-									    paging: {startPage: startPage, endPage: endPage, totalPage: totalPage},
-									    result: result[1]
-									  }, 
-									  message:"success"});
-			});
-        }
-);
-
-// 아래의 코드는 삭제해도 될 듯 함
-api.get("/complete/mobile", async (req, res) => {
-  try {
-	  const { imp_uid, merchant_uid } = req.query; // req의 query에서 imp_uid, merchant_uid 추출
-	  const paid_id = merchant_uid.substr(0,2);
-
-	  // 액세스 토큰(access token) 발급 받기
-	  const getToken = await axios({
-		url: "https://api.iamport.kr/users/getToken",
-		method: "post", // POST method
-		headers: { "Content-Type": "application/json" }, // "Content-Type": "application/json"
-		data: {
-		  imp_key: imp_key,
-		  imp_secret: imp_secret
-		}
-	  });
-	  const { access_token } = getToken.data.response; // 인증 토큰
-	  // imp_uid로 아임포트 서버에서 결제 정보 조회
-	  const getPaymentData = await axios({
-		url: `https://api.iamport.kr/payments/${imp_uid}`, // imp_uid 전달
-		method: "get", // GET method
-		headers: { "Authorization": access_token } // 인증 토큰 Authorization header에 추가
-	  });
-	  const paymentData = getPaymentData.data.response; // 조회한 결제 정보
-	  const { status } = paymentData;
-
-	  if (status === "paid") { // 결제 성공적으로 완료
-		  if(paid_id == "2")
-			res.json({status: 200, data: {method: "mobile", paymentData: paymentData}});
-		  else
-			res.json({status: 200, data: {method: "mobile", paymentData: paymentData}});
-		
-		  
-	  } else {
-		    res.json({status: 403, data: "결제 실패"});
-	  }
-	} catch (e) {
-	  res.status(400).send(e);
-	}
-});
-
-async function scheduleMembership(access_token, customer_uid, laterNum, amount, name, custom_data){
-	axios({
-		url: "https://api.iamport.kr/subscribe/payments/schedule",
-		method: "post",
-		headers: { "Authorization": access_token }, 
-		data: {
-		  customer_uid: customer_uid, // 카드(빌링키)와 1:1로 대응하는 값
-		  schedules: [
-			{
-			  merchant_uid: getNewMerchantUid("3", name), // 새로 생성한 예약용 주문 번호 주문 번호
-			  schedule_at: getNextDateTime(laterNum), // 결제 시도 시각 in Unix Time Stamp
-			  amount: amount,
-			  name: name,
-			  custom_data: custom_data
-			}
-		  ]
-		}
-	  });
-}
-async function appendFreeMembership(imp_uid, access_token, customer_uid, name, custom_data){
-	delete custom_data.payType;
-
-	var amount = 9900;
-	const laterNum = 5;
-	
-	scheduleMembership(access_token, customer_uid, laterNum, amount, name, custom_data);
-}
-
-async function payForMembership(access_token, customer_uid, name, amount, custom_data){
-	// 재결제
-	const paymentResult = await axios({
-        url: 'https://api.iamport.kr/subscribe/payments/again',
-        method: "post",
-        headers: { "Authorization": access_token },
-        data: {
-          customer_uid: customer_uid,
-          merchant_uid: getNewMerchantUid("2", name), // 새로 생성한 결제(재결제)용 주문 번호
-          amount: amount,
-          name: name,
-        }
-      });
-
-	const { code, message } = paymentResult.data;
-	if (code === 0) { // 카드사 통신에 성공(실제 승인 성공 여부는 추가 판단이 필요함)
-        if ( paymentResult.data.response.status == "paid" ) { //카드 정상 승인
-		  // 새로운 결제 예약
-		  const laterNum = 1;
-		  scheduleMembership(access_token, customer_uid, laterNum, amount, name, custom_data);
-		  
-		  return {status: 200, data: "true", message: "결제 승인 성공"};
-
-        } else { 
-			console.log(message);
-		  return {status: 403, data: "false", message: "승인 결제 실패"}; //카드 승인 실패 (예: 고객 카드 한도초과, 거래정지카드, 잔액부족 등)
-        }
-      } 
-	else {
-		return {status: 403, data: "false", message: "카드사 요청 실패"}; // 카드사 요청에 실패 (paymentResult is null)
-    }
-}
-
-// "/billings" 에 대한 POST 요청을 처리하는 controller
-api.post("/billings", async (req, res) => {
-    try {
-		console.log("billings 호출");
-      const { customer_uid, merchant_uid, imp_uid } = req.body; 
-
-      // 인증 토큰 발급 받기
-      const getToken = await axios({
-        url: "https://api.iamport.kr/users/getToken",
-        method: "post", // POST method
-        headers: { "Content-Type": "application/json" }, 
-        data: {
-          imp_key: imp_key,
-          imp_secret: imp_secret
-        }
-      });
-      const { access_token } = getToken.data.response; 
-
-	  // imp_uid로 아임포트 서버에서 결제 정보 조회
-      const getPaymentData = await axios({
-        url: `https://api.iamport.kr/payments/${imp_uid}`,
-        method: "get", // GET method
-        headers: { "Authorization": access_token } 
-      });
-
-	  var paymentData = getPaymentData.data.response; // 조회한 결제 정보
-	  var custom_data = paymentData.custom_data ? JSON.parse(paymentData.custom_data): '';
-	  var name = paymentData.name ? paymentData.name : '';
-	  var amount = paymentData.amount ? parseInt(paymentData.amount) : 0;
-	  var payType =  custom_data.payType;
-
-	  if(payType == "coupon" && name == "single"){
-		  // 앱 출시 이후에는 첫 달만 무료이고 그 이후부터는 정기 구독료 납부해야하므로 이 코드 실행
-		  //appendFreeMembership(imp_uid, access_token, customer_uid, name, amount, custom_data);
-		  res.status(200).json({status: 200, data: "true", message: "결제 승인 성공"});
-	  }
-	  else{
-		  var result = await payForMembership(access_token, customer_uid, name, amount, custom_data);
-		  if(result.status == 200)
-			  res.status(200).json(result);
-		  else
-			  res.status(403).json(result);
-	  }
-    } catch (e) {
-      res.status(400).send(e);
-    }
-});
-
 function comma(str) {
     str = String(str);
     return str.replace(/(\d)(?=(?:\d{3})+(?!\d))/g, '$1,');
@@ -705,20 +769,21 @@ function sendPaymentEmail(email, paymentUID){
 				 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px">'
 				 + '<b><span style="font-size:13.5pt;line-height:19.26px;color:black">모티프 미러를 구매해주셔서 감사합니다.</span></b><br><br></p>'
 				 + `<p><span style="font-size:9pt;line-height:12.84px;color:black">주문번호: ${merchantUid}</span></p>`
-					 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center"><br></div>'
-				 + '<table cellspacing="0" cellpadding="0" border="1" style="margin-left: auto; margin-right: auto; border-color: #E0E0E0; width: 450px;">'
+				 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center"><br></div>'
+				 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center"><br></div>'
+				 + '<table cellspacing="0" cellpadding="0" border="1" style="margin-left: auto; margin-right: auto; border-color: #E0E0E0; width: 500px;">'
 				 + `<col width="${leftCol}" />`
 				 + `<col width="${centerCol}" />`
 				 + `<col width="${rightCol}" />`
 				 + '<tr>'
-				 + `<td width="72"><img src="${productImg}" style="display: block; width: 120px; height: 120px; margin: 0px auto;"></td>`
+				 + `<td width="72" style="padding: 5px"><img src="${productImg}" style="display: block; width: 100%; margin: 0px auto;"></td>`
 				 + `<td width="127">${productName}<br /></td>`
 				 + `<td width="72" style="text-align: right">${productPrice}원</td>`
 				 + '</tr>'
 				 + '<tr>'
-				 + '<td>&nbsp;</td>'
-				 + '<td></td>'
-				 + '<td></td>'
+				 + '<td style="height: 35px">&nbsp;</td>'
+				 + '<td style="height: 35px"></td>'
+				 + '<td style="height: 35px"></td>'
 				 + '</tr>'
 				 + '<tr>'
 				 + '<td colspan="3">'
@@ -727,19 +792,19 @@ function sendPaymentEmail(email, paymentUID){
 				 + `<col width="${centerCol}" />`
 				 + `<col width="${rightCol}" />`
 				 + '<tr>'
-				 + '<td>할인 적용</td>'
-				 + '<td></td>'
-				 + `<td style="text-align: right">-${difference}원</td>`
+				 + '<td style="height: 35px">할인 적용</td>'
+				 + '<td style="height: 35px"></td>'
+				 + `<td style="text-align: right; height: 35px">-${difference}원</td>`
 				 + '</tr>'
 				 + '<tr>'
-				 + '<td>배송비</td>'
-				 + `<td style="text-align: right">${isFree}</td>`
-				 + `<td style="text-align: right; text-decoration:line-through">${originShippingFee}원</td>`
+				 + '<td style="height: 35px">배송비</td>'
+				 + `<td style="text-align: right; height: 35px;">${isFree}</td>`
+				 + `<td style="text-align: right; text-decoration:line-through; height: 35px">${originShippingFee}원</td>`
 				 + '</tr>'
 				 + '<tr>'
-				 + '<td>결제 금액</td>'
-				 + '<td></td>'
-				 + `<td style="text-align: right">${paymentPrice}원</td>`
+				 + '<td style="height: 35px">결제 금액</td>'
+				 + '<td style="height: 35px"></td>'
+				 + `<td style="text-align: right; height: 35px">${paymentPrice}원</td>`
 				 + '</tr>'
 				 + '</table>'
 				 + '</td>'
@@ -782,10 +847,12 @@ function sendMembershipEmail(email, level, amount, payMethod, cardNumber){
 			 + '</div>';
 	var subject = "[모티프] 모티프 멤버십 구독 완료 안내";
 	sendMail(email, subject, html);
+	
 }
 
 // 주문에 대한 상품 정보 추가
 function saveOrderProduct(paymentUID, productUID, optionUID, count, buyerEmail){
+	console.log("saveOrderProduct");
 	var productPaymentInsertSql = "insert payment_product_list(paymentUID, productUID, optionUID, count) values (?, ?, ?, 1)";
 	var productPaymentInsertData = [paymentUID, productUID, optionUID];
 
@@ -798,6 +865,7 @@ function saveOrderProduct(paymentUID, productUID, optionUID, count, buyerEmail){
 
 // 멤버십 정보 업데이트
 function updateMembership(level, laterNum, membershipUID){
+	console.log("updateMembership");
 	var membershipUpdateSql = "update membership set level = ?, endDate = date_add(now(), interval ? month) where UID = ?";
 	var membershipUpdateData = [level, laterNum, membershipUID];
 
@@ -808,6 +876,7 @@ function updateMembership(level, laterNum, membershipUID){
 
 // 주문에 대한 멤버십 정보 추가
 function insertOrderMembership(paymentUID, membershipUID, laterNum){
+	console.log("insertOrderMembership");
 	var productPaymentInsertSql = "insert payment_product_list(paymentUID, productUID, membershipEndDate) values (?, ?, date_add(now(), interval ? month))";
 	var productPaymentInsertData = [paymentUID, membershipUID, laterNum];
 
@@ -818,6 +887,7 @@ function insertOrderMembership(paymentUID, membershipUID, laterNum){
 
 // 멤버십 정보 추가
 function insertMembership(userUID, level, laterNum, paymentUID){
+	console.log("insertMembership");
 	var membershipInsertSql = "insert membership(userUID, level, endDate, paymentUID) values (?, ?, date_add(now(), interval ? month), ?)";
 	var membershipInsertData = [userUID, level, laterNum, paymentUID];
 
@@ -830,8 +900,9 @@ function insertMembership(userUID, level, laterNum, paymentUID){
 	});
 }
 
-// 
+// membership 정보 추가/업데이트
 function checkAndInsertMembership(userUID, level, paymentUID, laterNum){
+	console.log("checkAndInsertMembership");
 	var membershipSelectSql = "select UID from membership where userUID = ?";
 	db.query(membershipSelectSql, userUID, function (err, result) {
 		if (err) throw err;
@@ -876,6 +947,8 @@ function saveOrder(paidId, paymentData){
 	var bankName = paymentData.bank_name ? paymentData.bank_name : '';
 	var buyerAddr = paymentData.buyer_addr ? paymentData.buyer_addr : '';
 	var buyerEmail = paymentData.buyer_email ? paymentData.buyer_email : '';
+	if(buyerEmail.length == 0)
+		return false;
 	var buyerName = paymentData.buyer_name ? paymentData.buyer_name : '';
 	var buyerPostcode = paymentData.buyer_postcode ? paymentData.buyer_postcode : '';
 	var buyerTel = paymentData.buyer_tel ? paymentData.buyer_tel : '';
@@ -894,6 +967,7 @@ function saveOrder(paidId, paymentData){
 	var receiptUrl = paymentData.receipt_url ? paymentData.receipt_url : '';
 	var payType = customData.payType ? customData.payType : '';
 	var laterNum = 1; // 만료날짜 한달 후
+	var status = paymentData.status ? paymentData.status : '';
 
 	if(payType == "coupon"){
 		payMethod = "[미러구매 혜택] 무료 멤버십";
@@ -904,16 +978,18 @@ function saveOrder(paidId, paymentData){
 	if(payMethod == "card")
 		payMethod = "신용카드";
 
+
 	// 결제 정보 저장
 	var paymentInsertSql = "insert payment(userUID, amount, addr1, addr2, requireMents, applyNum, bankName, buyerAddr, buyerEmail, buyerName, buyerPostcode, buyerTel, cardName, cardNumber, cardQuota, currency, customerUid, impUid, "
 						+ "merchantUid, name, paidAt, payMethod, pgTid, pgType, receiptUrl, paymentStatus, type) "
 						+ "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 	var paymentInsertData = [userUID, amount, addr1, addr2, requireMents, applyNum, bankName, buyerAddr, buyerEmail, buyerName, buyerPostcode, buyerTel, cardName, cardNumber, cardQuota, currency, customerUid, impUid, merchantUid, name,
-			 paidAt, payMethod, pgTid, pgType, receiptUrl, status, type];
+							 paidAt, payMethod, pgTid, pgType, receiptUrl, status, type];
 
 	var paymentUID = 0;
 	db.query(paymentInsertSql, paymentInsertData, function (err, result) {
 		if (err) throw err;
+		console.log(result);
 		
 		paymentUID = result.insertId;
 		
@@ -953,15 +1029,6 @@ function saveOrder(paidId, paymentData){
 				}
 			});
 		}
-	});
-}
-
-// 주문 환불 처리
-function refundOrder(amount, merchantUid){
-	var sql = "update payment set refundAmount = ?, paymentStatus = 'cancelled', orderStatus = '취소승인' where merchantUid = ?";
-	var data = [amount, merchantUid];
-	db.query(sql, data, function (err, result){
-		if (err) throw err;
 	});
 }
 

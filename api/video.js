@@ -133,7 +133,7 @@ api.get('/favorite', verifyToken, function (req, res) {
 		  + "right join video on video.UID = video_history.videoUID "
 		  + "where video.status = 'act' "
           + "group by video.UID "
-          + "order by video_history.updateDate desc, count(video_history.videoUID) desc "
+          + "order by count(video_history.videoUID) desc, video_history.updateDate desc "
 		  + "limit 20";
 
   db.query(sql, function (err, result, fields) {
@@ -159,10 +159,10 @@ api.get('/search', verifyToken, function (req, res) {
 	var videoLevels = req.query.videoLevels;
 	var playTimeValues = req.query.playTimeValues;
 	var teacherUIDs = req.query.teacherUIDs;
+	var videoType = req.query.videoType;
 
 	if(categoryUIDs.length != 0){
 		sql += "and category.UID in (?) ";
-
 		data.push(categoryUIDs.split(','));
 	}
 
@@ -182,44 +182,14 @@ api.get('/search', verifyToken, function (req, res) {
 	}
 
 	sql += "and video.videoType = ? "
-	data.push(req.query.videoType);
+	data.push(videoType);
 
 	sql += "order by video.regDate desc, video.UID desc";
-
-	var responseData = [];
-	var obj = {};
 
 	db.query(sql, data, function (err, result, fields) {
 	  if (err) throw err;
 
-	  var rowIdx = -1;
-
-	  // 비디오마다 운동기구 리스트 추가
-	  if(result.length > 0){
-		for(var i in result){
-		  if(result[i].UID != rowIdx){
-			if(rowIdx != -1)
-			  responseData.push(obj);
-
-			obj = {};
-			rowIdx = result[i].UID;
-			obj.videoUID = result[i].UID;
-			obj.contentsPath = result[i].contentsPath;
-			obj.teacherImg = result[i].contentsPath;
-			obj.teacherName = result[i].teacherName;
-			obj.videoName = result[i].videoName;
-			obj.categoryName = result[i].categoryName;
-			obj.videoLevel = result[i].videoLevel;
-			obj.playTimeValue = result[i].playTimeValue;
-			obj.accImgPath = [];
-		  }
-
-		  if(result[i].imgPath != null)
-			obj.accImgPath.push(result[i].imgPath);
-		}
-
-		responseData.push(obj);
-	  }
+	  var responseData = makevideoList(result);
 
 	  res.status(200).send({status:200, data: responseData, message:"success"});
 	});
@@ -277,8 +247,8 @@ api.get('/category/:categoryUID',
           check("videoType", "videoType is required").not().isEmpty()
         ],
         function (req, res) {
-          const errors = getError(req, res);
-			    if(errors.isEmpty()){
+            const errors = getError(req, res);
+			if(errors.isEmpty()){
             var sql = "select video.UID, video.contentsPath, teacher.teacherImg, video.videoName, teacher.teacherNickname, category.categoryName, video.videoLevel, video.playTimeValue, acc.rectImgPath as imgPath "
                     + "from video "
                     + "join teacher on video.teacherUID = teacher.UID "
@@ -289,41 +259,10 @@ api.get('/category/:categoryUID',
                     + "order by video.regDate desc, video.UID desc";
             var data = [req.params.categoryUID, req.query.videoType];
 
-            var responseData = [];
-            var obj = {};
-
             db.query(sql, data, function (err, result, fields) {
                 if (err) throw err;
 
-                var rowIdx = -1;
-				
-				// 비디오마다 운동기구 리스트 추가
-                if(result.length > 0){
-                  for(var i in result){
-					  console.log(rowIdx);
-                    if(result[i].UID != rowIdx){
-                      if(rowIdx != -1)
-                        responseData.push(obj);
-
-                      obj = {};
-                      rowIdx = result[i].UID;
-                      obj.videoUID = result[i].UID;
-					  obj.contentsPath = result[i].contentsPath;
-                      obj.teacherImg = result[i].contentsPath;
-                      obj.teacherName = result[i].teacherNickname;
-                      obj.videoName = result[i].videoName;
-                      obj.categoryName = result[i].categoryName;
-                      obj.videoLevel = result[i].videoLevel;
-                      obj.playTimeValue = result[i].playTimeValue;
-                      obj.accImgPath = [];
-                    }
-
-                    if(result[i].imgPath != null)
-                      obj.accImgPath.push(result[i].imgPath);
-                  }
-
-                  responseData.push(obj);
-                }
+                var responseData = makevideoList(result);
 
                 res.status(200).send({status:200, data: responseData, message:"success"});
             });
@@ -350,5 +289,41 @@ api.get('/:videoUID', verifyToken, function (req, res) {
 		res.status(200).json({status:200, data: result, message:"success"});
 	});
 });
+
+function makevideoList(result){
+	var responseData = [];
+    var obj = {};
+	var rowIdx = -1;
+				
+	// 비디오마다 운동기구 리스트 추가
+	if(result.length > 0){
+	  for(var i in result){
+		  console.log(rowIdx);
+		if(result[i].UID != rowIdx){
+		  if(rowIdx != -1)
+			responseData.push(obj);
+
+		  obj = {};
+		  rowIdx = result[i].UID;
+		  obj.videoUID = result[i].UID;
+		  obj.contentsPath = result[i].contentsPath;
+		  obj.teacherImg = result[i].contentsPath;
+		  obj.teacherName = result[i].teacherNickname;
+		  obj.videoName = result[i].videoName;
+		  obj.categoryName = result[i].categoryName;
+		  obj.videoLevel = result[i].videoLevel;
+		  obj.playTimeValue = result[i].playTimeValue;
+		  obj.accImgPath = [];
+		}
+
+		if(result[i].imgPath != null)
+		  obj.accImgPath.push(result[i].imgPath);
+	  }
+
+	  responseData.push(obj);
+	}
+
+	return responseData;
+}
 
 module.exports = api;

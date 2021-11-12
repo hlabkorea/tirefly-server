@@ -1,9 +1,11 @@
 const express = require('express');
 const db = require('./config/database.js');
-const {verifyToken} = require("./config/authCheck.js");
+const {verifyToken, verifyAdminToken} = require("./config/authCheck.js");
 const api = express.Router();
 const {check} = require('express-validator');
 const {getError} = require('./config/requestError.js');
+const {getPageInfo} = require('./config/paging.js'); 
+const pageCnt15 = 15;
 
 // 프로그램 상세 정보 조회
 api.get('/:programUID', 
