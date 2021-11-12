@@ -12,6 +12,8 @@ const {getCurrentDateTime, getNextDateTime} = require('./config/date.js');
 const {sendMail} = require('./config/mail.js');
 const imp_key = "7260030924750208"; // REST API 키
 const imp_secret = "abc8d306c8df0b4354dd438c5ab9d5af9bf06094734cc1936780beef5fa4a6ab585b1219b7b09a4b"; // REST API Secret
+//const imp_key = "5425471433410805"; // 테스트 REST API 키
+//const imp_secret = "L76UxuB5wmV0TRtcRR3iBYiGz38AOiTAq0uXu630tY1mPuzHmC0YBiEamNLa6FLwFfu9mxaPwccmGL33"; // 테스트 REST API Secret
 const pageCnt15 = 15;
 const pageCnt10 = 10;
 
@@ -556,8 +558,7 @@ api.post("/refund", async (req, res) => {
 api.post("/membership/unschedule", async (req, res) => {
     try {
 	  console.log("membership unschedule 호출");
-      const { customer_uid } = req.body;
-	  
+	  var userUID = req.body.userUID;
       // 인증 토큰 발급 받기
       const getToken = await axios({
         url: "https://api.iamport.kr/users/getToken",
@@ -571,36 +572,47 @@ api.post("/membership/unschedule", async (req, res) => {
 
 	  const { access_token } = getToken.data.response; 
 
-	  // 3개월 내에 예약된 정기결제 조회
-	  const getScheduledData = await axios({
-		  url: `https://api.iamport.kr/subscribe/payments/schedule/customers/${customer_uid}`,
-		  method: "get", // GET method
-		  headers: { "Authorization": access_token },
-		  data: {
-			from: 1636690235, // 가맹점 클라이언트로부터 받은 환불사유
-			to: 1639318259 // imp_uid를 환불 `unique key`로 입력
+	  var sql = "select customerUid from payment where userUID = ? and type = 'membership' order by regDate desc limit 1";
+	  db.query(sql, userUID, async (err, result) => {
+		  if (err) throw err;
+
+		  var customer_uid = result[0].customerUid;
+		  console.log(customer_uid);
+
+		  // 3개월 내에 예약된 정기결제 조회
+		  const getScheduledData = await axios({
+			  url: `https://api.iamport.kr/subscribe/payments/schedule/customers/${customer_uid}`,
+			  method: "get", // GET method
+			  headers: { "Authorization": access_token },
+			  params: {
+				from: getNextDateTime(0), 
+				to: getNextDateTime(3)
+			  }
+		  }).catch(error => {
+			  console.log(error);
+		  });
+
+		  const { status } = getScheduledData;
+		  if(status == 200){
+			  const { list } = getScheduledData.data.response;
+			  console.log(list);
+			  var merchant_uid = list[0].merchant_uid;
+				
+			  // 예약된 내역 취소
+			  const getCancelData = await axios({
+				  url: "https://api.iamport.kr/subscribe/payments/unschedule",
+				  method: "post",
+				  headers: {
+					"Content-Type": "application/json",
+					"Authorization": access_token // 아임포트 서버로부터 발급받은 엑세스 토큰
+				  },
+				  data: {
+					customer_uid: customer_uid, // 가맹점 클라이언트로부터 받은 환불사유
+					merchant_uid: merchant_uid, // imp_uid를 환불 `unique key`로 입력
+				  }
+			});
 		  }
 	  });
-
-	  console.log("axios 호출 끝");
-
-	  const scheduledData = getScheduledData.data.response;
-	  var merchant_uid = scheduledData.list[0].merchant_uid;
-	  consoel.log(merchant_uid);
-
-	  // 스케쥴 취소
-	  /*const getCancelData = await axios({
-          url: "https://api.iamport.kr/subscribe/payments/unschedule",
-          method: "post",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": access_token // 아임포트 서버로부터 발급받은 엑세스 토큰
-          },
-          data: {
-            customer_uid, // 가맹점 클라이언트로부터 받은 환불사유
-            merchant_uid, // imp_uid를 환불 `unique key`로 입력
-          }
-        });*/
     } catch (e) {
       res.status(400).send(e);
     }
