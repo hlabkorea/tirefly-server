@@ -64,7 +64,7 @@ api.post("/",
 					 + '<br>'
 					 + `<b>문의 내용 : </b> <span> ${contents} </span> <br>`
 					 + '<br>';
-			if(type == "제휴/제안")
+			if(type == "제휴")
 				html += `<b>소속 : </b> <span> ${contents} </span> <br>`
 					 + '<br>'
 					 + `<b>전화번호 : </b> <span> ${contents} </span> <br>`
