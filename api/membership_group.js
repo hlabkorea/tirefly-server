@@ -4,7 +4,7 @@ const {verifyToken} = require("./config/authCheck.js");
 const api = express.Router();
 const {check} = require('express-validator');
 const {getError} = require('./config/requestError.js');
-const {sendMail} = require('./config/mail.js');
+const {sendInviteEmail} = require('./config/mail.js');
 
 // 멤버십 그룹에 추가
 api.post('/', 
@@ -85,33 +85,7 @@ api.post('/',
 			}
 });
 
-function sendInviteEmail(ownerEmail, userEmail){	
-	var html = '<div style="color:#111;font-size:10pt;line-height:1.5;text-align:center"><p><br></p><p><br></p>'
-			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center">'
-			 + '<img src="https://api.motifme.io/files/motif_logo.png"><br></div>'
-			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center"><br></div>'
-			 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px">'
-			 + '<b><span style="font-size:13.5pt;line-height:19.26px;color:black">모티퍼 멤버십에 초대되신 것을 축하합니다.</span></b><br><br>'
-			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255)text-align:center"><br></div>'
-			 + `<b><span style="font-size:9pt;line-height:12.84px;color:black"> 초대 계정 : ${ownerEmail}</span></b></p>`
-			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255)text-align:center"><br></div>'
-			 + '<p><span style="font-size:9pt;line-height:12.84px;color:black">모티프가 제공하는 새로운 방식의 홈트레이닝 서비스를 시작하세요!</span></p>'
-			 + '<p><span style="font-size:9pt;line-height:12.84px;color:black">지금 모티프 앱을 설치하시고 경험해보세요</span></p>'
-			 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;lbackground-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px"></p>'
-			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255)text-align:center"><br></div>'
-			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center">'
-			 + '<a href="https://www.apple.com/kr/app-store" target="_blank"><img src="https://api.motifme.io/files/apple_store_logo.png" style="width: 194px; height: 75px;"></a><br>'
-			 + '</div>'
-			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255)text-align:center"><br></div>'
-			 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px">'
-			 + '<i><span lang="EN-US" style="font-size:9pt;line-height:12.84px;color:black"></span></i></p>'
-			 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px">'
-			 + '<span style="font-size:9pt;line-height:12.84px;color:black">회원가입 시, 본 메일을 수신하신 이메일 계정을 사용해주세요.</span></p>'
-			 + '</div>';
-	var subject = "[모티프] 모티프 멤버십 초대 안내";
-	sendMail(userEmail, subject, html);
-	
-}
+
 
 // 멤버십 그룹에서 계정 삭제
 api.delete('/:groupUID',

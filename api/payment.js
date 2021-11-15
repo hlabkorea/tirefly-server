@@ -9,7 +9,8 @@ const {toHypenDateTimeFormat, toHypenDateFormat} = require('./config/toDateForma
 const {generateRandomNumber} = require('./config/generateRandomNumber.js');
 const {getPageInfo} = require('./config/paging.js'); 
 const {getCurrentDateTime, getNextDateTime} = require('./config/date.js');
-const {sendMail} = require('./config/mail.js');
+const {sendPaymentMail, sendMembershipEmail} = require('./config/mail.js');
+const {addCellSearchSql} = require('./config/searchSql.js');
 const imp_key = "7260030924750208"; // REST API 키
 const imp_secret = "abc8d306c8df0b4354dd438c5ab9d5af9bf06094734cc1936780beef5fa4a6ab585b1219b7b09a4b"; // REST API Secret
 //const imp_key = "5425471433410805"; // 테스트 REST API 키
@@ -32,6 +33,7 @@ api.get('/',
 						 + "from payment "
 						 + "join user on payment.userUID = user.UID "
 						 + "where (date_format(payment.regDate, '%Y-%m-%d') between ? and ?) ";
+
 			var productSql = "select payment.UID as paymentUID, payment.merchantUid, product.korName, product_option_list.optionName, payment.buyerEmail, user.cellNumber as buyerTel, payment.amount, "
 						   + "payment.payMethod, payment.orderStatus, payment.regDate "
 						   + "from payment "
@@ -58,8 +60,8 @@ api.get('/',
 			countSql += "and payment.type = '" + type + "' ";
 
 			
-			sql = addSearchSql(sql, searchType, searchWord, "user");
-			countSql = addSearchSql(countSql, searchType, searchWord, "user");
+			sql += addCellSearchSql(searchType, searchWord, "user");
+			countSql += addCellSearchSql(searchType, searchWord, "user");
 
 			sql += "group by payment.UID "
 				+ "order by payment.regDate desc";
@@ -124,8 +126,8 @@ api.get('/ship',
 				countSql += "and payment.shippingStatus = '" + status + "' ";
 			}
 
-			sql = addSearchSql(sql, searchType, searchWord, "payment");
-			countSql = addSearchSql(countSql, searchType, searchWord, "payment");
+			sql += addCellSearchSql(searchType, searchWord, "payment");
+			countSql += addCellSearchSql(searchType, searchWord, "payment");
 
 			sql += "group by payment.UID "
 				+ "order by payment.regDate desc";
@@ -414,6 +416,7 @@ async function scheduleMembership(access_token, customer_uid, laterNum, amount, 
 		}
 	  });
 }
+
 async function appendFreeMembership(imp_uid, access_token, customer_uid, name, custom_data){
 	delete custom_data.payType;
 
@@ -499,6 +502,7 @@ api.post("/billings", async (req, res) => {
 			  res.status(403).json(result);
 	  }
     } catch (e) {
+		console.log(e);
       res.status(400).send(e);
     }
 });
@@ -648,8 +652,8 @@ api.get('/refund',
 				countSql += "and payment.orderStatus = '" + status + "' ";
 			}
 
-			sql = addSearchSql(sql, searchType, searchWord, "user");
-			countSql = addSearchSql(countSql, searchType, searchWord, "user");
+			sql += addCellSearchSql(searchType, searchWord, "user");
+			countSql += addCellSearchSql(searchType, searchWord, "user");
 
 			sql += "group by payment.UID "
 				+ "order by payment.reqDate desc";
@@ -738,11 +742,6 @@ api.get('/refund_status',
 		}
 );
 
-function comma(str) {
-    str = String(str);
-    return str.replace(/(\d)(?=(?:\d{3})+(?!\d))/g, '$1,');
-}
-
 function sendPaymentEmail(email, paymentUID){
 	var sql = 'select product_img_list.imgPath, product.korName, product.originPrice, product.discountPrice, payment.merchantUid, payment.amount, product.originShippingFee, product.dcShippingFee '
 			+ 'from payment '
@@ -755,112 +754,12 @@ function sendPaymentEmail(email, paymentUID){
 			+ 'order by payment.regDate desc, product_img_list.UID';
 	db.query(sql, paymentUID, function (err, result) {
 		if (err) throw err;
-	
-		console.log(result[0]);
-		var productImg = "https://api.motifme.io/files/" + result[0].imgPath;
-		var productName = result[0].korName;
-		var productPrice = result[0].originPrice;
-		var discountPrice = result[0].discountPrice;
-		var difference = comma(productPrice - discountPrice);
-		productPrice = comma(productPrice);
-		var merchantUid = result[0].merchantUid;
-		var paymentPrice = comma(result[0].amount);
-		var originShippingFee = comma(result[0].originShippingFee);
-		var dcShippingFee = result[0].dcShippingFee;
-		var isFree = "";
-		if(dcShippingFee == 0)
-			isFree = "FREE";
-		var leftCol = '25%';
-		var centerCol = '50%';
-		var rightCol = '25%';
-
-		var html = '<div style="color:#111;font-size:10pt;line-height:1.5;text-align:center"><p><br></p><p><br></p>'
-				 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center">'
-				 + '<img src="https://api.motifme.io/files/motif_logo.png"><br></div>'
-				 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center"><br></div>'
-				 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px">'
-				 + '<b><span style="font-size:13.5pt;line-height:19.26px;color:black">모티프 미러를 구매해주셔서 감사합니다.</span></b><br><br></p>'
-				 + `<p><span style="font-size:9pt;line-height:12.84px;color:black">주문번호: ${merchantUid}</span></p>`
-				 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center"><br></div>'
-				 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center"><br></div>'
-				 + '<table cellspacing="0" cellpadding="0" border="1" style="margin-left: auto; margin-right: auto; border-color: #E0E0E0; width: 500px;">'
-				 + `<col width="${leftCol}" />`
-				 + `<col width="${centerCol}" />`
-				 + `<col width="${rightCol}" />`
-				 + '<tr>'
-				 + `<td width="72" style="padding: 5px"><img src="${productImg}" style="display: block; width: 100%; margin: 0px auto;"></td>`
-				 + `<td width="127">${productName}<br /></td>`
-				 + `<td width="72" style="text-align: right">${productPrice}원</td>`
-				 + '</tr>'
-				 + '<tr>'
-				 + '<td style="height: 35px">&nbsp;</td>'
-				 + '<td style="height: 35px"></td>'
-				 + '<td style="height: 35px"></td>'
-				 + '</tr>'
-				 + '<tr>'
-				 + '<td colspan="3">'
-				 + '<table cellspacing="0" cellpadding="0" width="100%" style="text-align: center; color: black">'
-				 + `<col width="${leftCol}" />`
-				 + `<col width="${centerCol}" />`
-				 + `<col width="${rightCol}" />`
-				 + '<tr>'
-				 + '<td style="height: 35px">할인 적용</td>'
-				 + '<td style="height: 35px"></td>'
-				 + `<td style="text-align: right; height: 35px">-${difference}원</td>`
-				 + '</tr>'
-				 + '<tr>'
-				 + '<td style="height: 35px">배송비</td>'
-				 + `<td style="text-align: right; height: 35px;">${isFree}</td>`
-				 + `<td style="text-align: right; text-decoration:line-through; height: 35px">${originShippingFee}원</td>`
-				 + '</tr>'
-				 + '<tr>'
-				 + '<td style="height: 35px">결제 금액</td>'
-				 + '<td style="height: 35px"></td>'
-				 + `<td style="text-align: right; height: 35px">${paymentPrice}원</td>`
-				 + '</tr>'
-				 + '</table>'
-				 + '</td>'
-				 + '</tr>'
-				 + '</table>'
-				 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center"><br></div>'
-				 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center"><br></div>'
-				 + '<b><span style="font-size:9pt;line-height:12.84px;color:black">배송 정보 안내</span></b>'
-				 + '<p><span style="font-size:9pt;line-height:12.84px;color:black">모티프 미러는 프리오더 종료 후 순차 배송되며, 주문자에 한하여 추후 배송 일정 안내 메일을 전송해드릴 예정입니다.</span></p>'
-				 + '<p><span style="font-size:9pt;line-height:12.84px;color:black">모티프 미러 배송은 수도권 한정으로 가능하지만, 프리오더 구매 건에 한하여 전국 무료 배송 서비스를 제공합니다. (단, 제주 및 도서산간 지역 제외)</span></p>'
-				 + '<p><span style="font-size:9pt;line-height:12.84px;color:black">배송과 관련하여 문의사항이 있는 경우에는 고객센터(<a href="mailto:support@motifme.io">support@motifme.io</a>)로 문의 바랍니다.</span></p>'
-				 + '</div>';
-		var subject = "[모티프] 모티프 미러 주문 완료 안내";
-		sendMail(email, subject, html);
-	
+		
+		sendPaymentMail(result, email);
 	});
 }
 
-function sendMembershipEmail(email, level, amount, payMethod, cardNumber){	
-	amount = comma(amount);
-	cardNumber = cardNumber.replace(/([0-9]{4})([0-9*]{4})([0-9*]{4})([0-9*]{4})/,"$1-$2-$3-$3");
-	var html = '<div style="color:#111;font-size:10pt;line-height:1.5;text-align:center"><p><br></p><p><br></p>'
-			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center">'
-			 + '<img src="https://api.motifme.io/files/motif_logo.png"><br></div>'
-			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center"><br></div>'
-			 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px">'
-			 + '<b><span style="font-size:13.5pt;line-height:19.26px;color:black">모티프 멤버십을 구독해주셔서 감사합니다.</span></b><br><br></p>'
-			 + `<p><span style="font-size:9pt;line-height:12.84px;color:black">계정 정보 : ${email}</span></p>`
-			 + '<p><span style="font-size:9pt;line-height:12.84px;color:black">서비스 제공 업체 : 주식회사 에이치랩</span></p>'
-			 + `<p><span style="font-size:9pt;line-height:12.84px;color:black">구독 멤버십 : ${level}</span></p>`
-			 + `<p><span style="font-size:9pt;line-height:12.84px;color:black">멤버십 요금 : 월 ${amount}원(VAT 포함)</span></p>`
-			 + `<p><span style="font-size:9pt;line-height:12.84px;color:black">결제수단 : ${payMethod} ${cardNumber}</span></p>`
-			 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;lbackground-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px"></p>'
-			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255)text-align:center"><br></div>'
-			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255)text-align:center"><br></div>'
-			 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px">'
-			 + '<i><span lang="EN-US" style="font-size:9pt;line-height:12.84px;color:black"></span></i></p>'
-			 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px">'
-			 + '<span style="font-size:9pt;line-height:12.84px;color:black">결제하신 멤버십에 대한 자세한 내용은 홈페이지 내 마이페이지에서 확인 가능합니다.</span></p>'
-			 + '</div>';
-	var subject = "[모티프] 모티프 멤버십 구독 완료 안내";
-	sendMail(email, subject, html);
-	
-}
+
 
 // 주문에 대한 상품 정보 추가
 function saveOrderProduct(paymentUID, productUID, optionUID, count, buyerEmail){
@@ -1125,25 +1024,6 @@ function getNewMerchantUid(startNo, level){
 	}
 
 	return merchantUid + Math.floor(Date.now() / 1000) + generateRandomNumber(3);
-}
-
-// 검색 sql 생성
-function addSearchSql(sql, searchType, searchWord, tellType){
-	if(searchType.length != 0){
-		if(searchType == "buyerEmail") {
-			sql += "and user.email LIKE '%" + searchWord + "%' ";
-		} 
-		else if(searchType == "buyerTel"){
-			if(tellType == "user")
-				sql += "and user.cellNumber LIKE '%" + searchWord + "%' ";
-			else if(tellType == "payment")
-				sql += "and payment.buyerTel LIKE '%" + searchWord + "%' ";
-		}
-		else if(searchType == "merchantUid"){
-			sql += "and payment.merchantUid LIKE '%" + searchWord + "%' ";
-		}
-	}
-	return sql;
 }
 
 module.exports = api;

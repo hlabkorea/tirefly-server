@@ -10,7 +10,7 @@ const sharp = require('sharp');
 const {upload} = require('./config/uploadFile.js');
 const {check} = require('express-validator');
 const {getError} = require('./config/requestError.js');
-const {sendMail} = require('./config/mail.js');
+const {sendJoinMail, sendPasswdMail} = require('./config/mail.js');
 const {maskEmail} = require('./config/masking');
 const {toHypenDateFormat} = require('./config/date.js');
 
@@ -46,7 +46,7 @@ api.post('/join',
 						expiresIn: '1440m'    // 유효 시간은 1440분
 					});
 
-					sendJoinEmail(email);
+					sendJoinMail(email);
 					
 					// 토큰 이력 추가
 					var token_insert_sql = "insert into user_log(userUID, token) values(?, ?)";
@@ -78,29 +78,6 @@ api.post('/join',
 			}
 		}
 );
-
-function sendJoinEmail(toEmail){	
-	var html = '<div style="color:#111;font-size:10pt;line-height:1.5;text-align:center"><p><br></p><p><br></p>'
-			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center">'
-			 + '<img src="https://api.motifme.io/files/motif_logo.png"><br></div>'
-			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center"><br></div>'
-			 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px"></p>'
-			 + '<b><span style="font-size:13.5pt;line-height:19.26px;color:black">회원가입이 완료되었습니다.</span></b><br><br>'
-			 + '<span style="font-size:9pt;line-height:12.84px;color:black">모티퍼가 되신 것을 환영합니다.</span></p>'
-			 + '<p><span style="font-size:9pt;line-height:12.84px;color:black">모티프와 함께 새로운 홈트레이닝 서비스를 경험해보세요!</span></p>'
-			 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;lbackground-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px"></p>'
-			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255)text-align:center"><br></div>'
-			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center">'
-			 + '<a href="https://www.motifme.io" style="background-color: black; color: white; font-size: 20px; text-align: center; text-decoration: none; border-radius: 10px; width: 252px; height: 59px; padding: 15px 45px"> 모티프 홈페이지로 </a>'
-			 + '</div>'
-			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255)text-align:center"><br></div>'
-			 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px"></p>'
-			 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px"></p>'
-			 + '<span style="font-size:9pt;line-height:12.84px;color:black">회원님의 정보는 철저한 보안 아래 안전하게 유지됩니다.</span></p>'
-			 + '</div>';
-	var subject = "[모티프] 회원가입 완료 안내";
-	sendMail(toEmail, subject, html);	
-}
 
 // 이메일 중복 체크
 api.post('/overlapEmail',
@@ -254,29 +231,7 @@ api.post('/findPw',
 					if(req.body.type == "web"){
 						res.status(200).json({status:200, data:key, message: "success"});
 					} else {
-						var html = '<div style="color:#111;font-size:10pt;line-height:1.5"><p><br></p><p><br></p>'
-								 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center">'
-								 + '<img src="https://api.motifme.io/files/motif_logo.png"><br></div>'
-								 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center"><br></div>'
-								 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px">'
-								 + '<b><span style="font-size:13.5pt;line-height:19.26px;color:black">비밀번호 재설정</span></b><br><br>'
-								 + '<span style="font-size:9pt;line-height:12.84px;color:black">아래 버튼을 클릭하시면 비밀번호를 재설정 할 수 있습니다<span lang="EN-US">.</span></span></p>'
-								 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;lbackground-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px">'
-								 + '<span lang="EN-US" style="font-size:9pt;line-height:12.84px;color:black"> </span></p>'
-								 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255)text-align:center"><br></div>'
-								 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center">'
-								 + `<a href="http://43.133.64.160/user/new_pw.html?auth=${key}" style="background-color: black; color: white; font-size: 20px; text-align: center; text-decoration: none; border-radius: 10px; width: 252px; height: 59px; padding: 15px 45px"> 비밀번호 재설정 </a>`
-								 + '</div>'
-								 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255)text-align:center"><br></div>'
-								 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px"></p>'
-								 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px"></p>'
-								 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px">'
-								 + '<span style="font-size:9pt;line-height:12.84px;color:black">해당 링크는<span> </span><span lang="EN-US">24</span>시간 동안 유효합니다<span lang="EN-US">.</span></span></p>'
-								 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px">'
-								 + '<span style="font-size:9pt;line-height:12.84px;color:black">새로운 비밀번호 설정을 원하지 않는 경우에는 해당 메일은 무시하시면 됩니다</span></p></div>';
-
-						var subject = "[모티프] 비밀번호 재설정 안내";
-						sendMail(toEmail, subject, html);
+						sendPasswdMail(toEmail);
 						res.status(200).json({status:200, data:"true", message: "비밀번호 재설정 메일이 전송되었습니다."});
 					}
 				});
@@ -375,14 +330,15 @@ api.put('/basic_img/:userUID',
 );
 
 // 프로필 조회
-api.get('/:userUID', verifyToken, function (req, res) {
+api.get('/:userUID', verifyToken, async function (req, res) {
 	var responseData = {};
+	var userUID = req.params.userUID;
 
 	// 사용자 정보 조회
 	var info_sql = "select profileImg, email, cellNumber, nickName, birthday, gender, height, weight, purpose, intensity, frequency, theHours, momentum "
 				+ "from user "
 				+ "where UID = ?";
-	db.query(info_sql, req.params.userUID, function (err, result, fields) {
+	await db.query(info_sql, userUID, function (err, result, fields) {
 		if (err) throw err;
 
 		if(result.length != 0){
@@ -398,7 +354,7 @@ api.get('/:userUID', verifyToken, function (req, res) {
 					+ "from my_category "
 					+ "join category on my_category.categoryUID = category.UID "
 					+ "where my_category.userUID = ?";
-	db.query(category_sql, req.params.userUID, function (err, result, fields) {
+	await db.query(category_sql, userUID, function (err, result, fields) {
 		if (err) throw err;
 
 		responseData.categories = [];
@@ -411,7 +367,7 @@ api.get('/:userUID', verifyToken, function (req, res) {
 				+ "from my_acc "
 				+ "join acc on my_acc.accUID = acc.UID "
 				+ "where my_acc.userUID = ?";
-	db.query(acc_sql, req.params.userUID, function (err, result, fields) {
+	db.query(acc_sql, userUID, function (err, result, fields) {
 		if (err) throw err;
 
 		responseData.accs = [];

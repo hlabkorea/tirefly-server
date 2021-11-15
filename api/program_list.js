@@ -24,36 +24,36 @@ api.get('/all', verifyToken, function (req, res) {
 api.get('/week/:programUID', 
         verifyToken, 
         [
-                check("weekly", "weekly is required").not().isEmpty()
+			check("weekly", "weekly is required").not().isEmpty()
         ],
         function (req, res) {
-                const errors = getError(req, res);
-                if(errors.isEmpty()){
-						var programUID = req.params.programUID;
-						var weekly = req.query.weekly;
-                        var sql = "select ifnull(video.UID, 0) as videoUID, program_list.day, program_list.isRest, ifnull(teacher.teacherImg, '') as teacherImg, ifnull(video.contentsPath, '') as contentsPath, "
-								+ "ifnull(video.videoName, '') as videoName, ifnull(teacher.teacherName, '') as teacherName, ifnull(category.categoryName, '') as categoryName, "
-								+ "ifnull(video.videoLevel, '') as videoLevel, ifnull(video.playTimeValue, '') as playTimeValue "
-                                + "from program_list "
-                                + "left join video on program_list.videoUID = video.UID "
-                                + "left join category on video.categoryUID = category.UID "
-                                + "left join teacher on video.teacherUID = teacher.UID "
-                                + "where program_list.programUID = ? and weekly = ? "
-                                + "order by program_list.day";
+			const errors = getError(req, res);
+			if(errors.isEmpty()){
+				var programUID = req.params.programUID;
+				var weekly = req.query.weekly;
+				var sql = "select ifnull(video.UID, 0) as videoUID, program_list.day, program_list.isRest, ifnull(teacher.teacherImg, '') as teacherImg, ifnull(video.contentsPath, '') as contentsPath, "
+						+ "ifnull(video.videoName, '') as videoName, ifnull(teacher.teacherName, '') as teacherName, ifnull(category.categoryName, '') as categoryName, "
+						+ "ifnull(video.videoLevel, '') as videoLevel, ifnull(video.playTimeValue, '') as playTimeValue "
+						+ "from program_list "
+						+ "left join video on program_list.videoUID = video.UID "
+						+ "left join category on video.categoryUID = category.UID "
+						+ "left join teacher on video.teacherUID = teacher.UID "
+						+ "where program_list.programUID = ? and weekly = ? "
+						+ "order by program_list.day";
 
-                        var data = [programUID, weekly];
+				var data = [programUID, weekly];
 
-                        db.query(sql, data, function (err, result) {
-                                if (err) throw err;
+				db.query(sql, data, function (err, result) {
+					if (err) throw err;
 
-								for(var i in result){
-									result[i].teacherImg = result[i].contentsPath;
-								}
+					for(var i in result){
+						result[i].teacherImg = result[i].contentsPath;
+					}
 
-                                res.status(200).json({status:200,  data: result, message:"success"});
-                        });
-                }
-        }
+					res.status(200).json({status:200,  data: result, message:"success"});
+				});
+			}
+		}
 );
 
 // 프로그램의 비디오 완료 여부 조회

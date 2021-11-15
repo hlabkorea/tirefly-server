@@ -20,13 +20,11 @@ api.get('/',
 			sql += "group by product.UID " 
 				 + "order by product_img_list.UID ";
 
-			const exec = db.query(sql, category, function (err, result) {
+			db.query(sql, category, function (err, result) {
 				if (err) throw err;
 
 				res.status(200).json({status:200, data: result, message:"success"});
 			});
-			
-			console.log(exec.sql);
         }
 );
 

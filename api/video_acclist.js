@@ -47,13 +47,11 @@ api.put('/:videoUID', verifyAdminToken, function (req, res) {
 		}
 		
 		var insertSql = "insert into video_acclist(videoUID, accUID, regUID) values ?;";
-		const exec = db.query(insertSql, [data], function (err, result, fields) {
+		db.query(insertSql, [data], function (err, result, fields) {
 			if (err) throw err;
 
 			res.status(200).send({status:200, data: "true", message:"success"});
 		});
-
-		console.log(exec.sql);
 	});
 });
 

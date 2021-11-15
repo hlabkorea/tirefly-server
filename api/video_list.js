@@ -5,7 +5,7 @@ const api = express.Router();
 
 // 비디오 운동 리스트 조회
 api.get('/:videoUID', verifyToken, function (req, res) {
-  var sql = "select UID as listUID, listName, listStartTime, listPlayTime from video_list where videoUID = ? order by video_list.order";
+  var sql = "select UID as listUID, listName, listStartTime, listPlayTime, video_list.order from video_list where videoUID = ? order by video_list.order";
   var data = [req.params.videoUID];
 
   db.query(sql, data, function (err, result, fields) {

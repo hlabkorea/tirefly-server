@@ -6,6 +6,7 @@ const {check} = require('express-validator');
 const {getError} = require('./config/requestError.js');
 const {getPageInfo} = require('./config/paging.js'); 
 const {upload} = require('./config/uploadFile.js');
+const {addSearchSql, addVodSearchSql} = require('./config/searchSql.js');
 const pageCnt15 = 15;
 
 // cms - vod 정보 조회
@@ -19,12 +20,7 @@ api.get('/', verifyAdminToken, function (req, res) {
 		  + "join category ON video.categoryUID = category.UID "
 		  + "where videoType = 'vod' ";
 
-	if(searchType.length != 0){
-		if(searchType == "videoName") 
-			sql += "and video.videoName LIKE '%" + searchWord + "%' ";
-		else if(searchType == "teacherName")
-			sql += "and teacher.teacherName LIKE '%" + searchWord + "%' ";
-	}
+	sql += addSearchSql(searchType, searchWord);
 
 	var data = [];
 
@@ -33,6 +29,8 @@ api.get('/', verifyAdminToken, function (req, res) {
 		data.push(status);
 		data.push(status);
 	}
+
+	console.log(sql);
 
 	sql += "order by video.regDate desc ";
 	var countSql = sql + ";";
@@ -82,6 +80,36 @@ api.post('/', verifyAdminToken, function (req, res) {
 	});
 });
 
+// cms - 영상 수정
+api.put('/:videoUID', verifyAdminToken, function (req, res) {
+	var videoUID = req.params.videoUID;
+	var adminUID = req.adminUID;
+	var teacherUID = req.body.teacherUID;
+	var categoryUID = req.body.categoryUID;
+	var videoName = req.body.videoName;
+	var videoLevel = req.body.videoLevel;
+	var totalPlayTime = req.body.totalPlayTime;
+	var playContents = req.body.playContents;
+	var playTimeValue = req.body.playTimeValue;
+	var status = req.body.status;
+	var videoType = req.body.videoType;
+	var videoURL = req.body.videoURL;
+	var isPlayBGM = req.body.isPlayBGM;
+	var liveStartDate = req.body.liveStartDate;
+	var liveEndDate = req.body.liveEndDate;
+
+	var sql = "update video set teacherUID = ?, categoryUID = ?, videoName = ?, videoLevel = ?, totalPlayTime = ?, playContents = ?, playTimeValue = ?, status = ?, videoType = ?, videoURL = ?, isPlayBGM = ?, liveStartDate = ?, "
+			+ "liveEndDate = ?, updateUID = ? "
+			+ "where UID = ?";
+	var data = [teacherUID, categoryUID, videoName, videoLevel, totalPlayTime, playContents, playTimeValue, status, videoType, videoURL, isPlayBGM, liveStartDate, liveEndDate, adminUID, videoUID];
+	db.query(sql, data, function (err, result, fields) {
+		if (err) throw err;
+
+		res.status(200).json({status:200, data: "true", message:"success"});
+	});
+});
+
+
 // cms - 영상 이미지 업로드
 api.put('/image/:videoUID', 
 		verifyAdminToken,
@@ -90,14 +118,12 @@ api.put('/image/:videoUID',
 			var videoUID = req.params.videoUID;
 			var filename = req.file.filename;
 			var imgType = req.body.imgType;
-			var sql = "update video set " + imgType + " = ? where UID = ?";
-			var data = [filename, videoUID];
-			const exec = db.query(sql, data, function (err, result, fields) {
+			var sql = `update video set ${imgType} = '${filename}' where UID = ${videoUID}`;
+			db.query(sql, function (err, result, fields) {
 				if (err) throw err;
 
-				res.status(200).json({status:200, data:"true", message: "success"});
+				res.status(200).json({status:200, data:{filename: filename}, message: "success"});
 			});
-			console.log(exec.sql);
 		}
 );
 
@@ -153,7 +179,6 @@ api.get('/search', verifyToken, function (req, res) {
 		    + "left join acc on video_acclist.accUID = acc.UID "
 		    + "where video.status='act' ";
 		  
-	var data = [];
 	var isOption = false;
 	var categoryUIDs = req.query.categoryUIDs;
 	var videoLevels = req.query.videoLevels;
@@ -161,26 +186,8 @@ api.get('/search', verifyToken, function (req, res) {
 	var teacherUIDs = req.query.teacherUIDs;
 	var videoType = req.query.videoType;
 
-	if(categoryUIDs.length != 0){
-		sql += "and category.UID in (?) ";
-		data.push(categoryUIDs.split(','));
-	}
-
-	if(videoLevels.length != 0){
-		sql += "and video.videoLevel in (?) ";
-		data.push(videoLevels.split(','));
-	}
-
-	if(playTimeValues.length != 0){
-		sql += "and video.playTimeValue in (?) ";
-		data.push(playTimeValues.split(','));
-	}
-
-	if(teacherUIDs.length != 0){
-		sql += "and teacher.UID in (?) ";
-		data.push(teacherUIDs.split(','));
-	}
-
+	var {sqlResult, data} = addVodSearchSql(categoryUIDs, videoLevels, playTimeValues, teacherUIDs);
+	sql += sqlResult;
 	sql += "and video.videoType = ? "
 	data.push(videoType);
 
