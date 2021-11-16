@@ -49,8 +49,8 @@ api.post('/',
 							if (isFull){
 								res.status(403).json({status:403,  data: "false", message:"인원이 초과하여 초대가 불가능합니다."}); // 멘트 수정
 							} else { // 이미 초대되어있는 경우
-								var checkInvited_sql = "select UID from membership_group where ownerUID = ? and userUID = ?";
-								var checkInvited_data = [ownerUID, userUID];
+								var checkInvited_sql = "select UID from membership_group where ownerUID = ? and email = ?";
+								var checkInvited_data = [ownerUID, email];
 
 								db.query(checkInvited_sql, checkInvited_data, function (err, result) {
 									if (err) throw err;

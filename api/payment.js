@@ -308,7 +308,7 @@ api.get('/membership/:userUID',
 		verifyToken,
         function (req, res, next) {
 			var userUID = req.params.userUID;
-			var sql = "select payment.name, payment.amount, payment.payMethod, payment.regDate, payment_product_list.membershipEndDate "
+			var sql = "select payment.UID as paymentUID, payment.name, payment.amount, payment.payMethod, payment.regDate, payment_product_list.membershipEndDate "
 					+ "from payment "
 					+ "join payment_product_list on payment.UID = payment_product_list.paymentUID "
 					+ "where payment.userUID = ? and payment.type = 'membership' "
@@ -397,6 +397,20 @@ api.get('/product/:userUID',
 			});
         }
 );
+
+async function getToken() {
+	const getToken = await axios({
+		url: "https://api.iamport.kr/users/getToken",
+		method: "post", // POST method
+		headers: { "Content-Type": "application/json" }, 
+		data: {
+			imp_key: imp_key,
+			imp_secret: imp_secret
+		}
+	});
+
+	return getToken;
+}
 
 async function scheduleMembership(access_token, customer_uid, laterNum, amount, name, custom_data){
 	axios({
@@ -516,106 +530,131 @@ function refundOrder(amount, merchantUid){
 	});
 }
 
-// 이니시스에 환불 요청
-api.post("/refund", async (req, res) => {
-    try {
-	  console.log("refund 호출");
-      const { imp_uid, merchant_uid, reason, cancel_request_amount } = req.body;
-	  
-      // 인증 토큰 발급 받기
-      const getToken = await axios({
-        url: "https://api.iamport.kr/users/getToken",
-        method: "post", // POST method
-        headers: { "Content-Type": "application/json" }, 
-        data: {
-          imp_key: imp_key,
-          imp_secret: imp_secret
-        }
-      });
-      const { access_token } = getToken.data.response; 
-	  var cancelableAmount = 100;
-	  const getCancelData = await axios({
-          url: "https://api.iamport.kr/payments/cancel",
-          method: "post",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": access_token // 아임포트 서버로부터 발급받은 엑세스 토큰
-          },
-          data: {
-            reason, // 가맹점 클라이언트로부터 받은 환불사유
-            imp_uid, // imp_uid를 환불 `unique key`로 입력
-            amount: cancel_request_amount, // 가맹점 클라이언트로부터 받은 환불금액
-            checksum: cancelableAmount // [권장] 환불 가능 금액 입력
-          }
-        });
+function completeRefund(refConfMsg, orderStatus, paymentUID){
+	var sql = "update payment "
+			+ "set refConfMsg = ?, orderStatus = ?, refConfDate = now() "
+			+ "where UID = ?";
+	var data = [refConfMsg, orderStatus, paymentUID];
 
-		const refundData = getCancelData.data.response;
-		var amount = refundData.cancel_amount;
-		var merchantUid = refundData.merchant_uid;
-		
-		refundOrder(amount, merchantUid);
+	db.query(sql, data, function (err, result) {
+		if (err) throw err;
+
+		res.status(200).json({status:200, data: "true", message:"success"});	
+	});
+}
+
+async function refundFromIamport(refundMsg, impUid, refundAmount){
+	// 인증 토큰 발급 받기
+	const token = await getToken();
+	const { access_token } = token.data.response; 
+
+	const getCancelData = await axios({
+		url: "https://api.iamport.kr/payments/cancel",
+		method: "post",
+		headers: {
+		"Content-Type": "application/json",
+		"Authorization": access_token // 아임포트 서버로부터 발급받은 엑세스 토큰
+		},
+		data: {
+			reason: refundMsg, // 가맹점 클라이언트로부터 받은 환불사유
+			imp_uid: impUid, // imp_uid를 환불 `unique key`로 입력
+			amount: refundAmount, // 가맹점 클라이언트로부터 받은 환불금액
+			checksum: refundAmount // [권장] 환불 가능 금액 입력
+		}
+	});
+
+	return getCancelData.data.response;
+}
+
+// 이니시스에 환불 요청
+api.put("/refund/complete/:paymentUID", async (req, res) => {
+    try {
+		console.log("refund 호출");
+		var paymentUID = req.params.paymentUID;
+		var refConfMsg = req.body.refConfMsg;
+		var orderStatus = req.body.orderStatus;
+		var sql = "select merchantUid, impUid, amount, refundMsg from payment where UID = ?";
+
+		db.query(sql, paymentUID, async function (err, result) {
+			if (err) throw err;
+
+			var refundAmount = result[0].amount;
+			var merchantUid = result[0].merchantUid;
+			var impUid = result[0].impUid;
+			var refundMsg = result[0].refundMsg;
+
+			if(orderStatus == "취소승인"){
+				const refundData = await refundFromIamport(refundMsg, impUid, refundAmount);
+				refundOrder(refundAmount, merchantUid);
+			}
+			completeRefund(refConfMsg, orderStatus, paymentUID);
+
+			res.status(200).json({status:200, data: "true", message:"success"});	
+		});
     } catch (e) {
       res.status(400).send(e);
     }
 });
 
+// 3개월 내에 예약된 정기결제 조회
+async function getScheduledData(customerUid){
+	const token = await getToken();
+	const { access_token } = token.data.response; 
+	console.log(access_token);
+	const scheduledData = await axios({
+		url: `https://api.iamport.kr/subscribe/payments/schedule/customers/${customerUid}`,
+		method: "get", // GET method
+		headers: { "Authorization": access_token },
+		params: {
+			from: getNextDateTime(0), 
+			to: getNextDateTime(3)
+		}
+	}).catch(error => {
+		console.log(error);
+	});
+
+	return scheduledData;
+}
+
+async function unscheduleFromIamport(customerUid, merchantUid){
+	console.log("멤버십 해지");
+	const token = await getToken();
+	const { access_token } = token.data.response; 
+	
+	const unscheduledData = await axios({
+		  url: "https://api.iamport.kr/subscribe/payments/unschedule",
+		  method: "post",
+		  headers: {
+			"Content-Type": "application/json",
+			"Authorization": access_token // 아임포트 서버로부터 발급받은 엑세스 토큰
+		  },
+		  data: {
+			customer_uid: customerUid, // 가맹점 클라이언트로부터 받은 환불사유
+			merchant_uid: merchantUid, // imp_uid를 환불 `unique key`로 입력
+		  }
+	});
+}
 // 멤버십 예약 취소
-api.post("/membership/unschedule", async (req, res) => {
+api.put("/membership/unschedule/:paymentUID", async (req, res) => {
     try {
-	  console.log("membership unschedule 호출");
-	  var userUID = req.body.userUID;
-      // 인증 토큰 발급 받기
-      const getToken = await axios({
-        url: "https://api.iamport.kr/users/getToken",
-        method: "post", // POST method
-        headers: { "Content-Type": "application/json" }, 
-        data: {
-          imp_key: imp_key,
-          imp_secret: imp_secret
-        }
-      });
+	  var paymentUID = req.params.paymentUID;
 
-	  const { access_token } = getToken.data.response; 
-
-	  var sql = "select customerUid from payment where userUID = ? and type = 'membership' order by regDate desc limit 1";
-	  db.query(sql, userUID, async (err, result) => {
+	  var sql = "select customerUid from payment where UID = ? and type = 'membership' order by regDate desc limit 1";
+	  db.query(sql, paymentUID, async (err, result) => {
 		  if (err) throw err;
 
-		  var customer_uid = result[0].customerUid;
-		  console.log(customer_uid);
+		  var customerUid = result[0].customerUid;
 
 		  // 3개월 내에 예약된 정기결제 조회
-		  const getScheduledData = await axios({
-			  url: `https://api.iamport.kr/subscribe/payments/schedule/customers/${customer_uid}`,
-			  method: "get", // GET method
-			  headers: { "Authorization": access_token },
-			  params: {
-				from: getNextDateTime(0), 
-				to: getNextDateTime(3)
-			  }
-		  }).catch(error => {
-			  console.log(error);
-		  });
-
-		  const { status } = getScheduledData;
+		  const scheduledData = await getScheduledData(customerUid);
+		  console.log(scheduledData);
+		  const { status } = scheduledData;
 		  if(status == 200){
-			  const { list } = getScheduledData.data.response;
-			  console.log(list);
-			  var merchant_uid = list[0].merchant_uid;
+			  const { list } = scheduledData.data.response;
+			  var merchantUid = list[0].merchant_uid;
 				
-			  // 예약된 내역 취소
-			  const getCancelData = await axios({
-				  url: "https://api.iamport.kr/subscribe/payments/unschedule",
-				  method: "post",
-				  headers: {
-					"Content-Type": "application/json",
-					"Authorization": access_token // 아임포트 서버로부터 발급받은 엑세스 토큰
-				  },
-				  data: {
-					customer_uid: customer_uid, // 가맹점 클라이언트로부터 받은 환불사유
-					merchant_uid: merchant_uid, // imp_uid를 환불 `unique key`로 입력
-				  }
-			});
+			  unscheduleFromIamport(customerUid, merchantUid);
+			  res.status(200).json({status:200, data: "true", message:"success"});
 		  }
 	  });
     } catch (e) {
