@@ -51,6 +51,9 @@ api.get('/:userUID', verifyToken, function (req, res) {
 						case "single": 
 							maxCount = 1;
 							break;
+						case "mobile":
+							maxCount = 1;
+							break;
 						case "friends":
 							maxCount = 3;
 							break;
