@@ -38,6 +38,7 @@ app.use('/logout', require('./api/logout.js'));
 app.use('/user', require('./api/user.js'));
 app.use('/category', require('./api/category.js'));
 app.use('/acc', require('./api/acc.js'));
+app.use('/calorie', require('./api/calorie.js'));
 
 app.use('/my_category', require('./api/my_category.js'));
 app.use('/my_acc', require('./api/my_acc.js'));

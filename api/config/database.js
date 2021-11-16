@@ -1,5 +1,6 @@
 //Mysql connect
-const mysql = require('mysql');
+const mysql = require('mysql'); // callback 형식 -> async await 사용 불가능
+//const mysql = require('mysql2/promise'); // promise 형식 -> async await 사용 가능
 
 var con = mysql.createConnection({
 	connectionLimit : 10,

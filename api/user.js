@@ -148,7 +148,7 @@ api.post('/overlapNick',
 		}
 );
 
-// 아이디 찾기
+// 아이디 찾기 - 간편 찾기
 api.post('/findId/simple', 
 		[
 			check("cellNumber", "cellNumber is required").not().isEmpty()

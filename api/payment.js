@@ -317,14 +317,14 @@ api.get('/membership/:userUID',
 			
 			var countSql = sql + ";";
 
-			sql += " limit ?, 10";
+			sql += " limit ?, " + pageCnt10;
 			var currentPage = req.query.page ? parseInt(req.query.page) : 1;
-			data.push((parseInt(currentPage) - 1) * 10);
+			data.push((parseInt(currentPage) - 1) * pageCnt10);
 
 			db.query(countSql+sql, data, function (err, result) {
 				if (err) throw err;
 
-				var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length);
+				var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length, pageCnt10);
 				res.status(200).json({status:200, 
 									  data: {
 									    paging: {startPage: startPage, endPage: endPage, totalPage: totalPage},
@@ -379,14 +379,15 @@ api.get('/product/:userUID',
 			
 			var countSql = sql + ";";
 
-			sql += " limit ?, 10";
+			sql += " limit ?, " + pageCnt10;
 			var currentPage = req.query.page ? parseInt(req.query.page) : 1;
-			data.push((parseInt(currentPage) - 1) * 10);
+			data.push((parseInt(currentPage) - 1) * pageCnt10);
 
 			db.query(countSql+sql, data, function (err, result) {
 				if (err) throw err;
+				console.log(result[0].length);
 
-				var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length);
+				var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length, pageCnt10);
 				res.status(200).json({status:200, 
 									  data: {
 									    paging: {startPage: startPage, endPage: endPage, totalPage: totalPage},
