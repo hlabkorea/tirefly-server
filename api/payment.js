@@ -421,7 +421,7 @@ async function scheduleMembership(access_token, customer_uid, laterNum, amount, 
 		  customer_uid: customer_uid, // 카드(빌링키)와 1:1로 대응하는 값
 		  schedules: [
 			{
-			  merchant_uid: getNewMerchantUid("3", name), // 새로 생성한 예약용 주문 번호 주문 번호
+			  merchant_uid: generateMerchantUid("3", name), // 새로 생성한 예약용 주문 번호 주문 번호
 			  schedule_at: getNextDateTime(laterNum), // 결제 시도 시각 in Unix Time Stamp
 			  amount: amount,
 			  name: name,
@@ -441,7 +441,11 @@ async function appendFreeMembership(imp_uid, access_token, customer_uid, name, c
 	await scheduleMembership(access_token, customer_uid, laterNum, amount, name, custom_data);
 }
 
-async function payForMembership(access_token, customer_uid, name, amount, custom_data){
+async function payForMembership(customer_uid, name, amount, custom_data){
+	// 인증 토큰 발급 받기
+	const token = await getToken();
+	const { access_token } = token.data.response; 
+
 	// 재결제
 	const paymentResult = await axios({
         url: 'https://api.iamport.kr/subscribe/payments/again',
@@ -449,7 +453,7 @@ async function payForMembership(access_token, customer_uid, name, amount, custom
         headers: { "Authorization": access_token },
         data: {
           customer_uid: customer_uid,
-          merchant_uid: getNewMerchantUid("2", name), // 새로 생성한 결제(재결제)용 주문 번호
+          merchant_uid: generateMerchantUid("2", name), // 새로 생성한 결제(재결제)용 주문 번호
           amount: amount,
           name: name,
         }
@@ -474,31 +478,87 @@ async function payForMembership(access_token, customer_uid, name, amount, custom
     }
 }
 
-// 정기결제 관해서 이니시스에 결제 요청
+// imp_uid로 아임포트 서버에서 결제 정보 조회
+async function getPaymentData(imp_uid){
+	// 인증 토큰 발급 받기
+	const token = await getToken();
+	const { access_token } = token.data.response; 
+
+	const paymentData = await axios({
+		url: `https://api.iamport.kr/payments/${imp_uid}`,
+		method: "get", // GET method
+		headers: { "Authorization": access_token } 
+	});
+
+	return paymentData.data.response;
+}
+
+// 빌링키 발급과 동시에 최초 결제
+async function issueBilling(customer_uid, name, amount, card_number, expiry, birth, pwd_2digit){
+	// 인증 토큰 발급 받기
+	const token = await getToken();
+	const { access_token } = token.data.response; 
+	console.log(access_token);
+	console.log(card_number);
+	console.log(pwd_2digit);
+	// 빌링키 발급 요청
+	/*const billingKey = await axios({
+		url: "https://api.iamport.kr/subscribe/payments/onetime",
+		method: "post",
+		headers: { "Authorization": access_token }, // 인증 토큰 Authorization header에 추가
+		data: {
+			merchant_uid: generateMerchantUid("2", name),
+			amount,
+			card_number, // 카드 번호
+			expiry, // 카드 유효기간
+			birth, // 생년월일
+			pwd_2digit
+		}
+	});*/
+	const billingKey = await axios({
+		url: `https://api.iamport.kr/subscribe/customers/${customer_uid}`,
+		method: "post",
+		headers: { "Authorization": access_token }, // 인증 토큰 Authorization header에 추가
+		data: {
+			card_number, // 카드 번호
+			expiry, // 카드 유효기간
+			birth, // 생년월일
+			pwd_2digit, // 카드 비밀번호 앞 두자리
+		}
+	});
+	console.log(billingKey);
+
+	return billingKey.data;
+}
+
+api.post("/subscription/issue-billing", async (req, res) => {
+	try {
+		const {
+			name, 
+			amount,
+			card_number, // 카드 번호
+			expiry, // 카드 유효기간
+			birth, // 생년월일
+			customer_uid, // 카드(빌링키)와 1:1로 대응하는 값
+			pwd_2digit
+		} = req.body; // req의 body에서 카드정보 추출
+
+		const { code, message } = await issueBilling(customer_uid, name, amount, card_number, expiry, birth, pwd_2digit);
+		if (code === 0) { // 빌링키 발급 성공
+			res.send({ status: "success", message: "Billing has successfully issued" });
+		} else { // 빌링키 발급 실패
+			res.send({ status: "failed", message });
+		}
+	} catch (e) {
+		res.status(400).send(e);
+	}
+});
+
+// 정기결제
 api.post("/billings", async (req, res) => {
     try {
       const { customer_uid, merchant_uid, imp_uid } = req.body; 
-
-      // 인증 토큰 발급 받기
-      const getToken = await axios({
-        url: "https://api.iamport.kr/users/getToken",
-        method: "post", // POST method
-        headers: { "Content-Type": "application/json" }, 
-        data: {
-          imp_key: imp_key,
-          imp_secret: imp_secret
-        }
-      });
-      const { access_token } = getToken.data.response; 
-
-	  // imp_uid로 아임포트 서버에서 결제 정보 조회
-      const getPaymentData = await axios({
-        url: `https://api.iamport.kr/payments/${imp_uid}`,
-        method: "get", // GET method
-        headers: { "Authorization": access_token } 
-      });
-
-	  var paymentData = getPaymentData.data.response; // 조회한 결제 정보
+	  const paymentData = await getPaymentData(imp_uid);
 	  var custom_data = paymentData.custom_data ? JSON.parse(paymentData.custom_data): '';
 	  var name = paymentData.name ? paymentData.name : '';
 	  var amount = paymentData.amount ? parseInt(paymentData.amount) : 0;
@@ -510,7 +570,7 @@ api.post("/billings", async (req, res) => {
 		  res.status(200).json({status: 200, data: "true", message: "결제 승인 성공"});
 	  }
 	  else{
-		  var result = await payForMembership(access_token, customer_uid, name, amount, custom_data);
+		  var result = await payForMembership(customer_uid, name, amount, custom_data);
 		  if(result.status == 200)
 			  res.status(200).json(result);
 		  else
@@ -985,44 +1045,24 @@ function saveOrder(paidId, paymentData){
 
 // 결제 승인, 예약결제가 시도되었을 때의 웹훅(Notification)
 api.post("/iamport-webhook", async (req, res) => {
-  try {
-    const { imp_uid, merchant_uid } = req.body;
-	const paidId = merchant_uid.substr(0,1);
+	try {
+		const { imp_uid, merchant_uid } = req.body;
+		const paidId = merchant_uid.substr(0,1);
 
-    // 액세스 토큰(access token) 발급 받기
-    const getToken = await axios({
-      url: "https://api.iamport.kr/users/getToken",
-      method: "post", // POST method
-      headers: { "Content-Type": "application/json" }, 
-      data: {
-        imp_key: imp_key, 
-        imp_secret: imp_secret
-      }
-    });
-    
-    const { access_token } = getToken.data.response; 
-    
-    // imp_uid로 아임포트 서버에서 결제 정보 조회
-    const getPaymentData = await axios({
-      url: `https://api.iamport.kr/payments/${imp_uid}`,
-      method: "get", // GET method
-      headers: { "Authorization": access_token } 
-    });
+		const paymentData = await getPaymentData(imp_uid);
+		const { status } = paymentData;
+		console.log(status);
 
-    const paymentData = getPaymentData.data.response; // 조회한 결제 정보
-    const { status } = paymentData;
-	console.log(status);
+		if (status === "paid") { // 결제 성공적으로 완료
+			saveOrder(paidId, paymentData);		
+		} else if (status == "cancelled") {
+			refundOrder(amount, merchant_uid);
+		}
 
-    if (status === "paid") { // 결제 성공적으로 완료
-		saveOrder(paidId, paymentData);		
-    } else if (status == "cancelled") {
-		refundOrder(amount, merchant_uid);
-    }
-
-	res.status(200).send("success");
-  } catch (e) {
-    res.status(400).send(e);
-  }
+		res.status(200).send("success");
+	} catch (e) {
+		res.status(400).send(e);
+	}
 });
 
 api.get('/:paymentUID', 
@@ -1045,7 +1085,7 @@ api.get('/:paymentUID',
 );
 
 // 주문번호 생성
-function getNewMerchantUid(startNo, level){
+function generateMerchantUid(startNo, level){
 	var merchantUid = startNo;
 	
 	switch (level) {

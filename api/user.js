@@ -14,6 +14,15 @@ const {sendJoinMail, sendPasswdMail} = require('./config/mail.js');
 const {maskEmail} = require('./config/masking');
 const {toHypenDateFormat} = require('./config/date.js');
 
+// 회원 조회
+api.get('/', function (req, res) {
+    var sql = "select UID, accName, imgPath, actImgPath, rectImgPath, status from acc";
+	db.query(sql, function (err, result) {
+		if (err) throw err;
+		res.status(200).json({status:200, data: result, message:"success"});	
+	});
+});
+
 // 회원가입
 api.post('/join', 
 		[
@@ -55,13 +64,16 @@ api.post('/join',
 						if (err) throw err;
 
 						// 멤버십 그룹에 초대된 사용자라면 membership_group 의 userUID 업데이트
-						var membership_sql = "select UID from membership_group where email = ?";
+						var membership_sql = "select UID from membership_group where email = ? and userUID = 0";
 						db.query(membership_sql, email, function (err, result) {
 							if (err) throw err;
 
 							if(result.length > 0){
-								var update_sql = "update membership_group set userUID = ? where UID = ?";
-								var update_data = [userUID, result[0].UID];
+								var updateUIDs = [];
+								for(var i in result)
+									updateUIDs.push(result[i].UID);
+								var update_sql = "update membership_group set userUID = ? where UID in (?)";
+								var update_data = [userUID, updateUIDs];
 
 								db.query(update_sql, update_data, function (err, result) {
 									if (err) throw err;

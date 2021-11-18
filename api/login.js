@@ -37,7 +37,6 @@ api.post('/',
                   if(result[0].nickName.length > 0)
                     redirect = "contents";
 				  
-				  // 멤버십에 초대되어있었는지 확인
 				  var membership_sql = "select level, endDate from membership "
 									 + "where date_format(membership.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') and userUID = ?";
 

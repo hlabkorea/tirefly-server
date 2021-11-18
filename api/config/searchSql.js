@@ -1,12 +1,11 @@
 exports.addSearchSql = (searchType, searchWord) => {
 	var sql = "";
-	console.log(sql);
 	if(searchType.length != 0){
 		if(searchType == "videoName") 
 			sql = "and video.videoName ";
 		else if(searchType == "teacherName")
 			sql = "and teacher.teacherName ";
-		else if(searchType == "teacherNickname")
+		else if(searchType == "teacherNick")
 			sql = "and teacher.teacherNickname ";
 
 		sql += "LIKE '%" + searchWord + "%' ";

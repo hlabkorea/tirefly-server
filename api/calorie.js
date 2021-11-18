@@ -24,4 +24,40 @@ api.post('/', verifyAdminToken, function (req, res) {
 	});
 });
 
+// cms - 카테고리의 칼로리 조회
+api.get('/:categoryUID', verifyAdminToken, function (req, res) {
+	var categoryUID = req.params.categoryUID;
+	var sql = "select UID as calorieUID, level, consume from calorie where categoryUID = ?";
+
+	db.query(sql, categoryUID, function (err, result) {
+		if (err) throw err;
+
+		res.status(200).json({status:200, data: result, message:"success"});	
+	});
+});
+
+// cms - 카테고리의 칼로리 수정
+api.put('/:categoryUID', verifyAdminToken, function (req, res) {
+	var adminUID = req.adminUID;
+	var calorieList = req.body.calorieList;
+	var categoryUID = req.params.categoryUID;
+	var sql = "";
+	var data = [];
+	for(var i in calorieList){
+		var consume = calorieList[i].consume;
+		var calorieUID = calorieList[i].calorieUID;
+		sql += "update calorie set categoryUID = ?, consume = ?, updateUID = ? where UID = ?;";
+		data.push(categoryUID);
+		data.push(consume);
+		data.push(adminUID);
+		data.push(calorieUID);
+	}
+
+	db.query(sql, data, function (err, result) {
+		if (err) throw err;
+
+		res.status(200).json({status:200, data: "true", message:"success"});	
+	});
+});
+
 module.exports = api;

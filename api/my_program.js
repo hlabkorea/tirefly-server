@@ -26,7 +26,7 @@ api.put('/:programUID',
                         data = result[0].UID;
                         message = "프로그램이 취소되었습니다.";
                     } else{
-                        sql = "insert INTO my_program(userUID, programUID) values(?, ?)";
+                        sql = "insert into my_program(userUID, programUID) values(?, ?)";
                         message = "프로그램이 시작되었습니다.";
                     }
 

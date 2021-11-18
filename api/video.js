@@ -7,6 +7,8 @@ const {getError} = require('./config/requestError.js');
 const {getPageInfo} = require('./config/paging.js'); 
 const {upload} = require('./config/uploadFile.js');
 const {addSearchSql, addVodSearchSql} = require('./config/searchSql.js');
+var querystring = require("querystring");
+var crypto = require('crypto');
 const pageCnt15 = 15;
 
 // cms - vod 정보 조회
@@ -51,6 +53,36 @@ api.get('/', verifyAdminToken, function (req, res) {
 							  }, 
 							  message:"success"});
 	});
+});
+
+// cms - cloud에 비디오 업로드
+api.post('/signature', function (req, res) {
+	var secret_id = "IKIDTnsrdAQQAdqnTs1tVrxnMfhfcVM8oIXW";
+	var secret_key = "mIZaKo2zg6GAoCJAk47uQgfOs52i8HAm";
+	
+	// Determine the current time and expiration time of the signature
+	var current = parseInt((new Date()).getTime() / 1000)
+	var expired = current + 86400;  // Signature validity period: 1 day
+
+	// Enter parameters into the parameter list
+	var arg_list = {
+		secretId : secret_id,
+		currentTimeStamp : current,
+		expireTime : expired,
+		random : Math.round(Math.random() * Math.pow(2, 32))
+	}
+
+	// Calculate the signature
+	var orignal = querystring.stringify(arg_list);
+	var orignal_buffer = new Buffer(orignal, "utf8");
+
+	var hmac = crypto.createHmac("sha1", secret_key);
+	var hmac_buffer = hmac.update(orignal_buffer).digest();
+
+	var signature = Buffer.concat([hmac_buffer, orignal_buffer]).toString("base64");
+	console.log(signature);
+
+	res.status(200).json({status:200, data: {signature: signature}, message:"success"});
 });
 
 // cms - 영상 업로드
@@ -118,7 +150,8 @@ api.put('/image/:videoUID',
 			var videoUID = req.params.videoUID;
 			var filename = req.file.filename;
 			var imgType = req.body.imgType;
-			var sql = `update video set ${imgType} = '${filename}' where UID = ${videoUID}`;
+			var sql = "update video set " + imgType + " = ? where UID = ?";
+			var data = [filename, videoUID]
 			db.query(sql, function (err, result, fields) {
 				if (err) throw err;
 
@@ -131,14 +164,14 @@ api.put('/image/:videoUID',
 api.put('/status/:videoUID', verifyAdminToken, function (req, res) {
 	var videoUID = req.params.videoUID;
 	var status = req.body.status;
-	var sql = "update video set status = ? where UID = ?";
-	var data = [status, videoUID];
-	const exec = db.query(sql, data, function (err, result, fields) {
+	var adminUID = req.adminUID;
+	var sql = "update video set status = ?, updateUID = ? where UID = ?";
+	var data = [status, adminUID, videoUID];
+	db.query(sql, data, function (err, result, fields) {
 		if (err) throw err;
 
 		res.status(200).send({status:200, data: "true", message:"success"});
 	});
-	console.log(exec.sql);
 });
 
 // 최신 업로드 영상 조회
@@ -280,7 +313,10 @@ api.get('/category/:categoryUID',
 // 상세보기 - 비디오 설명
 api.get('/:videoUID', verifyToken, function (req, res) {
   var sql = "select video.UID, video.videoType, video.videoName, video.categoryUID, category.categoryName, video.videoLevel, video.totalPlayTime, video.playTimeValue, video.videoThumbnail, video.contentsPath, "
-		  + "video.playContents, video.teacherUID, video.videoURL, video.liveStartDate, video.liveEndDate, calorie.consume, video.isPlayBGM, video.status "
+		  + "video.playContents, video.teacherUID, video.videoURL, video.liveStartDate, video.liveEndDate, calorie.consume, video.isPlayBGM, video.status, "
+		  + "(case	when videoLevel = '초급'  then calorie1 "
+		  + "when videoLevel = '중급' then calorie2 "
+		  + "when videoLevel = '고급' then calorie3 end) AS consume "
           + "from video "
           + "join category on video.categoryUID = category.UID "
           + "join calorie on category.UID = calorie.categoryUID "

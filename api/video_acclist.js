@@ -23,7 +23,6 @@ api.put('/:videoUID', verifyAdminToken, function (req, res) {
 	var videoUID = req.params.videoUID;
 	var data = [];
 	var acc = req.body.acc;
-	var acc = req.body.acc;
 
 	for(var i in acc){
 		data.push([videoUID, acc[i], adminUID]);

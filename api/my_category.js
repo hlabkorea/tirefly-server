@@ -27,7 +27,7 @@ api.post('/',
                         data.push([req.body.userId, category[i]]);
                     }
 
-                    var sql = "insert INTO my_category(userUID, categoryUID) VALUES ?;";
+                    var sql = "insert into my_category(userUID, categoryUID) values ?;";
                     db.query(sql, [data], function (err, result, fields) {
                         if (err) throw err;
 
