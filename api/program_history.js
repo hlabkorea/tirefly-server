@@ -76,4 +76,19 @@ api.get('/proceeding/:userUID', verifyToken, function (req, res) {
     });
 });
 
+// 프로그램 재생 이력 조회
+api.get('/:userUID', function (req, res) {
+	var userUID = req.params.userUID;
+    var sql = "select program_history.programUID, program.programName, video.videoName, program_history.playTime, program_history.complete, program_history.updateDate "
+			+ "from program_history "
+			+ "join program on program_history.programUID = program.UID "
+			+ "join video on program_history.videoUID = video.UID "
+			+ "where program_history.userUID = ?";
+	db.query(sql, userUID, function (err, result) {
+		if (err) throw err;
+
+		res.status(200).json({status:200, data: result, message:"success"});	
+	});
+});
+
 module.exports = api;

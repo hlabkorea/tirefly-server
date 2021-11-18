@@ -17,7 +17,7 @@ api.get('/', function (req, res) {
 // cms - 카테고리 조회
 api.get('/:categoryUID', function (req, res) {
 	var categoryUID = req.params.categoryUID;
-	var sql = "select categoryName, categoryImg, status from category where UID = ?";
+	var sql = "select categoryName, categoryImg, status, calorie1, calorie2, calorie3 from category where UID = ?";
 	db.query(sql, categoryUID, function (err, result) {
 		if (err) throw err;
 
@@ -30,8 +30,11 @@ api.post('/', verifyAdminToken, function (req, res) {
 	var categoryName = req.body.categoryName;
 	var adminUID = req.adminUID;
 	var status = req.body.status;
-    var sql = "insert category(categoryName, regUID, status) values(?, ?, ?)";
-	var data = [categoryName, adminUID, status];
+	var calorie1 = req.body.calorie1;
+	var calorie2 = req.body.calorie2;
+	var calorie3 = req.body.calorie3;
+    var sql = "insert category(categoryName, regUID, status, calorie1, calorie2, calorie3) values(?, ?, ?, ?, ?, ?)";
+	var data = [categoryName, adminUID, status, calorie1, calorie2, calorie3];
 
 	db.query(sql, data, function (err, result) {
 		if (err) throw err;
@@ -75,8 +78,11 @@ api.put('/:categoryUID', verifyAdminToken, function (req, res) {
 	var categoryName = req.body.categoryName;
 	var status = req.body.status;
 	var adminUID = req.adminUID;
-    var sql = "update category set categoryName = ?, status = ?, updateUID = ? where UID = ?";
-	var data = [categoryName, status, adminUID, categoryUID];
+	var calorie1 = req.body.calorie1;
+	var calorie2 = req.body.calorie2;
+	var calorie3 = req.body.calorie3;
+    var sql = "update category set categoryName = ?, status = ?, calorie1 = ?, calorie2 = ?, calorie3 = ?, updateUID = ? where UID = ?";
+	var data = [categoryName, status, calorie1, calorie2, calorie3, adminUID, categoryUID];
 	db.query(sql, data, function (err, result) {
 		if (err) throw err;
 		res.status(200).json({status:200, data: "true", message:"success"});

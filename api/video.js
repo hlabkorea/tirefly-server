@@ -314,9 +314,9 @@ api.get('/category/:categoryUID',
 api.get('/:videoUID', verifyToken, function (req, res) {
   var sql = "select video.UID, video.videoType, video.videoName, video.categoryUID, category.categoryName, video.videoLevel, video.totalPlayTime, video.playTimeValue, video.videoThumbnail, video.contentsPath, "
 		  + "video.playContents, video.teacherUID, video.videoURL, video.liveStartDate, video.liveEndDate, calorie.consume, video.isPlayBGM, video.status, "
-		  + "(case	when videoLevel = '초급'  then calorie1 "
+		  + "cast((case	when videoLevel = '초급'  then calorie1 "
 		  + "when videoLevel = '중급' then calorie2 "
-		  + "when videoLevel = '고급' then calorie3 end) AS consume "
+		  + "when videoLevel = '고급' then calorie3 end) as char(4)) AS consume " // float -> varchar : 처음 설정이 varchar 였어서 앱에서 타입 에러 발생하기 때문에
           + "from video "
           + "join category on video.categoryUID = category.UID "
           + "join calorie on category.UID = calorie.categoryUID "

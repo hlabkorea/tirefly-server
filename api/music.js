@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('./config/database.js');
 const {verifyToken, verifyAdminToken} = require("./config/authCheck.js");
 const {upload} = require('./config/uploadFile.js');
+const fs = require('fs');
 const api = express.Router();
 
 // 카테고리에 맞는 음악 조회
@@ -63,6 +64,35 @@ api.put('/:musicUID', verifyAdminToken, function (req, res) {
 		if (err) throw err;
 
 		res.status(200).json({status:200, data: "true", message:"success"});
+	});
+});
+
+// 카테고리에 맞는 음악 수정
+api.delete('/:musicUID', verifyAdminToken, function (req, res) {
+	var musicUID = req.params.musicUID;
+    var sql = "select musicPath from music where UID = ?";
+    
+	db.query(sql, musicUID, function (err, result) {
+		if (err) throw err;
+
+		var filePath = '../motif-server/views/files/';
+		var filename = result[0].musicPath;
+
+		// 파일이 존재하면 삭제
+		fs.exists(filePath + filename, function (exists) {
+			if(exists){							
+				fs.unlink(filePath + filename, function (err) {
+					if (err) throw err;
+				});
+			}
+		});
+
+		var deleteSql = "delete from music where UID = ?";
+		db.query(deleteSql, musicUID, function (err, result) {
+			if (err) throw err;
+
+			res.status(200).json({status:200, data: "true", message:"success"});
+		});
 	});
 });
 

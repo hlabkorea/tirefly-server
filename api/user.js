@@ -3,7 +3,7 @@ const sha256 = require('sha256');
 const db = require('./config/database.js');
 const jwt = require("jsonwebtoken");
 const secretObj = require("./config/jwt.js");
-const {verifyToken} = require("./config/authCheck.js");
+const {verifyToken, verifyAdminToken} = require("./config/authCheck.js");
 const api = express.Router();
 const fs = require('fs');
 const sharp = require('sharp');
@@ -13,13 +13,36 @@ const {getError} = require('./config/requestError.js');
 const {sendJoinMail, sendPasswdMail} = require('./config/mail.js');
 const {maskEmail} = require('./config/masking');
 const {toHypenDateFormat} = require('./config/date.js');
+const {addSearchSql} = require('./config/searchSql.js');
+const {getPageInfo} = require('./config/paging.js'); 
+const pageCnt15 = 15;
 
 // 회원 조회
-api.get('/', function (req, res) {
-    var sql = "select UID, accName, imgPath, actImgPath, rectImgPath, status from acc";
-	db.query(sql, function (err, result) {
+api.get('/', verifyAdminToken, function (req, res) {
+    var sql = "select UID as userUID, email, nickName, cellNumber, gender, birthday from user where UID >= 1 ";
+	var searchType = req.query.searchType;
+	var searchWord = req.query.searchWord;
+	sql += addSearchSql(searchType, searchWord);
+	
+	sql += "order by UID ";
+	
+	var countSql = sql + ";";
+
+	sql += "limit ?, " + pageCnt15;
+	var currentPage = req.query.page ? parseInt(req.query.page) : 1;
+	var data = parseInt(currentPage - 1) * pageCnt15;
+	
+	db.query(countSql+sql, data, function (err, result, fields) {
 		if (err) throw err;
-		res.status(200).json({status:200, data: result, message:"success"});	
+
+		var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length, pageCnt15);
+
+		res.status(200).json({status:200, 
+							  data: {
+								paging: {startPage: startPage, endPage: endPage, totalPage: totalPage},
+								result: result[1]
+							  }, 
+							  message:"success"});
 	});
 });
 
@@ -347,7 +370,7 @@ api.get('/:userUID', verifyToken, async function (req, res) {
 	var userUID = req.params.userUID;
 
 	// 사용자 정보 조회
-	var info_sql = "select profileImg, email, cellNumber, nickName, birthday, gender, height, weight, purpose, intensity, frequency, theHours, momentum "
+	var info_sql = "select profileImg, email, cellNumber, nickName, birthday, gender, height, weight, purpose, intensity, frequency, theHours, momentum, regDate "
 				+ "from user "
 				+ "where UID = ?";
 	await db.query(info_sql, userUID, function (err, result, fields) {

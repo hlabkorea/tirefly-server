@@ -58,4 +58,18 @@ api.put('/:videoUID',
         }
 );
 
+// 비디오 재생 이력 조회
+api.get('/:userUID', function (req, res) {
+	var userUID = req.params.userUID;
+    var sql = "select video_history.videoUID, video.videoName, video_history.playTime, video_history.complete, video_history.updateDate "
+			+ "from video_history "
+			+ "join video on video_history.videoUID = video.UID "
+			+ "where video_history.userUID = ?";
+	db.query(sql, userUID, function (err, result) {
+		if (err) throw err;
+
+		res.status(200).json({status:200, data: result, message:"success"});	
+	});
+});
+
 module.exports = api;
