@@ -16,7 +16,7 @@ api.get('/', function (req, res) {
 	});
 });
 
-// cms - 카테고리 조회
+// cms - 악세사리 상세조회
 api.get('/:accUID', function (req, res) {
 	var accUID = req.params.accUID;
 	var sql = "select accName, imgPath, actImgPath, rectImgPath, status from acc where UID = ?";

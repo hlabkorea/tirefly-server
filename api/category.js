@@ -17,7 +17,7 @@ api.get('/', function (req, res) {
 	});
 });
 
-// cms - 카테고리 조회
+// cms - 카테고리 상세조회
 api.get('/:categoryUID', function (req, res) {
 	var categoryUID = req.params.categoryUID;
 	var sql = "select categoryName, categoryImg, status, calorie1, calorie2, calorie3 from category where UID = ?";
