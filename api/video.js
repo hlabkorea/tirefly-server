@@ -247,7 +247,7 @@ api.get('/live',
 			if(errors.isEmpty()){
 				var startDate = req.query.startDate;
 				var endDate = req.query.endDate;
-				var sql = "select video.liveStartDate, teacher.teacherImg, video.videoName, teacher.teacherName, video.videoLevel, video.playTimeValue "
+				var sql = "select video.UID as videoUID, video.liveStartDate, teacher.teacherImg, video.videoName, teacher.teacherName, video.videoLevel, video.playTimeValue "
 						+ "from video "
 						+ "join teacher on teacher.UID = video.teacherUID "
 						+ "where videoType = 'live' and (date_format(video.liveStartDate, '%Y-%m-%d') between ? and ?) and video.status = 'act' "
