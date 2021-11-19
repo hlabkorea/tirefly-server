@@ -152,7 +152,7 @@ api.put('/image/:videoUID',
 			var imgType = req.body.imgType;
 			var sql = "update video set " + imgType + " = ? where UID = ?";
 			var data = [filename, videoUID]
-			db.query(sql, function (err, result, fields) {
+			db.query(sql, data, function (err, result, fields) {
 				if (err) throw err;
 
 				res.status(200).json({status:200, data:{filename: filename}, message: "success"});

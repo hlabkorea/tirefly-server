@@ -75,7 +75,7 @@ api.put('/status/:accUID', verifyAdminToken, function (req, res) {
 api.put('/:accUID', verifyAdminToken, function (req, res) {
 	var accUID = req.params.accUID;
 	var accName = req.body.accName;
-	var status = req.body.adminUID;
+	var status = req.body.status;
 	var adminUID = req.adminUID;
     var sql = "update acc set accName = ?, status = ? where UID = ?";
 	var data = [accName, status, accUID];

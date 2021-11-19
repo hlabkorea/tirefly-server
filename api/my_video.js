@@ -34,7 +34,7 @@ api.get('/isLike/:videoUID',
 api.get('/:userUID', verifyToken, function (req, res) {
   var sql = "select video.UID as videoUID, video.videoThumbnail "
           + "from my_video join video on my_video.videoUID = video.UID "
-          + "where my_video.userUID = ? "
+          + "where my_video.userUID = ? and video.status = 'act' "
           + "order by my_video.regDate desc";
   var data = req.params.userUID;
 
