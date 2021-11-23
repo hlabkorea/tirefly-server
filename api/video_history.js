@@ -34,7 +34,7 @@ api.put('/:videoUID',
                                 sql = "update video_history set playTime = ?, complete = ? where UID=?";
                                 data = [clientPlayTime, clientComplete, videoHistoryUID];
                             } else {
-                                sql = "update video_history set playTime = ?, where UID = ?";
+                                sql = "update video_history set playTime = ? where UID = ?";
                                 data = [clientPlayTime, videoHistoryUID];
                             }
                         } else {

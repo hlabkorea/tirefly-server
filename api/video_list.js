@@ -43,13 +43,14 @@ api.put('/:videoUID', verifyAdminToken, function (req, res) {
 			});
 		}
 
-		var sql = "insert into video_list(videoUID, listName, video_list.order, listStartTime, listPlayTime, regUID) values ?;";
-		db.query(sql, [data], function (err, result, fields) {
-			if (err) throw err;
+		if(videoList.length != 0){
+			var sql = "insert into video_list(videoUID, listName, video_list.order, listStartTime, listPlayTime, regUID) values ?;";
+			db.query(sql, [data], function (err, result, fields) {
+				if (err) throw err;
+			});
+		}	
 
-			res.status(200).send({status:200, data: "true", message:"success"});
-		});
-
+		res.status(200).send({status:200, data: "true", message:"success"});
 	});
 });
 

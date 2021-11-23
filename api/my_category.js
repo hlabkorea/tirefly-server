@@ -19,7 +19,6 @@ api.post('/',
                 db.query(sql, req.body.userId, function (err, result, fields) {
                     if (err) throw err;
 
-                    console.log(result +"delete");
                     var data = [];
                     var category = JSON.parse(req.body.category);
 
@@ -27,13 +26,13 @@ api.post('/',
                         data.push([req.body.userId, category[i]]);
                     }
 
-                    var sql = "insert into my_category(userUID, categoryUID) values ?;";
-                    db.query(sql, [data], function (err, result, fields) {
-                        if (err) throw err;
-
-                        console.log(result +"insert")
-                        res.status(200).send({status:200, data: "true", message:"success"});
-                    });
+					if(category.length != 0){
+						var sql = "insert into my_category(userUID, categoryUID) values ?;";
+						db.query(sql, [data], function (err, result, fields) {
+							if (err) throw err;
+						});
+					}
+					res.status(200).send({status:200, data: "true", message:"success"});
                 });
             }
         }

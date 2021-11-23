@@ -44,13 +44,15 @@ api.put('/:videoUID', verifyAdminToken, function (req, res) {
 				if (err) throw err;
 			});
 		}
-		
-		var insertSql = "insert into video_acclist(videoUID, accUID, regUID) values ?;";
-		db.query(insertSql, [data], function (err, result, fields) {
-			if (err) throw err;
 
-			res.status(200).send({status:200, data: "true", message:"success"});
-		});
+		if(acc.length != 0){
+			var insertSql = "insert into video_acclist(videoUID, accUID, regUID) values ?;";
+
+			db.query(insertSql, [data], function (err, result, fields) {
+				if (err) throw err;
+			});	
+		}
+		res.status(200).send({status:200, data: "true", message:"success"});
 	});
 });
 

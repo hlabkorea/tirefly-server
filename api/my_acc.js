@@ -27,12 +27,13 @@ api.post('/',
                         data.push([req.body.userId, acc[i]]);
                     }
 
-                    var sql = "insert INTO my_acc(userUID, accUID) VALUES ?;";
-                    db.query(sql, [data], function (err, result, fields) {
-                        if (err) throw err;
-
-                        res.status(200).send({status:200, data: "true", message:"success"});
-                    });
+					if(acc.length != 0){						
+						var sql = "insert INTO my_acc(userUID, accUID) VALUES ?;";
+						db.query(sql, [data], function (err, result, fields) {
+							if (err) throw err;			
+						});
+					}
+					res.status(200).send({status:200, data: "true", message:"success"});
                 });
             }
         }
