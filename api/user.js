@@ -332,7 +332,7 @@ api.put('/image/:userUID',
 );
 
 // 프로필 이미지 삭제하여 기본 이미지로 변경
-api.put('/basic_img/:userUID', 
+api.put('/basic_image/:userUID', 
 		verifyToken,
 		function (req, res) {
 			var userUID = req.params.userUID;

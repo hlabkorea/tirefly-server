@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- jQuery -->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js" ></script>
+	<script src="https://cdn-go.cn/cdn/vod-js-sdk-v6/latest/vod-js-sdk-v6.js"></script>
+	<!-- axios -->
+	<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <input type="file" id="videoInput" />
+	<input type="button" id="submit" onclick="uploadiVideo();" value="업로드" />
+    <script>
+	function uploadiVideo(){
+		function getSignature() {
+			const url = "http://43.133.64.160:3001/video/signature";
+			return axios.post(url).then(function (response) {
+			  return response.data.data.signature;
+			})
+		};
+
+		const tcVod = new TcVod.default({
+			getSignature: getSignature // The function to get the upload signature described above
+		});
+
+		var mediaFile = $("#videoInput")[0].files[0];
+		console.log(mediaFile);
+		const uploader = tcVod.upload({
+			mediaFile: mediaFile,
+			mediaName: "업로드 테스트"
+		});
+
+		// When the video upload is completed
+		uploader.on('media_upload', function(info) {
+			console.log(info);
+			console.log("upload 성공");
+			//uploaderInfo.isVideoUploadSuccess = true;
+		});
+
+		// Video upload progress
+		uploader.on('media_progress', function(info) {
+			console.log(info);
+			console.log("upload 중");
+			console.log(info.percent);
+			//uploaderInfo.progress = info.percent;
+		});
+
+		// When the cover upload is completed
+		uploader.on('cover_upload', function(info) {
+			//uploaderInfo.isCoverUploadSuccess = true;
+		});
+
+		// Cover upload progress
+		uploader.on('cover_progress', function(info) {
+			//uploaderInfo.coverProgress = info.percent;
+		});
+
+		uploader.done().then(function (doneResult) {
+		// Deal with doneResult
+		});
+	}
+    </script>
+</body>
+</html>
