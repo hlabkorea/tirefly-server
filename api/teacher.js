@@ -12,13 +12,10 @@ api.get('/', verifyToken, function (req, res) {
 	var sql = "select UID as teacherUID, teacherImg, teacherName, teacherNickName, teacherGender, regDate,status from teacher where UID >= 1 ";
 	var searchType = req.query.searchType ? req.query.searchType : '';
 	var searchWord = req.query.searchWord ? req.query.searchWord : '';
-	var type = req.query.type ? req.query.type : '';
-	var status = req.query.status ? req.query.status : '';
+	var status = req.query.status ? req.query.status : 'act';
 	var data = [];
 
-	if(type != "cms")
-		sql += "and status = 'act' ";
-	if(status != "all" && status.length != 0){
+	if(status != "all"){
 		sql += "and teacher.status = ? ";
 		data.push(status);
 	}

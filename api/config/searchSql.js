@@ -11,6 +11,8 @@ exports.addSearchSql = (searchType, searchWord) => {
 			sql = "and user.email ";
 		else if (searchType == "userTel")
 			sql = "and user.cellNumber ";
+		else if (searchType == "programName")
+			sql = "and program.programName ";
 
 		sql += "LIKE '%" + searchWord + "%' ";
 	}

@@ -13,9 +13,9 @@ const pageCnt15 = 15;
 
 // cms - vod 정보 조회
 api.get('/', verifyAdminToken, function (req, res) {
-	var searchType = req.query.searchType;
-	var searchWord = req.query.searchWord;
-	var status = req.query.status;
+	var searchType = req.query.searchType ? req.query.searchType : '';
+	var searchWord = req.query.searchWord ? req.query.searchWord : '';
+	var status = req.query.status ? req.query.status : 'act';
 	var sql = "select video.UID as videoUID, video.videoThumbnail, video.videoName, category.categoryName, teacher.teacherName, video.videoLevel, video.regDate, video.status, video.categoryUID "
 		  + "from video "
 		  + "join teacher on video.teacherUID = teacher.UID "
@@ -32,27 +32,34 @@ api.get('/', verifyAdminToken, function (req, res) {
 		data.push(status);
 	}
 
-	console.log(sql);
-
 	sql += "order by video.regDate desc ";
-	var countSql = sql + ";";
 
-	sql += "limit ?, " + pageCnt15;
-	var currentPage = req.query.page ? parseInt(req.query.page) : 1;
-	data.push(parseInt(currentPage - 1) * pageCnt15);
 	
+	var currentPage = req.query.page ? parseInt(req.query.page) : '';
+	if(currentPage != ''){
+		var countSql = sql + ";";
+		sql += "limit ?, " + pageCnt15;
+		data.push(parseInt(currentPage - 1) * pageCnt15);
+		
+		db.query(countSql+sql, data, function (err, result, fields) {
+			if (err) throw err;
+			var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length, pageCnt15);
 
-	db.query(countSql+sql, data, function (err, result, fields) {
-		if (err) throw err;
-		var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length, pageCnt15);
+			res.status(200).json({status:200, 
+								  data: {
+									paging: {startPage: startPage, endPage: endPage, totalPage: totalPage},
+									result: result[1]
+								  }, 
+								  message:"success"});
+		});
+	}
+	else {
+		db.query(sql, data, function (err, result, fields) {
+			if (err) throw err;
 
-		res.status(200).json({status:200, 
-							  data: {
-								paging: {startPage: startPage, endPage: endPage, totalPage: totalPage},
-								result: result[1]
-							  }, 
-							  message:"success"});
-	});
+			res.status(200).json({status:200, data: result, message:"success"});
+		});
+	}
 });
 
 // cms - cloud에 비디오 업로드

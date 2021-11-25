@@ -5,7 +5,57 @@ const api = express.Router();
 const {check} = require('express-validator');
 const {getError} = require('./config/requestError.js');
 const {getPageInfo} = require('./config/paging.js'); 
+const {addSearchSql} = require('./config/searchSql.js');
 const pageCnt15 = 15;
+
+// cms - 프로그램 정보 조회
+api.get('/', 
+        verifyToken,
+        function (req, res) {
+			var searchType = req.query.searchType ? req.query.searchType : '';
+			var searchWord = req.query.searchWord ? req.query.searchWord : '';
+			var status = req.query.status ? req.query.status : 'act';
+			var sql = "select UID as programUID, programThumbnail, programName, programLevel, weekNumber, updateDate, status from program where UID >= 1 ";
+
+			sql += addSearchSql(searchType, searchWord);
+
+			var data = [];
+
+			if(status != "all"){
+				sql += "and program.status = ? ";
+				data.push(status);
+				data.push(status);
+			}
+
+			sql += "order by program.UID desc, program.regDate desc ";
+
+			var currentPage = req.query.page ? parseInt(req.query.page) : '';
+			if(currentPage != ''){
+				var countSql = sql + ";";
+				sql += "limit ?, " + pageCnt15;
+				data.push(parseInt(currentPage - 1) * pageCnt15);
+				
+				db.query(countSql+sql, data, function (err, result, fields) {
+					if (err) throw err;
+					var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length, pageCnt15);
+
+					res.status(200).json({status:200, 
+										  data: {
+											paging: {startPage: startPage, endPage: endPage, totalPage: totalPage},
+											result: result[1]
+										  }, 
+										  message:"success"});
+				});
+			}
+			else {
+				db.query(sql, data, function (err, result, fields) {
+					if (err) throw err;
+
+					res.status(200).json({status:200, data: result, message:"success"});
+				});
+			}
+        }	
+);
 
 // 프로그램 상세 정보 조회
 api.get('/:programUID', 
