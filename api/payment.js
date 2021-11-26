@@ -46,7 +46,7 @@ api.get('/',
 			var membershipSql = "select payment.UID as paymentUID, payment.merchantUid, if(payment_product_list.optionUID = 0, '-', '') as optionName, membership.level as korName, payment.buyerEmail, user.cellNumber as buyerTel, payment.amount, payment.payMethod, payment.orderStatus, payment.regDate "
 							  + "from payment "
 							  + "join payment_product_list on payment.UID = payment_product_list.paymentUID "
-							  + "join membership on payment_product_list.productUID = membership.UID "
+							  + "join membership on payment_product_list.membershipUID = membership.UID "
 							  + "join user on membership.userUID = user.UID "
 							  + "where date_format(payment.regDate, '%Y-%m-%d') between ? and ? ";
 
@@ -310,7 +310,7 @@ api.get('/membership/:userUID',
 			var userUID = req.params.userUID;
 			var sql = "select payment.UID as paymentUID, payment.name, payment.amount, payment.payMethod, payment.regDate, payment_product_list.membershipEndDate "
 					+ "from payment "
-					+ "join payment_product_list on payment.UID = payment_product_list.paymentUID "
+					+ "join payment_product_list on payment.UID = payment_product_list.membershipUID "
 					+ "where payment.userUID = ? and payment.type = 'membership' "
 					+ "order by payment.regDate desc ";
 			var data = [userUID, userUID];
@@ -888,7 +888,7 @@ function updateMembership(level, laterNum, membershipUID){
 // 주문에 대한 멤버십 정보 추가
 function insertOrderMembership(paymentUID, membershipUID, laterNum){
 	console.log("insertOrderMembership");
-	var productPaymentInsertSql = "insert payment_product_list(paymentUID, productUID, membershipEndDate) values (?, ?, date_add(now(), interval ? month))";
+	var productPaymentInsertSql = "insert payment_product_list(paymentUID, membershipUID, membershipEndDate) values (?, ?, date_add(now(), interval ? month))";
 	var productPaymentInsertData = [paymentUID, membershipUID, laterNum];
 
 	db.query(productPaymentInsertSql, productPaymentInsertData, function (err, result) {
