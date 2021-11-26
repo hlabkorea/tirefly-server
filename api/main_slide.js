@@ -6,7 +6,7 @@ const api = express.Router();
 
 // 메인 슬라이드(배너) 조회
 api.get('/', verifyToken, function (req, res) {
-    var sql = "select UID as slideUID, imgPath, type, url, page, args from main_slide";
+    var sql = "select UID as slideUID, imgPath, type, url, page, args, updateDate from main_slide";
 	db.query(sql, function (err, result) {
 		if (err) throw err;
 

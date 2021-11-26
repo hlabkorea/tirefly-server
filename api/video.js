@@ -320,14 +320,13 @@ api.get('/category/:categoryUID',
 // 상세보기 - 비디오 설명
 api.get('/:videoUID', verifyToken, function (req, res) {
   var sql = "select video.UID, video.videoType, video.videoName, video.categoryUID, category.categoryName, video.videoLevel, video.totalPlayTime, video.playTimeValue, video.videoThumbnail, video.contentsPath, "
-		  + "video.playContents, video.teacherUID, video.videoURL, video.liveStartDate, video.liveEndDate, calorie.consume, video.isPlayBGM, video.status, "
+		  + "video.playContents, video.teacherUID, video.videoURL, video.liveStartDate, video.liveEndDate, video.isPlayBGM, video.status, "
 		  + "cast((case	when videoLevel = '초급'  then calorie1 "
 		  + "when videoLevel = '중급' then calorie2 "
 		  + "when videoLevel = '고급' then calorie3 end) as char(4)) AS consume " // float -> varchar : 처음 설정이 varchar 였어서 앱에서 타입 에러 발생하기 때문에
           + "from video "
           + "join category on video.categoryUID = category.UID "
-          + "join calorie on category.UID = calorie.categoryUID "
-          + "where video.UID = ? and video.videoLevel = calorie.level";
+          + "where video.UID = ?";
 
   var data = req.params.videoUID;
 

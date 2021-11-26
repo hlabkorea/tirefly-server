@@ -23,7 +23,7 @@ api.get('/auth/:userUID', verifyToken, function (req, res) {
 				if(currentDateTime <= endDate)
 					res.status(200).json({status:200,  data: "true", message:"success"});
 				else
-					res.status(200).json({status:200,  data: "false", message:"fail"});
+					res.status(403).json({status:403,  data: "false", message:"이용 중인 멤버십이 존재합니다. 남은 기간을 소진한 후 다시 이용해주세요."});
 			}
 			else
 				res.status(200).json({status:200,  data: "false", message:"fail"});
