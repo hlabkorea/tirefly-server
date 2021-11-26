@@ -87,7 +87,6 @@ api.post('/signature', function (req, res) {
 	var hmac_buffer = hmac.update(orignal_buffer).digest();
 
 	var signature = Buffer.concat([hmac_buffer, orignal_buffer]).toString("base64");
-	console.log(signature);
 
 	res.status(200).json({status:200, data: {signature: signature}, message:"success"});
 });
@@ -347,7 +346,6 @@ function makevideoList(result){
 	// 비디오마다 운동기구 리스트 추가
 	if(result.length > 0){
 	  for(var i in result){
-		  console.log(rowIdx);
 		if(result[i].UID != rowIdx){
 		  if(rowIdx != -1)
 			responseData.push(obj);

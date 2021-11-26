@@ -30,11 +30,10 @@ api.get('/', verifyToken, function (req, res) {
 
 		sql += "limit ?, " + pageCnt15;
 		var pageLimit = parseInt(currentPage - 1) * pageCnt15;
-		console.log(pageLimit);
 		if(status != "all")
 			data.push(status);
 		data.push(pageLimit);
-		const exec = db.query(countSql+sql, data, function (err, result, fields) {
+		db.query(countSql+sql, data, function (err, result, fields) {
 			if (err) throw err;
 
 			var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length, pageCnt15);
@@ -46,7 +45,6 @@ api.get('/', verifyToken, function (req, res) {
 							  }, 
 							  message:"success"});
 		});
-		console.log(exec.sql);
 	}
 	else{ // 전체 조회
 		db.query(sql, data, function (err, result, fields) {

@@ -124,7 +124,6 @@ api.post('/overlapEmail',
 			if(errors.isEmpty()){
 				var sql = "select count(email) as cnt from user where email = ?";
 				var data = req.body.email;
-				console.log(req.body.email);
 				db.query(sql, data, function (err, result, fields) {
 					if (err) throw err;
 
@@ -321,7 +320,6 @@ api.put('/image/:userUID',
 				var userUID = req.params.userUID;
 				var sql = "update user set profileImg = ? where UID = ?";
 				var data = [filename, userUID];
-				console.log(data);
 				db.query(sql, data, function (err, result, fields) {
 					if (err) throw err;
 

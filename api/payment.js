@@ -73,7 +73,7 @@ api.get('/',
 			var currentPage = req.query.page ? parseInt(req.query.page) : 1;
 			data.push(parseInt(currentPage - 1) * pageCnt15);
 
-			const exec = db.query(countSql+sql, data, function (err, result) {
+			db.query(countSql+sql, data, function (err, result) {
 				if (err) throw err;
 
 				var totalPrice = result[0][0].totalPrice;
@@ -91,8 +91,6 @@ api.get('/',
 									  }, 
 									  message:"success"});
 			});
-
-			console.log(exec.sql);
 		}
 );
 
@@ -385,7 +383,6 @@ api.get('/product/:userUID',
 
 			db.query(countSql+sql, data, function (err, result) {
 				if (err) throw err;
-				console.log(result[0].length);
 
 				var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length, pageCnt10);
 				res.status(200).json({status:200, 
@@ -469,7 +466,6 @@ async function payForMembership(customer_uid, name, amount, custom_data){
 		  return {status: 200, data: "true", message: "결제 승인 성공"};
 
         } else { 
-			console.log(message);
 		  return {status: 403, data: "false", message: "승인 결제 실패"}; //카드 승인 실패 (예: 고객 카드 한도초과, 거래정지카드, 잔액부족 등)
         }
       } 
@@ -498,9 +494,6 @@ async function issueBilling(customer_uid, name, amount, card_number, expiry, bir
 	// 인증 토큰 발급 받기
 	const token = await getToken();
 	const { access_token } = token.data.response; 
-	console.log(access_token);
-	console.log(card_number);
-	console.log(pwd_2digit);
 	// 빌링키 발급 요청
 	/*const billingKey = await axios({
 		url: "https://api.iamport.kr/subscribe/payments/onetime",
@@ -526,7 +519,6 @@ async function issueBilling(customer_uid, name, amount, card_number, expiry, bir
 			pwd_2digit, // 카드 비밀번호 앞 두자리
 		}
 	});
-	console.log(billingKey);
 
 	return billingKey.data;
 }
@@ -577,7 +569,6 @@ api.post("/billings", async (req, res) => {
 			  res.status(403).json(result);
 	  }
     } catch (e) {
-		console.log(e);
       res.status(400).send(e);
     }
 });
@@ -629,7 +620,6 @@ async function refundFromIamport(refundMsg, impUid, refundAmount){
 // 이니시스에 환불 요청
 api.put("/refund/complete/:paymentUID", async (req, res) => {
     try {
-		console.log("refund 호출");
 		var paymentUID = req.params.paymentUID;
 		var refConfMsg = req.body.refConfMsg;
 		var orderStatus = req.body.orderStatus;
@@ -660,7 +650,6 @@ api.put("/refund/complete/:paymentUID", async (req, res) => {
 async function getScheduledData(customerUid){
 	const token = await getToken();
 	const { access_token } = token.data.response; 
-	console.log(access_token);
 	const scheduledData = await axios({
 		url: `https://api.iamport.kr/subscribe/payments/schedule/customers/${customerUid}`,
 		method: "get", // GET method
@@ -669,15 +658,12 @@ async function getScheduledData(customerUid){
 			from: getNextDateTime(0), 
 			to: getNextDateTime(3)
 		}
-	}).catch(error => {
-		console.log(error);
 	});
 
 	return scheduledData;
 }
 
 async function unscheduleFromIamport(customerUid, merchantUid){
-	console.log("멤버십 해지");
 	const token = await getToken();
 	const { access_token } = token.data.response; 
 	
@@ -707,7 +693,6 @@ api.put("/membership/unschedule/:paymentUID", async (req, res) => {
 
 		  // 3개월 내에 예약된 정기결제 조회
 		  const scheduledData = await getScheduledData(customerUid);
-		  console.log(scheduledData);
 		  const { status } = scheduledData;
 		  if(status == 200){
 			  const { list } = scheduledData.data.response;
@@ -863,7 +848,6 @@ function sendPaymentEmail(email, paymentUID){
 
 // 주문에 대한 상품 정보 추가
 function saveOrderProduct(paymentUID, productUID, optionUID, count, buyerEmail){
-	console.log("saveOrderProduct");
 	var productPaymentInsertSql = "insert payment_product_list(paymentUID, productUID, optionUID, count) values (?, ?, ?, 1)";
 	var productPaymentInsertData = [paymentUID, productUID, optionUID];
 
@@ -876,7 +860,6 @@ function saveOrderProduct(paymentUID, productUID, optionUID, count, buyerEmail){
 
 // 멤버십 정보 업데이트
 function updateMembership(level, laterNum, membershipUID){
-	console.log("updateMembership");
 	var membershipUpdateSql = "update membership set level = ?, endDate = date_add(now(), interval ? month) where UID = ?";
 	var membershipUpdateData = [level, laterNum, membershipUID];
 
@@ -887,7 +870,6 @@ function updateMembership(level, laterNum, membershipUID){
 
 // 주문에 대한 멤버십 정보 추가
 function insertOrderMembership(paymentUID, membershipUID, laterNum){
-	console.log("insertOrderMembership");
 	var productPaymentInsertSql = "insert payment_product_list(paymentUID, membershipUID, membershipEndDate) values (?, ?, date_add(now(), interval ? month))";
 	var productPaymentInsertData = [paymentUID, membershipUID, laterNum];
 
@@ -898,7 +880,6 @@ function insertOrderMembership(paymentUID, membershipUID, laterNum){
 
 // 멤버십 정보 추가
 function insertMembership(userUID, level, laterNum, paymentUID){
-	console.log("insertMembership");
 	var membershipInsertSql = "insert membership(userUID, level, endDate, paymentUID) values (?, ?, date_add(now(), interval ? month), ?)";
 	var membershipInsertData = [userUID, level, laterNum, paymentUID];
 
@@ -913,7 +894,6 @@ function insertMembership(userUID, level, laterNum, paymentUID){
 
 // membership 정보 추가/업데이트
 function checkAndInsertMembership(userUID, level, paymentUID, laterNum){
-	console.log("checkAndInsertMembership");
 	var membershipSelectSql = "select UID from membership where userUID = ?";
 	db.query(membershipSelectSql, userUID, function (err, result) {
 		if (err) throw err;
@@ -1000,7 +980,6 @@ function saveOrder(paidId, paymentData){
 	var paymentUID = 0;
 	db.query(paymentInsertSql, paymentInsertData, function (err, result) {
 		if (err) throw err;
-		console.log(result);
 		
 		paymentUID = result.insertId;
 		
@@ -1051,7 +1030,6 @@ api.post("/iamport-webhook", async (req, res) => {
 
 		const paymentData = await getPaymentData(imp_uid);
 		const { status } = paymentData;
-		console.log(status);
 
 		if (status === "paid") { // 결제 성공적으로 완료
 			saveOrder(paidId, paymentData);		
