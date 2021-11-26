@@ -310,7 +310,7 @@ api.get('/membership/:userUID',
 			var userUID = req.params.userUID;
 			var sql = "select payment.UID as paymentUID, payment.name, payment.amount, payment.payMethod, payment.regDate, payment_product_list.membershipEndDate "
 					+ "from payment "
-					+ "join payment_product_list on payment.UID = payment_product_list.membershipUID "
+					+ "join payment_product_list on payment.UID = payment_product_list.paymentUID "
 					+ "where payment.userUID = ? and payment.type = 'membership' "
 					+ "order by payment.regDate desc ";
 			var data = [userUID, userUID];
