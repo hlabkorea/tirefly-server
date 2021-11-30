@@ -18,7 +18,7 @@ api.post('/check', function (req, res) {
 	if(qtVer == userQtVer)
 		res.status(200).json({status:200, data: "true", message:"success"});
 	else
-		res.status(403).json({status:403, data: "https://api.motifme.io/files/motif", message:"fail"});
+		res.status(403).json({status:403, data: {fileURL: "https://api.motifme.io/files/motif"}, message:"fail"});
 });
 
 module.exports = api;
