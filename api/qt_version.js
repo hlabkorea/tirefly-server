@@ -5,7 +5,7 @@ const {verifyToken} = require("./config/authCheck.js");
 const api = express.Router();
 
 // 버전 체크
-api.post('/check', verifyToken, function (req, res) {
+api.post('/check', function (req, res) {
 	var serial = "m005";
 	var qtVer = "1.0.0";
 	var userQtVer = req.body.version;
