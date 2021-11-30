@@ -78,4 +78,6 @@ app.use('/main_slide', require('./api/main_slide.js'));
 app.use('/newsletter', require('./api/newsletter.js'));
 
 app.use('/admin', require('./api/admin.js'));
-app.use('/adminLogin', require('./api/adminLogin.js'));
+app.use('/admin_login', require('./api/admin_login.js'));
+
+app.use('/qt_version', require('./api/qt_version.js'));
