@@ -1,6 +1,6 @@
 const express = require('express');
 const db = require('./config/database.js');
-const {verifyToken} = require("./config/authCheck.js");
+const {verifyToken, verifyAdminToken} = require("./config/authCheck.js");
 const api = express.Router();
 const {check} = require('express-validator');
 const {getError} = require('./config/requestError.js');
@@ -86,6 +86,52 @@ api.get('/complete/:programUID',
                         });
                 }
         }
+);
+
+// cms - 프로그램 리스트 추가
+api.put('/:programUID', 
+		verifyAdminToken,
+		function (req, res) {
+			var adminUID = req.adminUID;
+			var programUID = req.params.programUID;
+			var programList = req.body.programList;
+
+			var selectSql = "select UID from program_list where programUID = ?";
+			db.query(selectSql, programUID, function (err, selectResult, fields) {
+				if (err) throw err;
+
+				// 이미 program에 대한 리스트가 존재하면 삭제
+				if(selectResult.length != 0){
+					var deleteData = [];
+					for(var i in selectResult){
+						deleteData.push(selectResult[i].UID);
+					}
+
+					var deleteSql = "delete from program_list where UID in (?);";
+					db.query(deleteSql, [deleteData], function (err, selectResult, fields) {
+						if (err) throw err;
+					});
+				}
+				var data = [];
+				for(var i in programList){
+					var weekly = programList[i].weekly;
+					var programData = programList[i].data;
+					for(var j in programData){
+						var videoUID = programData[j].videoUID;
+						var day = programData[j].day;
+						var isRest = programData[j].isRest;
+						data.push([programUID, videoUID, weekly, day, isRest, adminUID]);
+					}
+				}
+
+				var sql = "insert program_list(programUID, videoUID, weekly, day, isRest, regUID) values ?;";
+				db.query(sql, [data], function (err, result, fields) {
+					if (err) throw err;
+
+					res.status(200).json({status:200,  data: "true", message:"success"});
+				});
+			});
+		}
 );
 
 module.exports = api;

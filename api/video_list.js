@@ -30,7 +30,7 @@ api.put('/:videoUID', verifyAdminToken, function (req, res) {
 	db.query(selectSql, videoUID, function (err, selectResult, fields) {
 		if (err) throw err;
 
-		// 이미 video에 대한 운동 기구들이 존재하면 삭제
+		// 이미 video에 대한 리스트가 존재하면 삭제
 		if(selectResult.length != 0){
 			var deleteData = [];
 			for(var i in selectResult){

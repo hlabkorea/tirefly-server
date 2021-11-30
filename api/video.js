@@ -166,7 +166,7 @@ api.put('/image/:videoUID',
 		}
 );
 
-// cms - 이미지 활성화 여부 수정
+// cms - 영상 활성화 여부 수정
 api.put('/status/:videoUID', verifyAdminToken, function (req, res) {
 	var videoUID = req.params.videoUID;
 	var status = req.body.status;

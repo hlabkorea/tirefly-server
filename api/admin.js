@@ -5,7 +5,22 @@ const jwt = require("jsonwebtoken");
 const secretObj = require("./config/jwt.js");
 const {verifyAdminToken} = require("./config/authCheck.js");
 const {verifyToken} = require("./config/authCheck.js");
+const {upload} = require('./config/uploadFile.js');
 const api = express.Router();
+
+// 관리자 상세정보 조회
+api.get('/:adminUID',
+		verifyAdminToken,
+		function (req, res) {
+			var adminUID = req.params.adminUID;
+			var sql = "select name, email, department, imgPath from admin where UID = ?";
+			db.query(sql, adminUID, function (err, result) {
+				if (err) throw err;
+
+				res.status(200).json({status:200, data: result[0], message:"success"});
+			});
+		}
+);
 
 // 관리자 계정 회원가입
 api.post('/join',
@@ -82,6 +97,23 @@ api.put('/password',
 			});
 
 			console.log(exec.sql);
+		}
+);
+
+// cms - 관리자 프로필 이미지 변경
+api.put('/image/:adminUID', 
+		verifyAdminToken,
+		upload.single("img"), 
+		function (req, res) {
+			var adminUID = req.params.adminUID;
+			var filename = req.file.filename;
+			var sql = "update admin set imgPath = ? where UID = ?";
+			var data = [filename, adminUID];
+			db.query(sql, data, function (err, result, fields) {
+				if (err) throw err;
+
+				res.status(200).json({status:200, data:{filename: filename}, message: "success"});
+			});
 		}
 );
 
