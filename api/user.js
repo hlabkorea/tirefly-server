@@ -3,18 +3,18 @@ const sha256 = require('sha256');
 const db = require('./config/database.js');
 const jwt = require("jsonwebtoken");
 const secretObj = require("./config/jwt.js");
-const {verifyToken, verifyAdminToken} = require("./config/authCheck.js");
+const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
 const api = express.Router();
 const fs = require('fs');
 const sharp = require('sharp');
-const {upload} = require('./config/uploadFile.js');
-const {check} = require('express-validator');
-const {getError} = require('./config/requestError.js');
-const {sendJoinMail, sendPasswdMail} = require('./config/mail.js');
-const {maskEmail} = require('./config/masking');
-const {toHypenDateFormat} = require('./config/date.js');
-const {addSearchSql} = require('./config/searchSql.js');
-const {getPageInfo} = require('./config/paging.js'); 
+const { upload } = require('./config/uploadFile.js');
+const { check } = require('express-validator');
+const { getError } = require('./config/requestError.js');
+const { sendJoinMail, sendPasswdMail } = require('./config/mail.js');
+const { maskEmail } = require('./config/masking');
+const { toHypenDateFormat } = require('./config/date.js');
+const { addSearchSql } = require('./config/searchSql.js');
+const { getPageInfo } = require('./config/paging.js'); 
 const pageCnt15 = 15;
 
 // 회원 조회

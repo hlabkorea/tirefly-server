@@ -1,10 +1,10 @@
 const express = require("express"); 
 const db = require('./config/database.js');
 const api = express.Router();
-const {getPageInfo} = require('./config/paging.js'); 
-const {verifyToken, verifyAdminToken} = require("./config/authCheck.js");
-const {check} = require('express-validator');
-const {getError} = require('./config/requestError.js');
+const { getPageInfo } = require('./config/paging.js'); 
+const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
+const { check } = require('express-validator');
+const { getError } = require('./config/requestError.js');
 const pageCnt10 = 10;
 
 // 웹에서 faq 조회와 검색

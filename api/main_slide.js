@@ -1,7 +1,7 @@
 const express = require('express');
 const db = require('./config/database.js');
-const {verifyToken, verifyAdminToken} = require("./config/authCheck.js");
-const {upload} = require('./config/uploadFile.js');
+const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
+const { upload } = require('./config/uploadFile.js');
 const api = express.Router();
 
 // 메인 슬라이드(배너) 조회

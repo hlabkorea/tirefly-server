@@ -1,9 +1,9 @@
 const express = require('express');
 const db = require('./config/database.js');
 const api = express.Router();
-const {verifyToken} = require("./config/authCheck.js");
-const {check} = require('express-validator');
-const {getError} = require('./config/requestError.js');
+const { verifyToken } = require("./config/authCheck.js");
+const { check } = require('express-validator');
+const { getError } = require('./config/requestError.js');
 
 // 장바구니 추가
 api.post('/:productUID', 

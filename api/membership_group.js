@@ -1,10 +1,10 @@
 const express = require('express');
 const db = require('./config/database.js');
-const {verifyToken} = require("./config/authCheck.js");
+const { verifyToken } = require("./config/authCheck.js");
 const api = express.Router();
-const {check} = require('express-validator');
-const {getError} = require('./config/requestError.js');
-const {sendInviteEmail} = require('./config/mail.js');
+const { check } = require('express-validator');
+const { getError } = require('./config/requestError.js');
+const { sendInviteEmail } = require('./config/mail.js');
 
 // 멤버십 그룹에 추가
 api.post('/', 

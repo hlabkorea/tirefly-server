@@ -1,11 +1,8 @@
 const express = require('express');
 const db = require('./config/database.js');
-const {verifyToken} = require("./config/authCheck.js");
+const { verifyToken } = require("./config/authCheck.js");
 const api = express.Router();
-const {check} = require('express-validator');
-const {getError} = require('./config/requestError.js');
-const {toDotDateFormat} = require('./config/toDateFormat.js');
-const {getCurrentDateTime, toHypenDateFormat} = require('./config/date.js');
+const { getCurrentDateTime, toHypenDateFormat } = require('./config/date.js');
 
 // 멤버십 소유자인지 조회
 api.get('/auth/:userUID', verifyToken, function (req, res) {

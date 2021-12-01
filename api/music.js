@@ -1,7 +1,7 @@
 const express = require('express');
 const db = require('./config/database.js');
-const {verifyToken, verifyAdminToken} = require("./config/authCheck.js");
-const {upload} = require('./config/uploadFile.js');
+const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
+const { upload } = require('./config/uploadFile.js');
 const fs = require('fs');
 const api = express.Router();
 

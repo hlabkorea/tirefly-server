@@ -1,12 +1,12 @@
 const express = require("express"); 
 const db = require('./config/database.js');
 const api = express.Router();
-const {upload} = require('./config/uploadFile.js');
-const {getPageInfo} = require('./config/paging.js'); 
-const {verifyToken, verifyAdminToken} = require("./config/authCheck.js");
-const {check} = require('express-validator');
-const {sendInquiryMail} = require('./config/mail.js');
-const {getError} = require('./config/requestError.js');
+const { upload } = require('./config/uploadFile.js');
+const { getPageInfo } = require('./config/paging.js'); 
+const { verifyAdminToken } = require("./config/authCheck.js");
+const { check } = require('express-validator');
+const { sendInquiryMail } = require('./config/mail.js');
+const { getError } = require('./config/requestError.js');
 const userPageCnt = 10;
 
 // 문의 조회
