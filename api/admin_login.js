@@ -4,9 +4,7 @@ const jwt = require("jsonwebtoken");
 const secretObj = require("./config/jwt.js");
 const api = express.Router();
 const sha256 = require('sha256');
-const {
-    check
-} = require('express-validator');
+const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 
 // 로그인

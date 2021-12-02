@@ -79,5 +79,6 @@ app.use('/newsletter', require('./api/newsletter.js'));
 
 app.use('/admin', require('./api/admin.js'));
 app.use('/admin_login', require('./api/admin_login.js'));
+app.use('/admin_log', require('./api/admin_log.js'));
 
 app.use('/qt_version', require('./api/qt_version.js'));
