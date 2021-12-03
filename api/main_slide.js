@@ -3,6 +3,8 @@ const db = require('./config/database.js');
 const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
 const { upload } = require('./config/uploadFile.js');
 const api = express.Router();
+const { check } = require('express-validator');
+const { getError } = require('./config/requestError.js');
 
 // 메인 슬라이드(배너) 조회
 api.get('/', verifyToken, function (req, res) {
@@ -26,21 +28,39 @@ api.get('/:slideUID', verifyAdminToken, function (req, res) {
 });
 
 // cms - 메인 슬라이드(배너) 생성
-api.post('/', verifyAdminToken, function (req, res) {
-	var adminUID = req.adminUID;
-	var type = req.body.type;
-	var url = req.body.url;
-	var page = req.body.page;
-	var args = req.body.args;
-    var sql = "insert main_slide(type, url, page, args, regUID) values (?, ?, ?, ?, ?)";
-	var data = [type, url, page, args, adminUID];
+api.post('/',
+    verifyAdminToken,
+    [
+        check("type", "type is required").not().isEmpty(),
+        check("url", "url is required").not().isEmpty(),
+        check("page", "page is required").not().isEmpty(),
+        check("args", "args is required").not().isEmpty()
+    ], 
+    function (req, res) {
+        const errors = getError(req, res);
+		if(errors.isEmpty()){
+            var adminUID = req.adminUID;
+            var type = req.body.type;
+            var url = req.body.url;
+            var page = req.body.page;
+            var args = req.body.args;
+            var sql = "insert main_slide(type, url, page, args, regUID) values (?, ?, ?, ?, ?)";
+            var data = [type, url, page, args, adminUID];
 
-	db.query(sql, data, function (err, result) {
-		if (err) throw err;
+            db.query(sql, data, function (err, result) {
+                if (err) throw err;
 
-		res.status(200).json({status:200, data: {slideUID: result.insertId}, message:"success"});	
-	});
-});
+                res.status(200).json({
+                    status: 200,
+                    data: {
+                        slideUID: result.insertId
+                    },
+                    message: "success"
+                });
+            });
+        }
+    }
+);
 
 // cms - 메인 슬라이드(배너) 이미지 업로드
 api.put('/image/:slideUID', 
@@ -58,24 +78,39 @@ api.put('/image/:slideUID',
 			});
 		}
 );
-
 // cms - 메인 슬라이드(배너) 수정
-api.put('/:slideUID', verifyAdminToken, function (req, res) {
-	var adminUID = req.adminUID;
-	var slideUID = req.params.slideUID;
-	var type = req.body.type;
-	var url = req.body.url;
-	var page = req.body.page;
-	var args = req.body.args;
-    var sql = "update main_slide set type = ?, url = ?, page = ?, args = ?, updateUID = ? where UID = ?";
-	var data = [type, url, page, args, adminUID, slideUID];
+api.put('/:slideUID',
+    verifyAdminToken,
+    [
+        check("type", "type is required").not().isEmpty(),
+        check("url", "url is required").not().isEmpty(),
+        check("page", "page is required").not().isEmpty(),
+        check("args", "args is required").not().isEmpty()
+    ], 
+    function (req, res) {
+        const errors = getError(req, res);
+		if(errors.isEmpty()){
+            var adminUID = req.adminUID;
+            var slideUID = req.params.slideUID;
+            var type = req.body.type;
+            var url = req.body.url;
+            var page = req.body.page;
+            var args = req.body.args;
+            var sql = "update main_slide set type = ?, url = ?, page = ?, args = ?, updateUID = ? where UID = ?";
+            var data = [type, url, page, args, adminUID, slideUID];
 
-	db.query(sql, data, function (err, result) {
-		if (err) throw err;
+            db.query(sql, data, function (err, result) {
+                if (err) throw err;
 
-		res.status(200).json({status:200, data: "true", message:"success"});	
-	});
-});
+                res.status(200).json({
+                    status: 200,
+                    data: "true",
+                    message: "success"
+                });
+            });
+        }
+    }
+);
 
 // cms - 메인 슬라이드(배너) 삭제
 api.delete('/:slideUID', verifyAdminToken, function (req, res) {
