@@ -1042,7 +1042,7 @@ api.post("/iamport-webhook", async (req, res) => {
 });
 
 // app-store 결제 정보
-api.post("/app-store", async (req, res) => {
+api.post("/app-store/v1", async (req, res) => {
 	try {
         console.log(req.body);
         res.status(200).send("success");
