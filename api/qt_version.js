@@ -31,7 +31,7 @@ api.post('/check', function (req, res) {
         res.status(403).json({
             status: 403,
             data: {
-                fileURL: "https://api.motifme.io/files/motif"
+                fileURL: "https://api.motifme.io/files/motif.tar.gz"
             },
             message: "fail"
         });

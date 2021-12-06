@@ -9,7 +9,7 @@ api.get('/',
         var sql = "select product.UID, product_img_list.imgPath, korName, engName, originPrice, discountRate, discountPrice, dcShippingFee as shippingFee " +
             "from product " +
             "join product_img_list on product.UID = product_img_list.productUID " +
-            "where status='ACT' ";
+            "where status='act' and category != 'membership' ";
 
         if (category != undefined) {
             if (category.length != 0) {

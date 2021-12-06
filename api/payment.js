@@ -720,7 +720,7 @@ api.get('/refund',
 						 + "count(case when orderStatus = '취소미승인'  then 1 end ) as refNoCnt "
 						 + "from payment "
 						 + "join user on payment.userUID = user.UID "
-						 + "where payment.orderStatus != '결제완료' and payment.type = 'product' and (date_format(payment.regDate, '%Y-%m-%d') between ? and ?) "
+						 + "where payment.orderStatus != '결제완료' and payment.type = 'product' and (date_format(payment.reqDate, '%Y-%m-%d') between ? and ?) "
 			var sql = "select payment.UID as paymentUID, payment.merchantUid, product.korName, product_option_list.optionName, payment.buyerName, payment.buyerEmail, buyerTel, ifnull(payment.refundMsg, '') as refundMsg, "
 					+ "ifnull(payment.refConfMsg, '') as refConfMsg, orderStatus, if(reqDate = '0000-01-01 00:00:00', '', reqDate) as reqDate, if(refConfDate = '0000-01-01 00:00:00', '', refConfDate) as refConfDate "
 					+ "from payment "
@@ -728,7 +728,7 @@ api.get('/refund',
 					+ "join payment_product_list on payment.UID = payment_product_list.paymentUID "
 					+ "join product on payment_product_list.productUID = product.UID "
 					+ "join product_option_list on payment_product_list.optionUID = product_option_list.UID "
-					+ "where payment.type = 'product' and (date_format(payment.regDate, '%Y-%m-%d') between ? and ?) and payment.orderStatus != '결제완료' ";
+					+ "where payment.type = 'product' and (date_format(payment.reqDate, '%Y-%m-%d') between ? and ?) and payment.orderStatus != '결제완료' ";
 					
 			if(status != "all"){
 				sql += "and payment.orderStatus = '" + status + "' ";
