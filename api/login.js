@@ -20,7 +20,7 @@ api.post('/',
             var password= req.body.password;
   
 			// 아이디 비밀번호 확인
-            var sql = "select * from user where email=? and password=?";
+            var sql = "select * from user where email=? and password=? where status != 'deleted'";
             var data = [email, sha256(password)];
             var userUID = 0;
             var token = '';
@@ -33,7 +33,10 @@ api.post('/',
                 } else{
                   userUID = result[0].UID;
                   var redirect = "setting";
-                  if(result[0].nickName.length > 0)
+
+                  if(result[0].status == "sleep")
+                    redirect = "sleep";
+                  else if(result[0].nickName.length > 0)
                     redirect = "contents";
 				  
 				  var membership_sql = "select level, endDate from membership "

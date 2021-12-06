@@ -13,7 +13,7 @@ api.get('/',
             var sql = "select admin_log.UID as logUID, admin_log.adminUID, admin.email, admin.name, admin.department, admin_log.regDate "
                     + "from admin_log "
                     + "join admin on admin_log.adminUID = admin.UID "
-                    + "order by regDate ";
+                    + "order by regDate desc ";
             var countSql = sql + ";";
             sql += "limit ?, " + pageCnt30;
 

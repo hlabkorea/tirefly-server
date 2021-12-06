@@ -19,9 +19,9 @@ const pageCnt15 = 15;
 
 // 회원 조회
 api.get('/', verifyAdminToken, function (req, res) {
-    var sql = "select UID as userUID, email, nickName, cellNumber, gender, birthday from user where UID >= 1 ";
-	var searchType = req.query.searchType;
-	var searchWord = req.query.searchWord;
+    var sql = "select UID as userUID, email, nickName, cellNumber, gender, birthday, status from user where UID >= 1 ";
+	var searchType = req.query.searchType ? req.query.searchType : '';
+	var searchWord = req.query.searchWord ? req.query.searchWord : '';
 	sql += addSearchSql(searchType, searchWord);
 	
 	sql += "order by UID ";
@@ -46,6 +46,56 @@ api.get('/', verifyAdminToken, function (req, res) {
 	});
 });
 
+// 프로필 조회
+api.get('/:userUID', verifyToken, async function (req, res) {
+	var responseData = {};
+	var userUID = req.params.userUID;
+
+	// 사용자 정보 조회
+	var info_sql = "select profileImg, email, cellNumber, nickName, birthday, gender, height, weight, purpose, intensity, frequency, theHours, momentum, regDate "
+				+ "from user "
+				+ "where UID = ?";
+	await db.query(info_sql, userUID, function (err, result, fields) {
+		if (err) throw err;
+
+		if(result.length != 0){
+			if(result[0].birthday != null){
+				result[0].birthday = toHypenDateFormat(result[0].birthday);
+			}
+			responseData = result[0];
+		}
+	});
+
+	// 관심운동 조회
+	var category_sql = "select category.UID as UID, category.categoryName "
+					+ "from my_category "
+					+ "join category on my_category.categoryUID = category.UID "
+					+ "where my_category.userUID = ?";
+	await db.query(category_sql, userUID, function (err, result, fields) {
+		if (err) throw err;
+
+		responseData.categories = [];
+		if(result.length != 0)
+			responseData.categories = result;
+	});
+
+	// 보유장비 조회
+	var acc_sql = "select acc.UID as accUID, accName, acc.imgPath "
+				+ "from my_acc "
+				+ "join acc on my_acc.accUID = acc.UID "
+				+ "where my_acc.userUID = ?";
+	db.query(acc_sql, userUID, function (err, result, fields) {
+		if (err) throw err;
+
+		responseData.accs = [];
+		
+		if(result.length != 0)
+			responseData.accs = result;
+			
+		res.status(200).json({status:200, data: responseData, message:"success"});
+	});
+});
+
 // 회원가입
 api.post('/join', 
 		[
@@ -57,8 +107,8 @@ api.post('/join',
 			const errors = getError(req, res);
 			
 			if(errors.isEmpty()){
-				var sql = "insert into user(email, password, cellNumber) "
-						+ "values (?, ?, ?)";
+				var sql = "insert into user(email, password, cellNumber, status) "
+						+ "values (?, ?, ?, 'act')";
 				var email = req.body.email;
 				var passwd = sha256(req.body.password);
 				var cellNumber = req.body.cellNumber;
@@ -122,13 +172,16 @@ api.post('/overlapEmail',
 		function (req, res) {
 			const errors = getError(req, res);
 			if(errors.isEmpty()){
-				var sql = "select count(email) as cnt from user where email = ?";
+				var sql = "select status from user where email = ?";
 				var data = req.body.email;
 				db.query(sql, data, function (err, result, fields) {
 					if (err) throw err;
 
-					if(result[0].cnt > 0){
-						res.status(403).json({status:403, data: "false", message:"이미 등록된 이메일주소 입니다."});
+					if(result.length > 0){
+                        if(result[0].status == 'deleted')
+                            res.status(403).json({status:403, data: "false", message:"탈퇴 회원입니다."});
+                        else
+						    res.status(403).json({status:403, data: "false", message:"이미 등록된 이메일주소 입니다."});
 					}else{
 						res.status(200).json({status:200, data: "true", message:"사용 가능한 이메일 입니다."});
 					}
@@ -145,7 +198,7 @@ api.post('/existEmail',
 		function (req, res) {
 			const errors = getError(req, res);
 			if(errors.isEmpty()){
-				var sql = "select count(email) as cnt from user where email = ?";
+				var sql = "select count(email) as cnt from user where email = ? and status != 'deleted'"; // 블랙리스트 계정인 inact 상태는 일단 고려하지 않았습니다
 				var data = req.body.email;
 				db.query(sql, data, function (err, result, fields) {
 					if (err) throw err;
@@ -207,6 +260,34 @@ api.post('/findId/simple',
 		}
 );
 
+// 비밀번호 찾기
+api.post('/findPw', 
+		[
+			check("email", "email is required").not().isEmpty()
+		],
+		function (req, res) {
+			const errors = getError(req, res);
+			if(errors.isEmpty()){
+				var toEmail = req.body.email;
+
+				var key = randomString();
+				var sql = "insert into pwd_auth(email, authKey) values (?, ?)";
+				
+				var data = [toEmail, key];
+				db.query(sql, data, function (err, result, fields) {
+					if (err) throw err;
+
+					if(req.body.type == "web"){
+						res.status(200).json({status:200, data:key, message: "success"});
+					} else {
+						sendPasswdMail(toEmail);
+						res.status(200).json({status:200, data:"true", message: "비밀번호 재설정 메일이 전송되었습니다."});
+					}
+				});
+			}
+		}
+);
+
 // 비밀번호 변경
 api.put('/password', 
 		[
@@ -240,34 +321,6 @@ api.put('/password',
 							if (err) throw err;
 						});		
 					});
-				});
-			}
-		}
-);
-
-// 비밀번호 찾기
-api.post('/findPw', 
-		[
-			check("email", "email is required").not().isEmpty()
-		],
-		function (req, res) {
-			const errors = getError(req, res);
-			if(errors.isEmpty()){
-				var toEmail = req.body.email;
-
-				var key = randomString();
-				var sql = "insert into pwd_auth(email, authKey) values (?, ?)";
-				
-				var data = [toEmail, key];
-				db.query(sql, data, function (err, result, fields) {
-					if (err) throw err;
-
-					if(req.body.type == "web"){
-						res.status(200).json({status:200, data:key, message: "success"});
-					} else {
-						sendPasswdMail(toEmail);
-						res.status(200).json({status:200, data:"true", message: "비밀번호 재설정 메일이 전송되었습니다."});
-					}
 				});
 			}
 		}
@@ -362,56 +415,6 @@ api.put('/basic_image/:userUID',
 		}
 );
 
-// 프로필 조회
-api.get('/:userUID', verifyToken, async function (req, res) {
-	var responseData = {};
-	var userUID = req.params.userUID;
-
-	// 사용자 정보 조회
-	var info_sql = "select profileImg, email, cellNumber, nickName, birthday, gender, height, weight, purpose, intensity, frequency, theHours, momentum, regDate "
-				+ "from user "
-				+ "where UID = ?";
-	await db.query(info_sql, userUID, function (err, result, fields) {
-		if (err) throw err;
-
-		if(result.length != 0){
-			if(result[0].birthday != null){
-				result[0].birthday = toHypenDateFormat(result[0].birthday);
-			}
-			responseData = result[0];
-		}
-	});
-
-	// 관심운동 조회
-	var category_sql = "select category.UID as UID, category.categoryName "
-					+ "from my_category "
-					+ "join category on my_category.categoryUID = category.UID "
-					+ "where my_category.userUID = ?";
-	await db.query(category_sql, userUID, function (err, result, fields) {
-		if (err) throw err;
-
-		responseData.categories = [];
-		if(result.length != 0)
-			responseData.categories = result;
-	});
-
-	// 보유장비 조회
-	var acc_sql = "select acc.UID as accUID, accName, acc.imgPath "
-				+ "from my_acc "
-				+ "join acc on my_acc.accUID = acc.UID "
-				+ "where my_acc.userUID = ?";
-	db.query(acc_sql, userUID, function (err, result, fields) {
-		if (err) throw err;
-
-		responseData.accs = [];
-		
-		if(result.length != 0)
-			responseData.accs = result;
-			
-		res.status(200).json({status:200, data: responseData, message:"success"});
-	});
-});
-
 // 프로필 변경
 api.put('/:userUID', 
 		verifyToken,
@@ -435,6 +438,25 @@ api.put('/:userUID',
 							req.body.momentum, req.params.userUID];
 
 				db.query(sql, data, function (err, result, fields) {
+					if (err) throw err;
+
+					res.status(200).json({status:200, data:"true", message: "success"});
+				});	
+			}
+		}
+);
+
+// 회원 탈퇴 처리
+api.delete('/:userUID', 
+		verifyToken, 
+		function (req, res) {
+			const errors = getError(req, res);
+			if(errors.isEmpty()){	
+				var userUID = req.params.userUID;
+				var sql = "update user "
+						+ "set status = 'deleted', nickName = 'Deleted User' where UID = ?";
+
+				db.query(sql, userUID, function (err, result, fields) {
 					if (err) throw err;
 
 					res.status(200).json({status:200, data:"true", message: "success"});
