@@ -1041,6 +1041,16 @@ api.post("/iamport-webhook", async (req, res) => {
 	}
 });
 
+// app-store 결제 정보
+api.post("/app-store", async (req, res) => {
+	try {
+        console.log(req.body);
+        res.status(200).send("success");
+	} catch (e) {
+		res.status(400).send(e);
+	}
+});
+
 api.get('/:paymentUID', 
 		verifyAdminToken, 
 		function (req, res, next) {
