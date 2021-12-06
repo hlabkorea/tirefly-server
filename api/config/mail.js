@@ -69,7 +69,7 @@ exports.sendJoinMail = (toEmail) => {
 }
 
 // 비밀번호 변경 메일
-exports.sendPasswdMail = (toEmail) => {
+exports.sendPasswdMail = (toEmail, key) => {
 	var html = '<div style="color:#111;font-size:10pt;line-height:1.5"><p><br></p><p><br></p>'
 			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center">'
 			 + '<img src="https://api.motifme.io/files/motif_logo.png"><br></div>'

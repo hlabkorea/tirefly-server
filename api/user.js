@@ -280,7 +280,7 @@ api.post('/findPw',
 					if(req.body.type == "web"){
 						res.status(200).json({status:200, data:key, message: "success"});
 					} else {
-						sendPasswdMail(toEmail);
+						sendPasswdMail(toEmail, key);
 						res.status(200).json({status:200, data:"true", message: "비밀번호 재설정 메일이 전송되었습니다."});
 					}
 				});
