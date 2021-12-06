@@ -12,7 +12,15 @@ const server = app.listen(3001, () => {
 	console.log('Start server');
 });
 
-app.use(morgan('combined'));
+app.use(morgan('combined', 
+        {skip: function (req, res) {
+            if (req.url == '/') {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }));
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -28,9 +36,6 @@ app.use(function (req, res, next) {
 	next();
 });
 
-app.get('/', function (req, res) {
-	res.render('index.html');
-})
 // API
 //app.use('/crud', require('./api/crudSample.js'));
 app.use('/login', require('./api/login.js'));
