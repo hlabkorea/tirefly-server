@@ -47,7 +47,8 @@ api.get('/:userUID', verifyToken, function (req, res) {
 					switch(result[0].level){
 						case "single": 
 							maxCount = 1;
-							break;
+                            break;
+                        case "IOS_mobile":
 						case "mobile":
 							maxCount = 1;
 							break;

@@ -81,7 +81,7 @@ api.get('/:programUID',
             var userUID = req.query.userUID ? req.query.userUID : 0;
 
             // 프로그램 정보 조회
-            var sql = "select programName, programContents, contentsPath, programLevel, weekNumber " +
+            var sql = "select programName, programContents, programThumbnail, contentsPath, programLevel, weekNumber, status " +
                 "from program left join my_program on program.UID = my_program.programUID " +
                 "where program.UID = ?";
             var responseData = {};
@@ -202,25 +202,37 @@ api.put('/status/:programUID', verifyAdminToken, function (req, res) {
 });
 
 // cms - 프로그램 정보 수정
-api.put('/:programUID', verifyAdminToken, function (req, res) {
-    var adminUID = req.adminUID;
-    var programUID = req.params.programUID;
-    var programName = req.body.pgName;
-    var programContents = req.body.pgContents;
-    var programLevel = req.body.pgLevel;
-    var weekNumber = req.body.weekNum;
-    var status = req.body.status;
-    var sql = "update program set programName = ?, programContents = ?, programLevel = ?, weekNumber = ?, status = ?, updateUID = ? where UID = ?";
-    var data = [programName, programContents, programLevel, weekNumber, status, adminUID, programUID];
-    db.query(sql, data, function (err, result, fields) {
-        if (err) throw err;
+api.put('/:programUID', 
+        verifyAdminToken, 
+        [
+            check("pgName", "pgName is required").not().isEmpty(),
+            check("pgContents", "pgContents is required").not().isEmpty(),
+            check("pgLevel", "pgLevel is required").not().isEmpty(),
+            check("weekNum", "weekNum is required").not().isEmpty(),
+            check("status", "status is required").not().isEmpty()
+        ],
+        function (req, res) {
+            const errors = getError(req, res);
+            if(errors.isEmpty()){
+                var adminUID = req.adminUID;
+                var programUID = req.params.programUID;
+                var programName = req.body.pgName;
+                var programContents = req.body.pgContents;
+                var programLevel = req.body.pgLevel;
+                var weekNumber = req.body.weekNum;
+                var status = req.body.status;
+                var sql = "update program set programName = ?, programContents = ?, programLevel = ?, weekNumber = ?, status = ?, updateUID = ? where UID = ?";
+                var data = [programName, programContents, programLevel, weekNumber, status, adminUID, programUID];
+                db.query(sql, data, function (err, result, fields) {
+                    if (err) throw err;
 
-        res.status(200).send({
-            status: 200,
-            data: "true",
-            message: "success"
-        });
-    });
+                    res.status(200).send({
+                        status: 200,
+                        data: "true",
+                        message: "success"
+                    });
+                });
+            }
 });
 
 module.exports = api;

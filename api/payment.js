@@ -579,16 +579,14 @@ function refundOrder(amount, merchantUid){
 	});
 }
 
-function completeRefund(refConfMsg, orderStatus, paymentUID){
+function completeRefund(refConfMsg, orderStatus, paymentUID, res){
 	var sql = "update payment "
 			+ "set refConfMsg = ?, orderStatus = ?, refConfDate = now() "
 			+ "where UID = ?";
 	var data = [refConfMsg, orderStatus, paymentUID];
 
 	db.query(sql, data, function (err, result) {
-		if (err) throw err;
-
-		res.status(200).json({status:200, data: "true", message:"success"});	
+		if (err) throw err;	
 	});
 }
 
