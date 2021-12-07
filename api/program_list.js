@@ -100,6 +100,27 @@ api.get('/complete/:programUID',
     }
 );
 
+// 프로그램 상세 정보 조회
+api.get('/:programUID',
+    verifyAdminToken,
+    function (req, res) {
+        var programUID = req.params.programUID;
+
+        // 프로그램 정보 조회
+        var sql = "select videoUID, weekly, day, isRest from program_list where programUID = ?";
+
+        db.query(sql, programUID, function (err, result) {
+            if (err) throw err;
+
+            res.status(200).json({
+                status: 200,
+                data: result,
+                message: "success"
+            });
+        });
+    }
+);
+
 // cms - 프로그램 리스트 추가
 api.put('/:programUID',
     verifyAdminToken,
@@ -126,14 +147,11 @@ api.put('/:programUID',
             }
             var data = [];
             for (var i in programList) {
+                var videoUID = programList[i].videoUID;
+                var day = programList[i].day;
                 var weekly = programList[i].weekly;
-                var programData = programList[i].data;
-                for (var j in programData) {
-                    var videoUID = programData[j].videoUID;
-                    var day = programData[j].day;
-                    var isRest = programData[j].isRest;
-                    data.push([programUID, videoUID, weekly, day, isRest, adminUID]);
-                }
+                var isRest = programList[i].isRest;
+                data.push([programUID, videoUID, weekly, day, isRest, adminUID]);
             }
 
             var sql = "insert program_list(programUID, videoUID, weekly, day, isRest, regUID) values ?;";

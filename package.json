@@ -31,6 +31,7 @@
     "querystring": "^0.2.1",
     "sha256": "^0.2.0",
     "sharp": "^0.23.2",
-    "swagger-jsdoc": "^6.1.0"
+    "swagger-jsdoc": "^6.1.0",
+    "xlsx": "^0.17.4"
   }
 }
