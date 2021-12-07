@@ -45,7 +45,7 @@ api.post('/test', onlyUpload.single("motif_file"), function (req, res) {
     db.query(sql, version, function (err, result) {
         if (err) throw err;
 
-        res.status(200).json({status:200, data:"true", message: "motif 파일 업로드가 완료되었습니다."});
+        res.status(200).json({status:200, data:"true", message: "motif.tar.gz 파일 업로드가 완료되었습니다."});
     }); 
 });
 
@@ -67,10 +67,10 @@ api.get('/test/exist', function (req, res) {
 
     fs.exists(filePath, function (exists) {
         if(exists){							
-            res.status(200).json({status:200, data:"true", message: "motif 파일이 존재합니다."});
+            res.status(200).json({status:200, data:"true", message: "motif.tar.gz 파일이 존재합니다."});
         }
         else{
-            res.status(403).json({status:403, data:"false", message: "motif 파일이 존재하지 않습니다."});
+            res.status(403).json({status:403, data:"false", message: "motif.tar.gz 파일이 존재하지 않습니다."});
         }
     });
 });
@@ -84,11 +84,11 @@ api.delete('/test', function (req, res) {
             fs.unlink(filePath, function (err) {
                 if (err) throw err;
 
-                res.status(200).json({status:200, data:"true", message: "motif 파일이 삭제되었습니다."});
+                res.status(200).json({status:200, data:"true", message: "motif.tar.gz 파일이 삭제되었습니다."});
             });
         }
         else{
-            res.status(403).json({status:403, data:"false", message: "motif 파일이 존재하지 않습니다."});
+            res.status(403).json({status:403, data:"false", message: "motif.tar.gz 파일이 존재하지 않습니다."});
         }
     });
 });
