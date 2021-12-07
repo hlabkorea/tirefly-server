@@ -1,0 +1,193 @@
+<html>
+
+<head>
+    <script src="https://code.jquery.com/jquery-3.6.0.js"
+        integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <h2>
+        Qt 파일 버전 업데이트 테스트
+    </h2>
+    <div style="border: 1px solid lightgray;">
+    <br />
+        <설명><br />
+        - motif.tar.gz 파일을 업로드합니다. (파일명은 무조건 motif.tar.gz 입니다.) <br />
+        - 파일이 제대로 업로드되었는지 확인하고 싶을 때 "motif.tar.gz 파일 존재 확인" 버튼을 클릭하여 확인합니다.<br />
+        - 새로운 motif.tar.gz 파일을 업로드하고 싶을 때 "motif.tar.gz 파일 삭제" 버튼을 클릭하여 삭제합니다. (파일을 새로 업로드했을 때 파일명이 같으면 덮어쓰기가 되기는 합니다.)<br />
+        - db에 저장된 버전 정보는 "버전 테이블 데이터"로 확인할 수 있습니다.<br />
+    <br />
+    </div>
+    <br />
+    <div>
+        <p> 버전: <input type="text" id="version" /> </p>
+        <p> 파일: <input type="file" id="FileInput" /><button onclick="upload()">업로드</button></p>
+        <br />
+        
+        <button onclick="remove()">
+            motif.tar.gz 파일 삭제
+        </button>
+        <button onclick="checkExist()">
+            motif.tar.gz 파일 존재 확인
+        </button>
+        <br />
+        <br />
+        <br />
+        <hr />
+    </div>
+    <h3>버전 테이블 데이터 (최신순)</h3>
+    <div id="versionList">
+    </div>
+</body>
+
+<script>
+    const domain = "http://43.133.64.160:3001";
+
+    function getTimeStamp(changedate) {
+        var d = new Date(changedate);
+        var s =
+            leadingZeros(d.getFullYear(), 4) + '-' +
+            leadingZeros(d.getMonth() + 1, 2) + '-' +
+            leadingZeros(d.getDate(), 2) + ' ' +
+
+            leadingZeros(d.getHours(), 2) + ':' +
+            leadingZeros(d.getMinutes(), 2) + ':' +
+            leadingZeros(d.getSeconds(), 2);
+
+        return s;
+    }
+
+    function leadingZeros(n, digits) {
+        var zero = '';
+        n = n.toString();
+
+        if (n.length < digits) {
+            for (i = 0; i < digits - n.length; i++)
+            zero += '0';
+        }
+        return zero + n;
+    }
+
+    $(document).ready(function(){
+        getVersionList();
+    });
+
+    function getVersionList() {
+        console.log("versionList 호출");
+        $.ajax({
+            type: "GET",
+            url: domain + '/qt_version/test'
+        }).done(function (result, textStatus, xhr) {
+            var resultHtml = "<table border='1' style='text-align:center;'>"
+                           + "<th>버전</th>"
+                           + "<th>등록날짜</th>"
+                           + "<th>삭제</th>";
+            var responseJSON = result.data;
+            for(var i=0; i<responseJSON.length; i++){
+                resultHtml += "<tr>"
+				           + `<td> ${responseJSON[i].version} </td>`
+                           + "<td> " + getTimeStamp(responseJSON[i].regDate) + "</td>"
+                           + `<td> <button onclick="removeVersion(${responseJSON[i].UID})">삭제</button>`
+                           + "</tr>";
+            }
+
+            resultHtml += "</table>";
+            console.log(resultHtml);
+            
+			$('#versionList').html(resultHtml);
+        });
+    }
+
+    function upload() {
+        const fileInput = $("#FileInput")[0];
+
+        if (fileInput.files.length === 0) {
+            alert("파일을 선택해주세요");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("motif_file", fileInput.files[0]);
+        formData.append("version", $(version).val());
+
+        $.ajax({
+            type: "POST",
+            url: domain + '/qt_version/test',
+            processData: false,
+            contentType: false,
+            data: formData
+        }).done(function (result, textStatus, xhr) {
+            if (result.status == 200) {
+                alert(result.message);
+                getVersionList();
+            } else {
+                alert(result.message);
+            }
+        }).fail(function (result, textStatus, errorThrown) {
+            if (result.status == 403) {
+                alert(result.responseJSON.message);
+            } else {
+                alert("전송 실패");
+            }
+        });
+    }
+
+    function remove() {
+        $.ajax({
+            type: "DELETE",
+            url: domain + '/qt_version/test'
+        }).done(function (result, textStatus, xhr) {
+            if (result.status == 200) {
+                alert(result.message);
+            } else {
+                alert(result.message);
+            }
+        }).fail(function (result, textStatus, errorThrown) {
+            if (result.status == 403) {
+                alert(result.responseJSON.message);
+            } else {
+                alert("전송 실패");
+            }
+        });
+    }
+
+    function removeVersion(versionUID) {
+        if(confirm("삭제하시겠습니까?") == false)
+            return;
+        $.ajax({
+            type: "DELETE",
+            url: domain + '/qt_version/test/' + versionUID
+        }).done(function (result, textStatus, xhr) {
+            if (result.status == 200) {
+                getVersionList();
+            } 
+        }).fail(function (result, textStatus, errorThrown) {
+            if (result.status == 403) {
+                alert(result.responseJSON.message);
+            } else {
+                alert("전송 실패");
+            }
+        });
+    }
+
+    function checkExist() {
+        $.ajax({
+            type: "GET",
+            url: domain + '/qt_version/test/exist'
+        }).done(function (result, textStatus, xhr) {
+            if (result.status == 200) {
+                alert(result.message);
+            } else {
+                alert(result.message);
+            }
+        }).fail(function (result, textStatus, errorThrown) {
+            if (result.status == 403) {
+                alert(result.responseJSON.message);
+            } else {
+                alert("전송 실패");
+            }
+        });
+    }
+</script>
+
+</html>

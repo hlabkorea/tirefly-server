@@ -6,6 +6,7 @@ const { getError } = require('./config/requestError.js');
 const { getPageInfo } = require('./config/paging.js'); 
 const { addSearchSql } = require('./config/searchSql.js');
 const { upload } = require('./config/uploadFile.js');
+const { check } = require('express-validator');
 const pageCnt15 = 15;
 
 // cms - 프로그램 정보 조회
@@ -122,28 +123,41 @@ api.get('/:programUID',
 );
 
 // cms - 프로그램 추가
-api.post('/', verifyAdminToken, function (req, res) {
-    var adminUID = req.adminUID;
-    var programName = req.body.pgName;
-    var programContents = req.body.pgContents;
-    var programLevel = req.body.pgLevel;
-    var weekNumber = req.body.weekNum;
-    var status = req.body.status;
-    var sql = "insert program(programName, programContents, programLevel, weekNumber, status, regUID) " +
-        "values (?, ?, ?, ?, ?, ?)";
-    var data = [programName, programContents, programLevel, weekNumber, status, adminUID];
-    db.query(sql, data, function (err, result, fields) {
-        if (err) throw err;
+api.post('/', 
+        verifyAdminToken, 
+        [
+          check("pgName", "pgName is required").not().isEmpty(),
+          check("pgContents", "pgContents is required").not().isEmpty(),
+          check("pgLevel", "pgLevel is required").not().isEmpty(),
+          check("weekNum", "weekNum is required").not().isEmpty(),
+          check("status", "status is required").not().isEmpty()
+        ],
+        function (req, res) {
+            const errors = getError(req, res);
+            if(errors.isEmpty()){
+                var adminUID = req.adminUID;
+                var programName = req.body.pgName;
+                var programContents = req.body.pgContents;
+                var programLevel = req.body.pgLevel;
+                var weekNumber = req.body.weekNum;
+                var status = req.body.status;
+                var sql = "insert program(programName, programContents, programLevel, weekNumber, status, regUID) " +
+                    "values (?, ?, ?, ?, ?, ?)";
+                var data = [programName, programContents, programLevel, weekNumber, status, adminUID];
+                db.query(sql, data, function (err, result, fields) {
+                    if (err) throw err;
 
-        res.status(200).json({
-            status: 200,
-            data: {
-                programUID: result.insertId
-            },
-            message: "success"
-        });
-    });
-});
+                    res.status(200).json({
+                        status: 200,
+                        data: {
+                            programUID: result.insertId
+                        },
+                        message: "success"
+                    });
+                });
+            }
+        }
+);
 
 // cms - 프로그램 이미지 업로드
 api.put('/image/:programUID',
