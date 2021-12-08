@@ -10,7 +10,7 @@ api.get('/all', verifyToken, function (req, res) {
     var sql = "select program_list.programUID, program.programName, program.programThumbnail, program.weekNumber, program.programLevel,  count(program_list.UID) as totalCount " +
         "from program_list " +
         "join program on program_list.programUID = program.UID " +
-        "where program.status = 'act'"
+        "where program.status = 'act' "
         "group by program_list.programUID " +
         "order by program.regDate desc";
 
