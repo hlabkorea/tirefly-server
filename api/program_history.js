@@ -68,7 +68,7 @@ api.get('/proceeding/:userUID', verifyToken, function (req, res) {
     var sql = "select my_program.programUID, ifnull(sum(complete), 0) as completeCount " +
         "from program_history " +
         "right join my_program on program_history.programUID = my_program.programUID and program_history.userUID = my_program.userUID " +
-        "where my_program.userUID = ?" +
+        "where program.status = 'act' and my_program.userUID = ? " +
         "group by my_program.programUID " +
         "order by my_program.regDate desc";
     var data = req.params.userUID;
