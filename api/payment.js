@@ -1042,7 +1042,11 @@ api.post("/iamport-webhook", async (req, res) => {
 // app-store 결제 정보
 api.post("/app-store/v1", async (req, res) => {
 	try {
-        console.log(req.body);
+        console.log("hello");
+        console.log(req.body.unified_receipt.pending_renewal_info);
+        console.log(req.body.unified_receipt.latest_receipt_info);
+        // product 테이블에서 iosUID 를 통해 어떤 제품인지 조회
+        // engName 조회해서 membership 테이블에 넣기
         res.status(200).send("success");
 	} catch (e) {
 		res.status(400).send(e);

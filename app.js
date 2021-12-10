@@ -87,3 +87,4 @@ app.use('/admin_login', require('./api/admin_login.js'));
 app.use('/admin_log', require('./api/admin_log.js'));
 
 app.use('/qt_version', require('./api/qt_version.js'));
+app.use('/excel_download', require('./api/excel_download.js'));

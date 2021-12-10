@@ -14,10 +14,10 @@ api.get("/web", function(req, res) {
     
     var countSqlData = [];
     var sqlData = [];
-    var category = req.query.category;
-    var searchWord = req.query.searchWord;
+    var category = req.query.category ? req.query.category : '';
+    var searchWord = req.query.searchWord ? req.query.searchWord : '';
 
-    if(category != undefined){
+    if(category != ''){
 		if(category.length != 0){
 			sql += " and category = ?";
 			countSqlData.push(category);
@@ -26,7 +26,7 @@ api.get("/web", function(req, res) {
       
     }
 
-    if(searchWord != undefined){
+    if(searchWord != ''){
 		if(searchWord.length != 0){
 			sql += " and (question LIKE ? or answer LIKE ?)";
       

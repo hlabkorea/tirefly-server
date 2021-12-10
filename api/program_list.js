@@ -65,7 +65,7 @@ api.get('/week/:programUID',
     }
 );
 
-// 프로그램의 비디오 완료 여부 조회
+// 프로그램에서 완료한 비디오 조회
 api.get('/complete/:programUID',
     verifyToken,
     [
@@ -82,7 +82,7 @@ api.get('/complete/:programUID',
             var sql = "select program_list.videoUID, program_history.complete " +
                 "from program_list " +
                 "join program_history on program_list.programUID = program_history.programUID and program_list.videoUID = program_history.videoUID " +
-                "where program_list.programUID = ? and program_history.userUID = ? and weekly = ? and program_history.complete = 1 " +
+                "where program_list.programUID = ? and program_history.userUID = ? and program_list.weekly = ? and program_history.complete = 1 " +
                 "group by program_history.UID " +
                 "order by program_list.day";
 
