@@ -32,7 +32,7 @@ api.get('/', verifyAdminToken, function (req, res) {
         data.push(status);
     }
 
-    sql += "order by video.regDate desc ";
+    sql += "order by video.UID desc ";
 
 
     var currentPage = req.query.page ? parseInt(req.query.page) : '';

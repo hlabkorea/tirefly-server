@@ -178,10 +178,7 @@ api.post('/overlapEmail',
 					if (err) throw err;
 
 					if(result.length > 0){
-                        if(result[0].status == 'deleted')
-                            res.status(403).json({status:403, data: "false", message:"탈퇴 회원입니다."});
-                        else
-						    res.status(403).json({status:403, data: "false", message:"이미 등록된 이메일주소 입니다."});
+						res.status(403).json({status:403, data: "false", message:"이미 등록된 이메일주소 입니다."});
 					}else{
 						res.status(200).json({status:200, data: "true", message:"사용 가능한 이메일 입니다."});
 					}
@@ -198,7 +195,7 @@ api.post('/existEmail',
 		function (req, res) {
 			const errors = getError(req, res);
 			if(errors.isEmpty()){
-				var sql = "select count(email) as cnt from user where email = ? and status != 'deleted'"; // 블랙리스트 계정인 inact 상태는 일단 고려하지 않았습니다
+				var sql = "select count(email) as cnt from user where email = ?";
 				var data = req.body.email;
 				db.query(sql, data, function (err, result, fields) {
 					if (err) throw err;
@@ -448,15 +445,22 @@ api.put('/:userUID',
 
 // 회원 탈퇴 처리
 api.delete('/:userUID', 
-		verifyToken, 
+        verifyToken, 
+        [
+			check("delMsg", "delMsg is required").not().isEmpty()
+		],
 		function (req, res) {
 			const errors = getError(req, res);
 			if(errors.isEmpty()){	
-				var userUID = req.params.userUID;
+                var userUID = req.params.userUID;
+                var delMsg = req.body.delMsg ? req.body.delMsg : ''; 
 				var sql = "update user "
-						+ "set status = 'deleted', nickName = 'Deleted User' where UID = ?";
+                        + "set status = 'delete', email = concat(email, '/', cellNumber), password = '', nickName = '', profileImg = '', birthday = '0000-01-01', gender = '', height = 0, weight = 0, "
+                        + "intensity = '', frequency = 0, theHours = '', momentum = '', cellNumber = '', purpose = '', delMsg = ? "
+                        + "where UID = ?";
+                var data = [delMsg, userUID];
 
-				db.query(sql, userUID, function (err, result, fields) {
+				db.query(sql, data, function (err, result, fields) {
 					if (err) throw err;
 
 					res.status(200).json({status:200, data:"true", message: "success"});

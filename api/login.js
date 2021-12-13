@@ -32,6 +32,7 @@ api.post('/',
                   res.status(403).send({status: 403, data: [], message: "비밀번호가 맞지 않아요!"});
                 } else{
                   userUID = result[0].UID;
+                  var email = result[0].email;
                   var redirect = "setting";
 
                   if(result[0].status == "sleep")
@@ -62,7 +63,7 @@ api.post('/',
 						  //expiresIn: '1440m'    // 유효 시간은 1440분
 						});
 
-						res.status(200).send({status: 200, data: {UID: userUID ,token: token, redirect: redirect, auth: auth, endDate: endDate}});
+						res.status(200).send({status: 200, data: {UID: userUID ,email: email, token: token, redirect: redirect, auth: auth, endDate: endDate}});
 					}
 					else { // Invited 유저인지 확인
 						var membership_group_sql = "select membership.endDate "
@@ -88,8 +89,7 @@ api.post('/',
 							  //expiresIn: '1440m'    // 유효 시간은 1440분
 							});
 
-							res.status(200).send({status: 200, data: {UID: userUID ,token: token, redirect: redirect, auth: auth, endDate: endDate}});
-
+							res.status(200).send({status: 200, data: {UID: userUID ,email: email, token: token, redirect: redirect, auth: auth, endDate: endDate}});
 						 });
 					}
 					
