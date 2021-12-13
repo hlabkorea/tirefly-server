@@ -21,7 +21,7 @@ api.get('/', verifyToken, function (req, res) {
 
 // 카테고리에 맞는 음악 조회
 api.get('/:categoryUID', verifyToken, function (req, res) {
-    var sql = "select UID as musicUID, musicName, artist, musicPath from music where categoryUID = ?";
+    var sql = "select UID as musicUID, musicName, artist, musicPath from music where categoryUID = ? order by rand()";
     var data = req.params.categoryUID;
 
     db.query(sql, data, function (err, result) {
