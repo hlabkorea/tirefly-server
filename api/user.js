@@ -272,15 +272,48 @@ api.post('/findPw',
 				
 				var data = [toEmail, key];
 				db.query(sql, data, function (err, result, fields) {
-					if (err) throw err;
-
-					if(req.body.type == "web"){
-						res.status(200).json({status:200, data:key, message: "success"});
-					} else {
-						sendPasswdMail(toEmail, key);
-						res.status(200).json({status:200, data:"true", message: "비밀번호 재설정 메일이 전송되었습니다."});
-					}
+                    if (err) throw err;
+                    
+                    sendPasswdMail(toEmail, key);
+                    res.status(200).json({status:200, data:"true", message: "비밀번호 재설정 메일이 전송되었습니다."});
 				});
+			}
+		}
+);
+
+// 비밀번호 토큰 발급
+api.post('/pwd_token', 
+        verifyToken,
+		[
+			check("email", "email is required").not().isEmpty()
+		],
+		function (req, res) {
+			const errors = getError(req, res);
+			if(errors.isEmpty()){
+                var email = req.body.email;
+                var password = sha256(req.body.password);
+
+                var check_sql = "select UID from user where email = ? and password = ?"
+                var check_data = [email, password];
+
+                db.query(check_sql, check_data, function (err, result, fields) {
+                    if (err) throw err;
+
+                    if(result.length != 0){
+                        var key = randomString();
+                        var sql = "insert into pwd_auth(email, authKey) values (?, ?)";
+                        var data = [email, key];
+
+                        db.query(sql, data, function (err, result, fields) {
+                            if (err) throw err;
+
+                            res.status(200).json({status:200, data:{authKey: key}, message: "success"});
+                        });
+                    }
+                    else{
+                        res.status(403).json({status:403, data:"false", message: "비밀번호가 일치하지 않아요!"});
+                    }
+                });
 			}
 		}
 );
