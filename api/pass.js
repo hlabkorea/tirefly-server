@@ -9,8 +9,8 @@ const sModulePath = path.join('/', 'usr', 'share', 'nginx', 'motif-server', 'mod
 
 var sAuthType = "";      	  //없으면 기본 선택화면, M(휴대폰), X(인증서공통), U(공동인증서), F(금융인증서), S(PASS인증서), C(신용카드)
 var sCustomize 	= "";			  //없으면 기본 웹페이지 / Mobile : 모바일페이지
-const ip = "http://api.motifme.io:3001/";
-var sErrorUrl = ip + "checkplus_fail";	  	// 실패시 이동될 URL (방식 : 프로토콜을 포함한 절대 주소)
+const domain = "https://api.motifme.io";
+var sErrorUrl = domain + "checkplus_fail";	  	// 실패시 이동될 URL (방식 : 프로토콜을 포함한 절대 주소)
 
 // 앱 response
 api.post("/join", function(req, res) {
@@ -21,7 +21,7 @@ api.post("/join", function(req, res) {
 //웹
 api.get("/join", function(req, res) {
     if(req.query.EncodeData == undefined){
-        var successReturnUrl = ip + "pass/join";	// 성공시 이동될 URL (방식 : 프로토콜을 포함한 절대 주소)
+        var successReturnUrl = domain + "/pass/join";	// 성공시 이동될 URL (방식 : 프로토콜을 포함한 절대 주소)
         showPassAuth(res, successReturnUrl);
     } else {
         //chrome80 이상 대응
@@ -39,7 +39,7 @@ api.post("/findId", function(req, res) {
 //웹
 api.get("/findId", function(req, res) {
     if(req.query.EncodeData == undefined){
-        var successReturnUrl = ip + "pass/findId"; // 성공시 이동될 URL (방식 : 프로토콜을 포함한 절대 주소)
+        var successReturnUrl = domain + "/pass/findId"; // 성공시 이동될 URL (방식 : 프로토콜을 포함한 절대 주소)
         showPassAuth(res, successReturnUrl);
     } else {
         //chrome80 이상 대응
