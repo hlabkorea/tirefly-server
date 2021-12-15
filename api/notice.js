@@ -9,10 +9,10 @@ const pageCnt10 = 10;
 
 // 공지사항 조회
 api.get('/', function (req, res) {
-    var type = req.query.type ? req.query.type : '';
-    var sql = "select UID as noticeUID, title, contents, type from notice";
-    if (type.length != 0)
-        sql += ` where type = '${type}'`;
+    var category = req.query.category ? req.query.category : '';
+    var sql = "select UID as noticeUID, title, contents, category from notice";
+    if (category.length != 0)
+        sql += ` where category = '${category}'`;
 
     var countSql = sql + ";";
 
@@ -51,7 +51,7 @@ api.post('/',
     verifyAdminToken,
     [
         check("title", "title is required").not().isEmpty(),
-        check("type", "type is required").not().isEmpty(),
+        check("category", "category is required").not().isEmpty(),
         check("contents", "contents is required").not().isEmpty()
     ],
     function (req, res) {
@@ -59,10 +59,10 @@ api.post('/',
         if (errors.isEmpty()) {
             var title = req.body.title;
             var contents = req.body.contents;
-            var type = req.body.type;
+            var category = req.body.category;
             var adminUID = req.adminUID;
-            var sql = 'insert notice(title, contents, type, regUID) values (?, ?, ?, ?)';
-            var data = [title, contents, type, adminUID];
+            var sql = 'insert notice(title, contents, category, regUID) values (?, ?, ?, ?)';
+            var data = [title, contents, category, adminUID];
 
             db.query(sql, data, function (err, result) {
                 if (err) throw err;
@@ -82,7 +82,7 @@ api.put('/:noticeUID',
     verifyAdminToken,
     [
         check("title", "title is required").not().isEmpty(),
-        check("type", "type is required").not().isEmpty(),
+        check("category", "category is required").not().isEmpty(),
         check("contents", "contents is required").not().isEmpty()
     ],
     function (req, res) {
@@ -91,10 +91,10 @@ api.put('/:noticeUID',
             var noticeUID = req.params.noticeUID;
             var title = req.body.title;
             var contents = req.body.contents;
-            var type = req.body.type;
+            var category = req.body.category;
             var adminUID = req.adminUID;
-            var sql = 'update notice set title = ?, contents = ?, type = ?, updateUID = ? where UID = ?';
-            var data = [title, contents, type, adminUID, noticeUID];
+            var sql = 'update notice set title = ?, contents = ?, category = ?, updateUID = ? where UID = ?';
+            var data = [title, contents, category, adminUID, noticeUID];
 
             db.query(sql, data, function (err, result) {
                 if (err) throw err;
