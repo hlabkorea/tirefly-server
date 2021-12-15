@@ -20,7 +20,7 @@ api.post('/',
             var password= req.body.password;
   
 			// 아이디 비밀번호 확인
-            var sql = "select * from user where email=? and password=? and status != 'deleted'";
+            var sql = "select * from user where email=? and password=? and status != 'delete'";
             var data = [email, sha256(password)];
             var userUID = 0;
             var token = '';
