@@ -852,7 +852,7 @@ function saveOrderProduct(paymentUID, productUID, optionUID, count, buyerEmail){
 
 		sendPaymentEmail(buyerEmail, paymentUID);
 	});
-}
+}1
 
 // 멤버십 정보 업데이트
 function updateMembership(level, laterNum, membershipUID){
@@ -866,7 +866,7 @@ function updateMembership(level, laterNum, membershipUID){
 
 // 주문에 대한 멤버십 정보 추가
 function insertOrderMembership(paymentUID, membershipUID, laterNum){
-	var productPaymentInsertSql = "insert payment_product_list(paymentUID, membershipUID, membershipEndDate) values (?, ?, date_add(now(), interval ? month))";
+	var productPaymentInsertSql = "insert payment_product_list(paymentUID, membershipUID, membershipEndDate) values (?, ?, date_add(addtime(curdate(), '23:59:59'), interval ? month))";
 	var productPaymentInsertData = [paymentUID, membershipUID, laterNum];
 
 	db.query(productPaymentInsertSql, productPaymentInsertData, function (err, result) {
@@ -876,7 +876,7 @@ function insertOrderMembership(paymentUID, membershipUID, laterNum){
 
 // 멤버십 정보 추가
 function insertMembership(userUID, level, laterNum, paymentUID){
-	var membershipInsertSql = "insert membership(userUID, level, endDate, paymentUID) values (?, ?, date_add(now(), interval ? month), ?)";
+	var membershipInsertSql = "insert membership(userUID, level, endDate, paymentUID) values (?, ?, date_add(addtime(curdate(), '23:59:59'), interval ? month), ?)";
 	var membershipInsertData = [userUID, level, laterNum, paymentUID];
 
 	db.query(membershipInsertSql, membershipInsertData, function (err, insertResult) {
