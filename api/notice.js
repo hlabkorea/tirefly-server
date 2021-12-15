@@ -10,7 +10,7 @@ const pageCnt10 = 10;
 // 공지사항 조회
 api.get('/', function (req, res) {
     var type = req.query.type ? req.query.type : '';
-    var sql = "select UID, title, contents, type, regDate, updateDate from notice";
+    var sql = "select UID as noticeUID, title, contents, type from notice";
     if (type.length != 0)
         sql += ` where type = '${type}'`;
 
