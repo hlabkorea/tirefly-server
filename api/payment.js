@@ -1042,10 +1042,24 @@ api.post("/iamport-webhook", async (req, res) => {
 // app-store 결제 정보
 api.post("/app-store/v1", async (req, res) => {
 	try {
-        console.log("hello");
-        console.log(req.body.unified_receipt.pending_renewal_info);
-        console.log(req.body.unified_receipt.latest_receipt_info);
-        // product 테이블에서 iosUID 를 통해 어떤 제품인지 조회
+        const password = "157cd3c52883418cabfab06e2b206da7";
+	console.log(req.body.notification_type);
+	console.log(req.body.auto_renew_status);
+	var receipt_data = req.body.unified_receipt.latest_receipt;
+	//console.log(receipt_data);
+	const verifiedReceipt = await axios({
+				           url: "https://sandbox.itunes.apple.com/verifyReceipt",
+				           method: "post", // POST method
+				           headers: { "Content-Type": "application/json" }, 
+				           data: {
+						"receipt-data": receipt_data,
+						password: password,
+						"exclude-old-transactions": true
+						}
+				        });
+	console.log(verifiedReceipt.data.latest_receipt_info[0]);
+
+	// product 테이블에서 iosUID 를 통해 어떤 제품인지 조회
         // engName 조회해서 membership 테이블에 넣기
         res.status(200).send("success");
 	} catch (e) {
