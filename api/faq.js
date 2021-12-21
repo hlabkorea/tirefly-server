@@ -7,6 +7,38 @@ const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 const pageCnt10 = 10;
 
+api.get("/", verifyAdminToken, function(req, res) {
+    var sql = "select UID, category, question, answer, type from faq ";
+	var type = req.query.type ? req.query.type : 'all';
+
+	var data = [];
+
+	if (type != "all") {
+       sql += "where type = ?";
+	   data.push(type);
+	   data.push(type);
+    }
+
+    var countSql = sql + ";";
+
+    sql += " limit ?, " + pageCnt10;
+    var currentPage = req.query.page ? parseInt(req.query.page) : 1;
+    data.push((parseInt(currentPage) - 1) * pageCnt10);
+
+    db.query(countSql+sql, data, function (err, result) {
+      if (err) throw err;
+
+      var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length, pageCnt10);
+      res.status(200).json({status:200, 
+                data: {
+                  paging: {startPage: startPage, endPage: endPage, totalPage: totalPage},
+                  result: result[1]
+                }, 
+                message:"success"});
+    });
+});
+
+
 // 웹에서 faq 조회와 검색
 // 검색은 무조건 전체에서 (카테고리 상관 없음)
 api.get("/web", function(req, res) {
@@ -76,15 +108,21 @@ api.get("/app", verifyToken, function(req, res) {
 api.post("/", 
         verifyAdminToken, 
         [
-          check("category", "category is required").not().isEmpty(),
           check("question", "question is required").not().isEmpty(),
-          check("answer", "answer is required").not().isEmpty()
+          check("answer", "answer is required").not().isEmpty(),
+		  check("type", "type is required").not().isEmpty()
         ],
         function(req, res) {
           const errors = getError(req, res);
           if(errors.isEmpty()){
-            var sql = 'insert faq(category, question, answer) values (?, ?, ?)';
-            var data = [req.body.category, req.body.question, req.body.answer];
+			var adminUID = req.adminUID;
+			var category = req.body.category;
+			var question = req.body.question;
+			var answer = req.body.answer;
+			var type = req.body.type;
+
+            var sql = 'insert faq(category, question, answer, type, regUID) values (?, ?, ?, ?, ?)';
+            var data = [category, question, answer, type, adminUID];
 
             db.query(sql, data, function (err, result) {
               if (err) throw err;
@@ -99,15 +137,21 @@ api.post("/",
 api.put("/:faqUID", 
         verifyAdminToken, 
         [
-          check("category", "category is required").not().isEmpty(),
           check("question", "question is required").not().isEmpty(),
-          check("answer", "answer is required").not().isEmpty()
+          check("answer", "answer is required").not().isEmpty(),
+		  check("type", "type is required").not().isEmpty()
         ],
         function(req, res) {
           const errors = getError(req, res);
           if(errors.isEmpty()){
-            var sql = 'update faq set category=?, question=?, answer=? where UID = ?';
-            var data = [req.body.category, req.body.question, req.body.answer, req.params.faqUID];
+			var adminUID = req.adminUID;
+			var faqUID = req.params.faqUID;
+			var category = req.body.category;
+			var question = req.body.question;
+			var answer = req.body.answer;
+			var type = req.body.type;
+            var sql = 'update faq set category=?, question=?, answer=?, type = ?, updateUID = ? where UID = ?';
+            var data = [category, question, answer, type, adminUID, faqUID];
 
             db.query(sql, data, function (err, result) {
               if (err) throw err;
