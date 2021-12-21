@@ -118,4 +118,23 @@ api.put("/:faqUID",
         }
 );
 
+// faq 삭제
+api.delete('/:faqUID',
+    verifyAdminToken,
+    function (req, res) {
+        var faqUID = req.params.faqUID;
+        var sql = 'delete from faq where UID = ?';
+
+        db.query(sql, faqUID, function (err, result) {
+            if (err) throw err;
+
+            res.status(200).json({
+                status: 200,
+                data: "true",
+                message: "success"
+            });
+        });
+    }
+);
+
 module.exports = api;
