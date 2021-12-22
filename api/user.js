@@ -195,7 +195,7 @@ api.post('/existEmail',
 		function (req, res) {
 			const errors = getError(req, res);
 			if(errors.isEmpty()){
-				var sql = "select count(email) as cnt from user where email = ?";
+				var sql = "select count(email) as cnt from user where email = ? and status != 'delete'";
 				var data = req.body.email;
 				db.query(sql, data, function (err, result, fields) {
 					if (err) throw err;

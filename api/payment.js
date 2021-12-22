@@ -9,8 +9,11 @@ const { getPageInfo } = require('./config/paging.js');
 const { getCurrentDateTime, getNextDateTime } = require('./config/date.js');
 const { sendPaymentMail, sendMembershipEmail } = require('./config/mail.js');
 const { addCellSearchSql } = require('./config/searchSql.js');
+const { check } = require('express-validator');
+const { getError } = require('./config/requestError.js');
 const imp_key = "7260030924750208"; // REST API 키
 const imp_secret = "abc8d306c8df0b4354dd438c5ab9d5af9bf06094734cc1936780beef5fa4a6ab585b1219b7b09a4b"; // REST API Secret
+const apple_password = "157cd3c52883418cabfab06e2b206da7";
 //const imp_key = "5425471433410805"; // 테스트 REST API 키
 //const imp_secret = "L76UxuB5wmV0TRtcRR3iBYiGz38AOiTAq0uXu630tY1mPuzHmC0YBiEamNLa6FLwFfu9mxaPwccmGL33"; // 테스트 REST API Secret
 const pageCnt15 = 15;
@@ -852,7 +855,7 @@ function saveOrderProduct(paymentUID, productUID, optionUID, count, buyerEmail){
 
 		sendPaymentEmail(buyerEmail, paymentUID);
 	});
-}1
+}
 
 // 멤버십 정보 업데이트
 function updateMembership(level, laterNum, membershipUID){
@@ -1039,32 +1042,175 @@ api.post("/iamport-webhook", async (req, res) => {
 	}
 });
 
+async function verifyTestReceipt(receiptData, excludeOldTransactions){
+    const verifiedTestReceipt = await axios({
+        url: "https://sandbox.itunes.apple.com/verifyReceipt",
+        method: "post", // POST method
+        headers: {
+            "Content-Type": "application/json"
+        },
+        data: {
+            "receipt-data": receiptData,
+            password: apple_password,
+            "exclude-old-transactions": excludeOldTransactions
+        }
+    });
+
+    return verifiedTestReceipt.data;
+}
+
+async function verifyReceipt(receiptData, excludeOldTransactions){
+    const verifiedReceipt = await axios({
+        url: "https://sandbox.itunes.apple.com/verifyReceipt",
+        method: "post", // POST method
+        headers: {
+            "Content-Type": "application/json"
+        },
+        data: {
+            "receipt-data": receiptData,
+            password: apple_password,
+            "exclude-old-transactions": excludeOldTransactions
+        }
+    });
+
+    if(verifiedReceipt.data.status == 21007)
+        return await verifyTestReceipt(receiptData, excludeOldTransactions);
+    else
+	    return verifiedReceipt.data;
+}
+
+// 멤버십 정보 업데이트
+function updateAppleMembership(level, membershipUID, endTimestamp){
+	var membershipUpdateSql = "update membership set level = ?, endDate = date_format(from_unixtime(?), '%Y-%m-%d 23:59:59') where UID = ?";
+	var membershipUpdateData = [level, endTimestamp, membershipUID];
+
+	db.query(membershipUpdateSql, membershipUpdateData, function (err, result) {
+		if (err) throw err;
+	});
+}
+
+// 주문에 대한 멤버십 정보 추가
+function insertAppleOrderMembership(paymentUID, membershipUID, paidTimestamp, endTimestamp){
+	var productPaymentInsertSql = "insert payment_product_list(paymentUID, membershipUID, regDate, membershipEndDate) values (?, ?, date_format(from_unixtime(?), '%Y-%m-%d %H:%i:%S'), date_format(from_unixtime(?), '%Y-%m-%d 23:59:59'))";
+	var productPaymentInsertData = [paymentUID, membershipUID, paidTimestamp, endTimestamp];
+
+	db.query(productPaymentInsertSql, productPaymentInsertData, function (err, result) {
+		if (err) throw err;
+	});
+}
+
+// 멤버십 정보 추가
+function insertAppleMembership(userUID, level, paymentUID, paidTimestamp, endTimestamp){
+	var membershipExistSql = "select UID from membership where userUID = ?";
+	var membershipUID = 0;
+	db.query(membershipExistSql, userUID, function (err, existResult) {
+		if (err) throw err;
+
+		if(existResult.length != 0){
+			membershipUID = existResult[0].UID;
+			insertAppleOrderMembership(paymentUID, membershipUID, paidTimestamp, endTimestamp);
+			updateAppleMembership(level, membershipUID, endTimestamp);
+		}
+		else{
+			var membershipInsertSql = "insert membership(userUID, level, paymentUID, startDate, endDate) values (?, ?, ?, date_format(from_unixtime(?), '%Y-%m-%d %H:%i:%S'), date_format(from_unixtime(?), '%Y-%m-%d 23:59:59'))";
+			var membershipInsertData = [userUID, level, paymentUID, paidTimestamp, endTimestamp];
+
+			db.query(membershipInsertSql, membershipInsertData, function (err, insertResult) {
+				if (err) throw err;
+
+				membershipUID = insertResult.insertId;
+
+				insertAppleOrderMembership(paymentUID, membershipUID, paidTimestamp, endTimestamp);
+			});
+		}
+	});
+}
+
+function insertApplePayment(userUID, verifiedReceipt, res){
+	if(verifiedReceipt.status == 0){
+		var receiptData = verifiedReceipt.latest_receipt;
+		var latestReceipt = verifiedReceipt.latest_receipt_info[0];
+		var productId = latestReceipt.product_id;
+		var originalTransactionId = latestReceipt.original_transaction_id;
+		var transactionId = latestReceipt.transaction_id;
+		var paidTimestamp = latestReceipt.purchase_date_ms / 1000;
+		var endTimestamp = latestReceipt.expires_date_ms / 1000;
+		var productSql = "select engName, originPrice from product where UID = ?";
+		var type = 'membership';
+
+		db.query(productSql, productId, function (err, productResult) {
+			if (err) throw err;
+			
+			var name = productResult[0].engName;
+			var price = productResult[0].originPrice;
+
+			var userSql = "select email from user where UID = ?";
+			db.query(userSql, userUID, function (err, userResult) {
+				if (err) throw err;
+
+				var buyerEmail = userResult[0].email;
+
+				var paymentSql = "insert payment(userUID, amount, buyerEmail, merchantUid, originalTransactionId, name, paidAt, receiptUrl, type, regDate) "
+					+ "values (?, ?, ?, ?, ?, ?, ?, ?, ?, date_format(from_unixtime(?), '%Y-%m-%d %H:%i:%S'))";
+				var paymentData = [userUID, price, buyerEmail, transactionId, originalTransactionId, name, paidTimestamp, receiptData, type, paidTimestamp];
+				db.query(paymentSql, paymentData, function (err, paymentResult) {
+					if (err) throw err;
+
+					var paymentUID = paymentResult.insertId;
+					insertAppleMembership(userUID, name, paymentUID, paidTimestamp, endTimestamp);						
+					
+					res.status(200).json({status:200, data: "true", message:"success"});
+				});
+			});				
+		});
+	}
+	else{
+		res.status(403).json({status:403, data: "false", message: "fail"}); // 영수증 데이터가 유효하지 않습니다	
+	}
+}
+
+api.post("/inapp", 
+		verifyToken,
+		[
+			check("userUID", "userUID is required").not().isEmpty(),
+			check("receipt", "receipt is required").not().isEmpty()
+		],
+		async (req, res) => {
+			const errors = getError(req, res);
+			
+			if(errors.isEmpty()){
+				var userUID = req.body.userUID;
+				var receipt = req.body.receipt;
+
+				var excludeOldTransactions = true;
+				var verifiedReceipt = await verifyReceipt(receipt, excludeOldTransactions);
+				insertApplePayment(userUID, verifiedReceipt, res);
+			}
+		}
+);
+
 // app-store 결제 정보
 api.post("/app-store/v1", async (req, res) => {
-	try {
-        const password = "157cd3c52883418cabfab06e2b206da7";
-	console.log(req.body.notification_type);
-	console.log(req.body.auto_renew_status);
-	var receipt_data = req.body.unified_receipt.latest_receipt;
-	//console.log(receipt_data);
-	const verifiedReceipt = await axios({
-				           url: "https://sandbox.itunes.apple.com/verifyReceipt",
-				           method: "post", // POST method
-				           headers: { "Content-Type": "application/json" }, 
-				           data: {
-						"receipt-data": receipt_data,
-						password: password,
-						"exclude-old-transactions": true
-						}
-				        });
-	console.log(verifiedReceipt.data.latest_receipt_info[0]);
+    try {
+		var notificationType = req.body.notification_type;
+		if(notificationType == "DID_RENEW"){ // 자동 갱신
+			var receiptData = req.body.unified_receipt.latest_receipt;
+			var excludeOldTransactions = true;
+			var verifiedReceipt = await verifyReceipt(receiptData, excludeOldTransactions);
+			var originalTransactionId = verifiedReceipt.latest_receipt_info[0].original_transaction_id;
+			var userSql = "select userUID from payment where originalTransactionId = ? limit 1";
+			db.query(userSql, originalTransactionId, function (err, result) {
+				if (err) throw err;
 
-	// product 테이블에서 iosUID 를 통해 어떤 제품인지 조회
-        // engName 조회해서 membership 테이블에 넣기
-        res.status(200).send("success");
-	} catch (e) {
-		res.status(400).send(e);
-	}
+				if(result.length != 0){
+					var userUID = result[0].userUID;
+					insertApplePayment(userUID, verifiedReceipt, res);
+				}
+			});
+		}
+    } catch (e) {
+        res.status(400).send(e);
+    }
 });
 
 api.get('/:paymentUID', 
