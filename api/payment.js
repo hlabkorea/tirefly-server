@@ -1192,7 +1192,7 @@ api.post("/inapp",
 // app-store 결제 정보
 api.post("/app-store/v1", async (req, res) => {
     try {
-		var notificationType = req.body.notification_type;
+        var notificationType = req.body.notification_type;
 		if(notificationType == "DID_RENEW"){ // 자동 갱신
 			var receiptData = req.body.unified_receipt.latest_receipt;
 			var excludeOldTransactions = true;
