@@ -6,38 +6,48 @@ const api = express.Router();
 const { onlyUpload } = require('./config/uploadFile.js');
 const fs = require('fs');
 const md5File = require('md5-file');
+const { check } = require('express-validator');
+const { getError } = require('./config/requestError.js');
 
 // 버전 체크
-api.post('/check', verifyToken, function (req, res) {
-    var userQtVer = req.body.version;
+api.post('/check', 
+		verifyToken, 
+		[
+			check("version", "email is required").not().isEmpty()
+		],
+		function (req, res) {
+			const errors = getError(req, res);
+			
+			if(errors.isEmpty()){
+				var userQtVer = req.body.version;
 
-    var sql = "select version from qt_version order by regDate desc limit 1";
-    db.query(sql, function (err, result) {
-        if (err) throw err;    
-        var qtVer = result[0].version;
+				var sql = "select version from qt_version order by regDate desc limit 1";
+				db.query(sql, function (err, result) {
+					if (err) throw err;    
+					var qtVer = result[0].version;
 
-        if (qtVer == userQtVer)
-            res.status(200).json({
-                status: 200,
-                data: "true",
-                message: "success"
-            });
-        else{
-            const hash = md5File.sync(path.join('/', 'usr', 'share', 'nginx', 'motif-server', 'views', 'files', 'main_01.png'));
-            res.status(403).json({
-                status: 403,
-                data: {
-                    version: qtVer,
-                    filename: hash,
-                    fileURL: "https://api.motifme.io/files/motif.tar.gz"
-                },
-                message: "fail"
-            });
-        }
-    }); 
-
-    
-});
+					if (qtVer == userQtVer)
+						res.status(200).json({
+							status: 200,
+							data: "true",
+							message: "success"
+						});
+					else{
+						const hash = md5File.sync(path.join('/', 'usr', 'share', 'nginx', 'motif-server', 'views', 'files', 'main_01.png'));
+						res.status(403).json({
+							status: 403,
+							data: {
+								version: qtVer,
+								filename: hash,
+								fileURL: "https://api.motifme.io/files/motif.tar.gz"
+							},
+							message: "fail"
+						});
+					}
+				}); 
+			}
+		}
+);
 
 api.post('/test', onlyUpload.single("motif_file"), function (req, res) {
     var version = req.body.version;

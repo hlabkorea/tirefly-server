@@ -22,6 +22,14 @@ app.use(morgan('combined',
         }
     }));
 // parse application/x-www-form-urlencoded
+app.use((req, res, next) => {
+    bodyParser.json()(req, res, err => {
+        if (err) 
+            return res.status(400).json(err);
+
+        next();
+    });
+});
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: false }));
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(express.urlencoded( {extended : false } ));
