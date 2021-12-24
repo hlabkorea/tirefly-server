@@ -8,17 +8,18 @@ const { getError } = require('./config/requestError.js');
 const pageCnt10 = 10;
 
 api.get("/", verifyAdminToken, function(req, res) {
-    var sql = "select UID, category, question, answer, type from faq ";
+    var sql = "select UID, category, question, answer, type from faq";
 	var type = req.query.type ? req.query.type : 'all';
 
 	var data = [];
 
 	if (type != "all") {
-       sql += "where type = ?";
+       sql += " where type = ?";
 	   data.push(type);
 	   data.push(type);
     }
 
+    sql += " order by regDate desc, UID desc";
     var countSql = sql + ";";
 
     sql += " limit ?, " + pageCnt10;
@@ -70,6 +71,7 @@ api.get("/web", function(req, res) {
       
     }
 
+    sql += " order by regDate desc, UID desc";
     var countSql = sql + ";";
 
     sql += " limit ?, " + pageCnt10;
@@ -91,14 +93,10 @@ api.get("/web", function(req, res) {
 
 // 앱에서 faq 조회
 api.get("/app", verifyToken, function(req, res) {
-    var sql = "select UID, question, answer from faq where type='app'";
+    var sql = "select UID, question, answer from faq where type='app' order by regDate desc, UID desc";
 
     db.query(sql, function (err, result) {
       if (err) throw err;
-
-	  for(var i in result){
-		  result[i].answer = result[i].answer.replace(/\\n/gi, "\n").replace(/\r/gi, "");
-	  }
 
       res.status(200).json({status:200, data: result, message:"success"});
     });

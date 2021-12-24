@@ -14,13 +14,12 @@ api.get('/', function (req, res) {
     if (category.length != 0)
         sql += ` where category = '${category}'`;
 
+	sql += " order by regDate desc, UID desc ";
     var countSql = sql + ";";
 
     var currentPage = req.query.page ? parseInt(req.query.page) : 1;
     currentpage = (parseInt(currentPage) - 1) * pageCnt10;
     sql += ` limit ${currentpage}, ${pageCnt10}`;
-    
-    
 
     db.query(countSql + sql, function (err, result) {
         if (err) throw err;
