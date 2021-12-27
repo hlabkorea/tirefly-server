@@ -25,7 +25,7 @@ app.use(morgan('combined',
 app.use((req, res, next) => {
     bodyParser.json()(req, res, err => {
         if (err) 
-            return res.status(400).json(err);
+            return res.status(400).json({status: 403, data: {err: err}, message: "fail"});
 
         next();
     });
