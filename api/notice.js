@@ -1,7 +1,7 @@
 const express = require('express');
 const db = require('./config/database.js');
 const { getPageInfo } = require('./config/paging.js'); 
-const { verifyAdminToken } = require("./config/authCheck.js");
+const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
 const api = express.Router();
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
@@ -42,6 +42,18 @@ api.get('/', function (req, res) {
             },
             message: "success"
         });
+    });
+});
+
+// 공지사항 상세조회
+api.get("/:noticeUID", verifyAdminToken, function(req, res) {
+	var noticeUID = req.params.noticeUID;
+    var sql = "select title, contents, category from notice where UID = ?";
+
+    db.query(sql, noticeUID, function (err, result) {
+      if (err) throw err;
+
+      res.status(200).json({status:200, data: result, message:"success"});
     });
 });
 

@@ -102,6 +102,18 @@ api.get("/app", verifyToken, function(req, res) {
     });
 });
 
+// cms - faq 상세조회
+api.get("/:faqUID", verifyAdminToken, function(req, res) {
+	var faqUID = req.params.faqUID;
+    var sql = "select question, answer, type from faq where UID = ?";
+
+    db.query(sql, faqUID, function (err, result) {
+      if (err) throw err;
+
+      res.status(200).json({status:200, data: result, message:"success"});
+    });
+});
+
 // faq 추가
 api.post("/", 
         verifyAdminToken, 
