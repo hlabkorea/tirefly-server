@@ -53,7 +53,7 @@ api.get("/:noticeUID", verifyAdminToken, function(req, res) {
     db.query(sql, noticeUID, function (err, result) {
       if (err) throw err;
 
-      res.status(200).json({status:200, data: result, message:"success"});
+      res.status(200).json({status:200, data: result[0], message:"success"});
     });
 });
 

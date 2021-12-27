@@ -110,7 +110,7 @@ api.get("/:faqUID", verifyAdminToken, function(req, res) {
     db.query(sql, faqUID, function (err, result) {
       if (err) throw err;
 
-      res.status(200).json({status:200, data: result, message:"success"});
+      res.status(200).json({status:200, data: result[0], message:"success"});
     });
 });
 
