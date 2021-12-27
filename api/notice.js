@@ -45,7 +45,7 @@ api.get('/', function (req, res) {
     });
 });
 
-// 공지사항 상세조회
+// cms - 공지사항 상세조회
 api.get("/:noticeUID", verifyAdminToken, function(req, res) {
 	var noticeUID = req.params.noticeUID;
     var sql = "select title, contents, category from notice where UID = ?";

@@ -29,6 +29,18 @@ api.get("/", verifyAdminToken, function(req, res) {
     });
 });
 
+// cms - 문의 상세조회
+api.get("/:inquiryUID", verifyAdminToken, function(req, res) {
+	var inquiryUID = req.params.inquiryUID;
+    var sql = "select inquiryType, inquiryTitle, inquiryContents, userName, userEmail, userGroup, userCellNumber from inquiry where UID = ?";
+
+    db.query(sql, inquiryUID, function (err, result) {
+      if (err) throw err;
+
+      res.status(200).json({status:200, data: result[0], message:"success"});
+    });
+});
+
 // 문의 하기
 api.post("/", 
         [
