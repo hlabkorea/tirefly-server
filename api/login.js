@@ -63,6 +63,23 @@ api.post('/',
 						  //expiresIn: '1440m'    // 유효 시간은 1440분
 						});
 
+						// 토큰 이력 추가
+						var token_check_sql = "select token from user_log where userUID = ? "
+									  + "order by regDate desc "
+									+ "limit 1";
+	  
+						db.query(token_check_sql, userUID, function (err, result, fields) {
+						  if (err) throw err;
+	  
+						  if(token != result[0]){
+							var token_insert_sql = "insert into user_log(userUID, token) values(?, ?)";
+							var data = [userUID, token];
+							db.query(token_insert_sql, data, function (err, result, fields) {
+							  if (err) throw err;
+							});
+						  }
+						});
+
 						res.status(200).send({status: 200, data: {UID: userUID ,email: email, token: token, redirect: redirect, auth: auth, endDate: endDate}});
 					}
 					else { // Invited 유저인지 확인
@@ -89,28 +106,27 @@ api.post('/',
 							  //expiresIn: '1440m'    // 유효 시간은 1440분
 							});
 
+							// 토큰 이력 추가
+						    var token_check_sql = "select token from user_log where userUID = ? "
+										  + "order by regDate desc "
+									  	+ "limit 1";
+		  
+						    db.query(token_check_sql, userUID, function (err, result, fields) {
+							  if (err) throw err;
+		  
+							  if(token != result[0]){
+							    var token_insert_sql = "insert into user_log(userUID, token) values(?, ?)";
+							    var data = [userUID, token];
+							    db.query(token_insert_sql, data, function (err, result, fields) {
+							  	  if (err) throw err;
+							    });
+							  }
+						    });
+
 							res.status(200).send({status: 200, data: {UID: userUID ,email: email, token: token, redirect: redirect, auth: auth, endDate: endDate}});
 						 });
 					}
-					
 				  });
-  
-				  // 토큰 이력 추가
-                  var token_check_sql = "select token from user_log where userUID = ? "
-                                + "order by regDate desc "
-                                + "limit 1";
-  
-                  db.query(token_check_sql, userUID, function (err, result, fields) {
-                    if (err) throw err;
-  
-                    if(token != result[0]){
-                      var token_insert_sql = "insert into user_log(userUID, token) values(?, ?)";
-                      var data = [userUID, token];
-                      db.query(token_insert_sql, data, function (err, result, fields) {
-                        if (err) throw err;
-                      });
-                    }
-                  });
                 }
             });
           }

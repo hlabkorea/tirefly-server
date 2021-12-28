@@ -30,8 +30,8 @@ app.use((req, res, next) => {
         next();
     });
 });
-app.use(bodyParser.urlencoded({ limit: "50mb", extended: false }));
-app.use(bodyParser.json({ limit: "50mb" }));
+app.use(bodyParser.urlencoded({ limit: "100mb", extended: false }));
+app.use(bodyParser.json({ limit: "100mb" }));
 app.use(express.urlencoded( {extended : false } ));
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');

@@ -1181,7 +1181,6 @@ api.post("/inapp",
 			if(errors.isEmpty()){
 				var userUID = req.body.userUID;
 				var receipt = req.body.receipt;
-
 				var excludeOldTransactions = true;
 				var verifiedReceipt = await verifyReceipt(receipt, excludeOldTransactions);
 				insertApplePayment(userUID, verifiedReceipt, res);
@@ -1191,8 +1190,11 @@ api.post("/inapp",
 
 // app-store 결제 정보
 api.post("/app-store/v1", async (req, res) => {
+	console.log(req.body);
     try {
+		console.log(req.body);
         var notificationType = req.body.notification_type;
+		console.log(notificationType);
 		if(notificationType == "DID_RENEW"){ // 자동 갱신
 			var receiptData = req.body.unified_receipt.latest_receipt;
 			var excludeOldTransactions = true;
@@ -1209,6 +1211,7 @@ api.post("/app-store/v1", async (req, res) => {
 			});
 		}
     } catch (e) {
+		console.log(e);
         res.status(400).send(e);
     }
 });

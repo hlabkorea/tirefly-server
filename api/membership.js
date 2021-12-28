@@ -29,46 +29,74 @@ api.get('/auth/:userUID', verifyToken, function (req, res) {
 
 // 멤버십 정보 조회
 api.get('/:userUID', verifyToken, function (req, res) {
-		var sql = "select level, startDate, endDate from membership where userUID = ? order by endDate";
-		var userUID = req.params.userUID;
-		db.query(sql, userUID, function (err, result) {
-			if (err) throw err;
-			
-			var maxCount = 0;
-			if(result.length != 0) {
-				var endDate = result[0].endDate;
-				endDate = toHypenDateFormat(endDate);
-				var currentDateTime = getCurrentDateTime();
+    var userUID = req.params.userUID;
+    var membership_sql = "select level, startDate, endDate from membership " +
+        "where date_format(membership.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') and userUID = ?";
 
-				if(currentDateTime > endDate){
-					res.status(200).json({status:200,  data: {level: "normal", startDate: "0000-01-01 00:00:00", endDate: "0000-01-01 00:00:00", maxCount: 0}, message:"success"});
-				}
-				else{
-					switch(result[0].level){
-						case "single": 
-							maxCount = 1;
-                            break;
-                        case "IOS_mobile":
-						case "mobile":
-							maxCount = 1;
-							break;
-						case "friends":
-							maxCount = 3;
-							break;
-						case "family":
-							maxCount = 5;
-							break;
-					}
+    db.query(membership_sql, userUID, function (err, result, fields) {
+        if (err) throw err;
 
-					result[0].maxCount = maxCount;
-					res.status(200).json({status:200,  data: result[0], message:"success"});
-				}
-				
-			}
-			else{
-				res.status(200).json({status:200,  data: {level: "normal", startDate: "0000-01-01 00:00:00", endDate: "0000-01-01 00:00:00", maxCount: 0}, message:"success"});
-			}
-		});
+        var level = "normal";
+        var startDate = 0;
+        var endDate = 0;
+        var maxCount = 0;
+
+        // 멤버십 결제자인지 확인
+        if (result.length != 0) {
+            level = result[0].level;
+            startDate = result[0].startDate;
+            endDate = result[0].endDate;
+
+            switch (level) {
+                case "single":
+                    result[0].maxCount = 1;
+                    break;
+                case "IOS_mobile":
+                case "mobile":
+                    result[0].maxCount = 1;
+                    break;
+                case "friends":
+                    result[0].maxCount = 3;
+                    break;
+                case "family":
+                    result[0].maxCount = 5;
+                    break;
+            }
+
+            res.status(200).send({
+                status: 200,
+                data: result[0],
+                message: "success"
+            });
+        } else { // Invited 유저인지 확인
+            var membership_group_sql = "select membership.startDate, membership.endDate " +
+                "from membership_group " +
+                "join membership on membership.userUID = membership_group.ownerUID " +
+                "where date_format(membership.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') and membership_group.userUID = ? " +
+                "order by membership.endDate desc " +
+                "limit 1";
+            db.query(membership_group_sql, userUID, function (err, result, fields) {
+                if (err) throw err;
+
+                if (result.length != 0) {
+                    level = "invited";
+                    startDate = result[0].startDate;
+                    endDate = result[0].endDate;
+                }
+
+                res.status(200).send({
+                    status: 200,
+                    data: {
+                        level: level,
+                        startDate: startDate,
+                        endDate: endDate,
+                        maxCount: maxCount
+                    },
+                    message: "success"
+                });
+            });
+        }
+    });
 });
 
 
