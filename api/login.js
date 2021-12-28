@@ -92,7 +92,6 @@ api.post('/',
 							res.status(200).send({status: 200, data: {UID: userUID ,email: email, token: token, redirect: redirect, auth: auth, endDate: endDate}});
 						 });
 					}
-					
 				  });
   
 				  // 토큰 이력 추가
