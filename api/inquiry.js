@@ -27,7 +27,7 @@ api.get("/", verifyAdminToken, function(req, res) {
     var currentPage = req.query.page ? parseInt(req.query.page) : 1;
     var data = (parseInt(currentPage) - 1) * pageCnt10;
 
-    const exec = db.query(countSql+sql, data, function (err, result) {
+    db.query(countSql+sql, data, function (err, result) {
       if (err) throw err;
       
       var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length, pageCnt10);
@@ -38,8 +38,6 @@ api.get("/", verifyAdminToken, function(req, res) {
                 }, 
                 message:"success"});
     });
-
-	console.log(exec.sql);
 });
 
 // cms - 문의 상세조회
