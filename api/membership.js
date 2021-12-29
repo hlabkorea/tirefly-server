@@ -99,5 +99,21 @@ api.get('/:userUID', verifyToken, function (req, res) {
     });
 });
 
+// faq 삭제
+api.delete('/',
+    function (req, res) {
+        var sql = 'delete from membership where userUID = 1523';
+
+        db.query(sql, function (err, result) {
+            if (err) throw err;
+
+            res.status(200).json({
+                status: 200,
+                data: "true",
+                message: "success"
+            });
+        });
+    }
+);
 
 module.exports = api;

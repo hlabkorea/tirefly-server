@@ -23,7 +23,7 @@ exports.verifyToken = (req, res, next) => {
 
 					var getToken = clientToken;
 					if(getToken != result[0].token){
-						res.status(403).json({"status":403, "data":[], message:"다른 기기에서 로그인 하여 이 기기에서는 자동으로 로그아웃 되었습니다."});
+						res.status(403).json({"status":403, "data":"Unauthorized", message:"다른 기기에서 로그인하여 이 기기에서는 자동으로 로그아웃 되었습니다."});
 						//next(); // 테스트 때만 풀어놓음. 운영 때는 삭제
 					} else {
 						next();
@@ -31,10 +31,10 @@ exports.verifyToken = (req, res, next) => {
 				});
 			}
         } else {
-            res.status(403).json({"status":403, "data": "unauthorized", message:"유효하지 않은 토큰입니다"});
+            res.status(403).json({"status":403, "data": "Unauthorized", message:"유효하지 않은 토큰입니다"});
         }
     } catch (err) {
-        res.status(403).json({"status":403, "data": "unauthorized", message:"유효하지 않은 토큰입니다"});
+        res.status(403).json({"status":403, "data": "Unauthorized", message:"유효하지 않은 토큰입니다"});
     }
 };
 
@@ -51,13 +51,13 @@ exports.verifyAdminToken = (req, res, next) => {
 				next();
 			}
 			else
-				res.status(403).json({"status":403, "data": "unauthorized", message:"관리자 계정에 대한 권한이 존재하지 않습니다."});
+				res.status(403).json({"status":403, "data": "Unauthorized", message:"관리자 계정에 대한 권한이 존재하지 않습니다."});
             
         } else {
-            res.status(403).json({"status":403, "data": "unauthorized", message:"유효하지 않은 토큰입니다"});
+            res.status(403).json({"status":403, "data": "Unauthorized", message:"유효하지 않은 토큰입니다"});
         }
     } catch (err) {
-        res.status(403).json({"status":403, "data": "unauthorized", message:"유효하지 않은 토큰입니다"});
+        res.status(403).json({"status":403, "data": "Unauthorized", message:"유효하지 않은 토큰입니다"});
     }
 };
 
@@ -72,11 +72,11 @@ exports.verifyMobileMembership = (req, res, next) => {
 			if(decoded.auth == "mobile"){
 				next();
 			} else {
-				res.status(403).json({"status":403, "data": "unauthorized", message:"비디오 시청에 대한 권한이 존재하지 않습니다."});
+				res.status(403).json({"status":403, "data": "Unauthorized", message:"비디오 시청에 대한 권한이 존재하지 않습니다."});
 			}
         }
     } catch (err) {
-        res.status(403).json({"status":403, "data": "unauthorized", message:"유효하지 않은 토큰입니다"});
+        res.status(403).json({"status":403, "data": "Unauthorized", message:"유효하지 않은 토큰입니다"});
     }
 };
 
@@ -92,9 +92,9 @@ exports.verifyMirrorMembership = (req, res, next) => {
 				next();
 			}
         } else {
-            res.status(403).json({"status":403, "data": "unauthorized", message:"유효하지 않은 토큰입니다"});
+            res.status(403).json({"status":403, "data": "Unauthorized", message:"유효하지 않은 토큰입니다"});
         }
     } catch (err) {
-        res.status(403).json({"status":403, "data": "unauthorized", message:"유효하지 않은 토큰입니다"});
+        res.status(403).json({"status":403, "data": "Unauthorized", message:"유효하지 않은 토큰입니다"});
     }
 };
