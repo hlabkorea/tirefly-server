@@ -1190,7 +1190,6 @@ api.post("/inapp",
 
 // app-store 결제 정보
 api.post("/app-store/v1", async (req, res) => {
-	console.log(req.body);
     try {
         var notificationType = req.body.notification_type;
 		console.log(notificationType);
