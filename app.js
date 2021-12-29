@@ -24,8 +24,10 @@ app.use(morgan('combined',
 // parse application/x-www-form-urlencoded
 app.use((req, res, next) => {
     bodyParser.json()(req, res, err => {
-        var buf = Buffer.from(JSON.stringify(req.body));
-        console.log(buf.length);
+        if (req.url != '/'){
+            var buf = Buffer.from(JSON.stringify(req.body));
+            console.log(buf.length);
+        }
         if (err) 
             return res.status(400).json({status: 400, data: {err: err}, message: "fail"});
 
