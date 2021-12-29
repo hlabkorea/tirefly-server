@@ -1061,7 +1061,7 @@ async function verifyTestReceipt(receiptData, excludeOldTransactions){
 
 async function verifyReceipt(receiptData, excludeOldTransactions){
     const verifiedReceipt = await axios({
-        url: "https://sandbox.itunes.apple.com/verifyReceipt",
+        url: "https://buy.itunes.apple.com/verifyReceipt",
         method: "post", // POST method
         headers: {
             "Content-Type": "application/json"
@@ -1073,7 +1073,7 @@ async function verifyReceipt(receiptData, excludeOldTransactions){
         }
     });
 
-    if(verifiedReceipt.data.status == 21007)
+    if(verifiedReceipt.data.status == 21007) // 21007은 샌드박스 테스트할 때의 status code
         return await verifyTestReceipt(receiptData, excludeOldTransactions);
     else
 	    return verifiedReceipt.data;
@@ -1090,17 +1090,19 @@ function updateAppleMembership(level, membershipUID, endTimestamp){
 }
 
 // 주문에 대한 멤버십 정보 추가
-function insertAppleOrderMembership(paymentUID, membershipUID, paidTimestamp, endTimestamp){
+function insertAppleOrderMembership(paymentUID, membershipUID, paidTimestamp, endTimestamp, res){
 	var productPaymentInsertSql = "insert payment_product_list(paymentUID, membershipUID, regDate, membershipEndDate) values (?, ?, date_format(from_unixtime(?), '%Y-%m-%d %H:%i:%S'), date_format(from_unixtime(?), '%Y-%m-%d 23:59:59'))";
 	var productPaymentInsertData = [paymentUID, membershipUID, paidTimestamp, endTimestamp];
 
 	db.query(productPaymentInsertSql, productPaymentInsertData, function (err, result) {
-		if (err) throw err;
+        if (err) throw err;
+        
+        res.status(200).json({status:200, data: "true", message:"success"}); // 인앱결제 종료
 	});
 }
 
 // 멤버십 정보 추가
-function insertAppleMembership(userUID, level, paymentUID, paidTimestamp, endTimestamp){
+function insertAppleMembership(userUID, level, paymentUID, paidTimestamp, endTimestamp, res){
 	var membershipExistSql = "select UID from membership where userUID = ?";
 	var membershipUID = 0;
 	db.query(membershipExistSql, userUID, function (err, existResult) {
@@ -1120,14 +1122,14 @@ function insertAppleMembership(userUID, level, paymentUID, paidTimestamp, endTim
 
 				membershipUID = insertResult.insertId;
 
-				insertAppleOrderMembership(paymentUID, membershipUID, paidTimestamp, endTimestamp);
+				insertAppleOrderMembership(paymentUID, membershipUID, paidTimestamp, endTimestamp, res);
 			});
 		}
 	});
 }
 
 function insertApplePayment(userUID, verifiedReceipt, res){
-	if(verifiedReceipt.status == 0){
+	if(verifiedReceipt.status == 0){ // 유효한 영수증
 		var receiptData = verifiedReceipt.latest_receipt;
 		var latestReceipt = verifiedReceipt.latest_receipt_info[0];
 		var productId = latestReceipt.product_id;
@@ -1157,14 +1159,12 @@ function insertApplePayment(userUID, verifiedReceipt, res){
 					if (err) throw err;
 
 					var paymentUID = paymentResult.insertId;
-					insertAppleMembership(userUID, name, paymentUID, paidTimestamp, endTimestamp);						
-					
-					res.status(200).json({status:200, data: "true", message:"success"});
+					insertAppleMembership(userUID, name, paymentUID, paidTimestamp, endTimestamp, res);				
 				});
 			});				
 		});
 	}
-	else{
+	else{ // 유효하지 않은 영수증
 		res.status(403).json({status:403, data: "false", message: "fail"}); // 영수증 데이터가 유효하지 않습니다	
 	}
 }
@@ -1181,7 +1181,7 @@ api.post("/inapp",
 			if(errors.isEmpty()){
 				var userUID = req.body.userUID;
 				var receipt = req.body.receipt;
-				var excludeOldTransactions = true;
+				var excludeOldTransactions = true; // 
 				var verifiedReceipt = await verifyReceipt(receipt, excludeOldTransactions);
 				insertApplePayment(userUID, verifiedReceipt, res);
 			}
@@ -1192,7 +1192,6 @@ api.post("/inapp",
 api.post("/app-store/v1", async (req, res) => {
 	console.log(req.body);
     try {
-		console.log(req.body);
         var notificationType = req.body.notification_type;
 		console.log(notificationType);
 		if(notificationType == "DID_RENEW"){ // 자동 갱신

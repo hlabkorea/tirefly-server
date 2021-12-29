@@ -21,21 +21,17 @@ app.use(morgan('combined',
             }
         }
     }));
+app.use(bodyParser.urlencoded({ limit: "100mb", extended: false }));
+app.use(bodyParser.json({ limit: "100mb" }));
 // parse application/x-www-form-urlencoded
 app.use((req, res, next) => {
     bodyParser.json()(req, res, err => {
-        if (req.url != '/'){
-            var buf = Buffer.from(JSON.stringify(req.body));
-            console.log(buf.length);
-        }
         if (err) 
             return res.status(400).json({status: 400, data: {err: err}, message: "fail"});
 
         next();
     });
 });
-app.use(bodyParser.urlencoded({ limit: "100mb", extended: false }));
-app.use(bodyParser.json({ limit: "100mb" }));
 app.use(express.urlencoded( {extended : false } ));
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
