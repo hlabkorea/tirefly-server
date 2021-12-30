@@ -1220,11 +1220,7 @@ function insertAppleMembership(userUID, level, paymentUID, paidTimestamp, endTim
 
         if (existResult.length != 0) {
             membershipUID = existResult[0].UID;
-<<<<<<< HEAD
             insertAppleOrderMembership(paymentUID, membershipUID, paidTimestamp, endTimestamp, res);
-=======
-            insertAppleOrderMembership(paymentUID, membershipUID, paidTimestamp, endTimestamp);
->>>>>>> dd8287d849f2d75a8cd3af709a19a8ce8b08d671
             updateAppleMembership(level, membershipUID, endTimestamp);
         } else {
             var membershipInsertSql = "insert membership(userUID, level, paymentUID, startDate, endDate) " +
