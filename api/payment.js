@@ -374,7 +374,7 @@ api.get('/membership/:userUID',
     verifyToken,
     function (req, res, next) {
         var userUID = req.params.userUID;
-        var sql = "select payment.UID as paymentUID, payment.name, payment.amount, payment.payMethod, payment.regDate, date_add(payment.regDate, interval 1 month) as membershipEndDate " +
+        var sql = "select payment.UID as paymentUID, payment.name, payment.amount, payment.payMethod, payment.regDate, date_add(date_format(payment.regDate, '%Y-%m-%d 23:59:59'), interval 1 month) as membershipEndDate " +
             "from payment " +
             "join payment_product_list on payment.UID = payment_product_list.paymentUID " +
             "where payment.userUID = ? and payment.type = 'membership' " +
