@@ -374,7 +374,7 @@ api.get('/membership/:userUID',
     verifyToken,
     function (req, res, next) {
         var userUID = req.params.userUID;
-        var sql = "select payment.UID as paymentUID, payment.name, payment.amount, payment.payMethod, payment.regDate, payment_product_list.membershipEndDate " +
+        var sql = "select payment.UID as paymentUID, payment.name, payment.amount, payment.payMethod, payment.regDate, date_add(payment.regDate, interval 1 month) as membershipEndDate " +
             "from payment " +
             "join payment_product_list on payment.UID = payment_product_list.paymentUID " +
             "where payment.userUID = ? and payment.type = 'membership' " +
@@ -958,9 +958,9 @@ function saveOrderProduct(paymentUID, productUID, optionUID, count, buyerEmail) 
 }
 
 // 멤버십 정보 업데이트
-function updateMembership(level, laterNum, membershipUID) {
-    var membershipUpdateSql = "update membership set level = ?, endDate = date_add(now(), interval ? month) where UID = ?";
-    var membershipUpdateData = [level, laterNum, membershipUID];
+function updateMembership(level, laterNum, membershipUID, paymentUID) {
+    var membershipUpdateSql = "update membership set level = ?, endDate = date_add(now(), interval ? month), paymentUID = ? where UID = ?";
+    var membershipUpdateData = [level, laterNum, paymentUID, membershipUID];
 
     db.query(membershipUpdateSql, membershipUpdateData, function (err, result) {
         if (err) throw err;
@@ -968,9 +968,9 @@ function updateMembership(level, laterNum, membershipUID) {
 }
 
 // 주문에 대한 멤버십 정보 추가
-function insertOrderMembership(paymentUID, membershipUID, laterNum) {
-    var productPaymentInsertSql = "insert payment_product_list(paymentUID, membershipUID, membershipEndDate) values (?, ?, date_add(addtime(curdate(), '23:59:59'), interval ? month))";
-    var productPaymentInsertData = [paymentUID, membershipUID, laterNum];
+function insertOrderMembership(paymentUID, membershipUID) {
+    var productPaymentInsertSql = "insert payment_product_list(paymentUID, membershipUID) values (?, ?)";
+    var productPaymentInsertData = [paymentUID, membershipUID];
 
     db.query(productPaymentInsertSql, productPaymentInsertData, function (err, result) {
         if (err) throw err;
@@ -987,7 +987,7 @@ function insertMembership(userUID, level, laterNum, paymentUID) {
 
         membershipUID = insertResult.insertId;
 
-        insertOrderMembership(paymentUID, membershipUID, laterNum);
+        insertOrderMembership(paymentUID, membershipUID);
     });
 }
 
@@ -1002,8 +1002,8 @@ function checkAndInsertMembership(userUID, level, paymentUID, laterNum) {
         if (result.length != 0) {
             membershipUID = result[0].UID;
             laterNum = 1;
-            updateMembership(level, laterNum, membershipUID);
-            insertOrderMembership(paymentUID, membershipUID, laterNum);
+            updateMembership(level, laterNum, membershipUID, paymentUID);
+            insertOrderMembership(paymentUID, membershipUID);
         } else {
             insertMembership(userUID, level, laterNum, paymentUID);
         }
@@ -1111,8 +1111,8 @@ function saveOrder(paidId, paymentData) {
                         // 만료일을 다음 달로 업데이트
                         let membershipUID = result[0].UID;
 
-                        updateMembership(name, laterNum, membershipUID);
-                        insertOrderMembership(paymentUID, membershipUID, laterNum);
+                        updateMembership(name, laterNum, membershipUID, paymentUID);
+                        insertOrderMembership(paymentUID, membershipUID);
                     }
                 }
             });
@@ -1181,9 +1181,9 @@ async function verifyReceipt(receiptData, excludeOldTransactions) {
 }
 
 // 멤버십 정보 업데이트
-function updateAppleMembership(level, membershipUID, endTimestamp) {
-    var membershipUpdateSql = "update membership set level = ?, endDate = date_format(from_unixtime(?), '%Y-%m-%d 23:59:59') where UID = ?";
-    var membershipUpdateData = [level, endTimestamp, membershipUID];
+function updateAppleMembership(level, membershipUID, endTimestamp, paymentUID) {
+    var membershipUpdateSql = "update membership set level = ?, endDate = date_format(from_unixtime(?), '%Y-%m-%d 23:59:59'), paymentUID = ? where UID = ?";
+    var membershipUpdateData = [level, endTimestamp, paymentUID, membershipUID];
 
     db.query(membershipUpdateSql, membershipUpdateData, function (err, result) {
         if (err) throw err;
@@ -1192,9 +1192,9 @@ function updateAppleMembership(level, membershipUID, endTimestamp) {
 
 // 주문에 대한 멤버십 정보 추가
 function insertAppleOrderMembership(paymentUID, membershipUID, paidTimestamp, endTimestamp, res) {
-    var productPaymentInsertSql = "insert payment_product_list(paymentUID, membershipUID, regDate, membershipEndDate) " +
-        "values (?, ?, date_format(from_unixtime(?), '%Y-%m-%d %H:%i:%S'), date_format(from_unixtime(?), '%Y-%m-%d 23:59:59'))";
-    var productPaymentInsertData = [paymentUID, membershipUID, paidTimestamp, endTimestamp];
+    var productPaymentInsertSql = "insert payment_product_list(paymentUID, membershipUID, regDate) " +
+        "values (?, ?, date_format(from_unixtime(?), '%Y-%m-%d %H:%i:%S'))";
+    var productPaymentInsertData = [paymentUID, membershipUID, paidTimestamp];
 
     db.query(productPaymentInsertSql, productPaymentInsertData, function (err, result) {
         if (err) throw err;
@@ -1217,7 +1217,7 @@ function insertAppleMembership(userUID, level, paymentUID, paidTimestamp, endTim
         if (existResult.length != 0) {
             membershipUID = existResult[0].UID;
             insertAppleOrderMembership(paymentUID, membershipUID, paidTimestamp, endTimestamp, res);
-            updateAppleMembership(level, membershipUID, endTimestamp);
+            updateAppleMembership(level, membershipUID, endTimestamp, paymentUID);
         } else {
             var membershipInsertSql = "insert membership(userUID, level, paymentUID, startDate, endDate) " +
                 "values (?, ?, ?, date_format(from_unixtime(?), '%Y-%m-%d %H:%i:%S'), date_format(from_unixtime(?), '%Y-%m-%d 23:59:59'))";
