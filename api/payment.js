@@ -487,6 +487,7 @@ api.get('/product/:userUID',
     }
 );
 
+// 아임포트 - 토큰 조회
 async function getToken() {
     const getToken = await axios({
         url: "https://api.iamport.kr/users/getToken",
@@ -500,9 +501,10 @@ async function getToken() {
         }
     });
 
-    return getToken.data.response;
+    return getToken.data.response.access_token;
 }
 
+// 아임포트 - 멤버십 구독 예약
 async function scheduleMembership(access_token, customer_uid, laterNum, amount, name, custom_data) {
     axios({
         url: "https://api.iamport.kr/subscribe/payments/schedule",
@@ -533,7 +535,7 @@ async function appendFreeMembership(imp_uid, access_token, customer_uid, name, c
     await scheduleMembership(access_token, customer_uid, laterNum, amount, name, custom_data);
 }
 
-
+// 아임포트 - 멤버십 결제
 async function payForMembership(customer_uid, name, amount, custom_data) {
     // 인증 토큰 발급 받기
     const access_token = await getToken();
@@ -584,11 +586,10 @@ async function payForMembership(customer_uid, name, amount, custom_data) {
     }
 }
 
-// imp_uid로 아임포트 서버에서 결제 정보 조회
+// 아임포트 - 결제 정보 조회
 async function getPaymentData(imp_uid) {
     // 인증 토큰 발급 받기
     const access_token = await getToken();
-
     const paymentData = await axios({
         url: `https://api.iamport.kr/payments/${imp_uid}`,
         method: "get", // GET method
@@ -632,7 +633,7 @@ api.post("/billings", async (req, res) => {
     }
 });
 
-// 결제 환불 처리
+// 관리자 - 결제 환불 처리
 function refundOrder(amount, merchantUid) {
     var sql = "update payment set refundAmount = ?, paymentStatus = 'cancelled', orderStatus = '취소승인' where merchantUid = ?";
     var data = [amount, merchantUid];
@@ -641,7 +642,7 @@ function refundOrder(amount, merchantUid) {
     });
 }
 
-// 환불 완료 처리
+// 관리자 - 결제 환불 완료 처리
 function completeRefund(refConfMsg, orderStatus, paymentUID, res) {
     var sql = "update payment " +
         "set refConfMsg = ?, orderStatus = ?, refConfDate = now() " +
@@ -653,7 +654,7 @@ function completeRefund(refConfMsg, orderStatus, paymentUID, res) {
     });
 }
 
-// 아임포트 결제 환불
+// 아임포트 - 결제 환불
 async function refundFromIamport(refundMsg, impUid, refundAmount) {
     // 인증 토큰 발급 받기
     const access_token = await getToken();
@@ -727,7 +728,7 @@ async function getScheduledData(customerUid) {
     return scheduledData;
 }
 
-// 아임포트 구독 예약 취소
+// 아임포트 구독 예약 취소 (멤버십 해지)
 async function unscheduleFromIamport(customerUid, merchantUid) {
     const access_token = await getToken();
 
@@ -1122,16 +1123,11 @@ function saveOrder(paidId, paymentData) {
 // 결제 승인, 예약결제가 시도되었을 때의 웹훅(Notification)
 api.post("/iamport-webhook", async (req, res) => {
     try {
-        const {
-            imp_uid,
-            merchant_uid
-        } = req.body;
+        const imp_uid = req.body.imp_uid;
+		const merchant_uid = req.body.merchant_uid;
         const paidId = merchant_uid.substr(0, 1);
-
         const paymentData = await getPaymentData(imp_uid);
-        const {
-            status
-        } = paymentData;
+        const status = paymentData.status;
 
         if (status === "paid") { // 결제 성공적으로 완료
             saveOrder(paidId, paymentData);
