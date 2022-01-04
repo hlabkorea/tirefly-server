@@ -8,8 +8,8 @@ var con = mysql.createConnection({
 	user : 'hlab_dev',
 	password : 'hlab0901',
 	database : 'motif',
-    multipleStatements: true,
-    dateStrings: true
+    multipleStatements: true, // 다중 쿼리 가능
+    dateStrings: true // Date 형식 변형 X (ex) 2020-08-09T08:11:31.OOOZ -> 2020-08-09 08:11:31)
 });
 
 con.connect(function(err) {
