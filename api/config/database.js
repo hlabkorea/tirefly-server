@@ -8,7 +8,8 @@ var con = mysql.createConnection({
 	user : 'hlab_dev',
 	password : 'hlab0901',
 	database : 'motif',
-	multipleStatements: true
+    multipleStatements: true,
+    dateStrings: true
 });
 
 con.connect(function(err) {

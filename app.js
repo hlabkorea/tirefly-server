@@ -96,4 +96,4 @@ app.use('/admin_log', require('./api/admin_log.js'));
 
 app.use('/qt_version', require('./api/qt_version.js'));
 app.use('/notice', require('./api/notice.js'));
-app.use('/excel_download', require('./api/excel_download.js'));
+app.use('/stock', require('./api/stock.js'));
