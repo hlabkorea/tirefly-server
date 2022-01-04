@@ -55,13 +55,10 @@ api.get('/:userUID', verifyToken, async function (req, res) {
 	var info_sql = "select profileImg, email, cellNumber, nickName, birthday, gender, height, weight, purpose, intensity, frequency, theHours, momentum, regDate "
 				+ "from user "
 				+ "where UID = ?";
-	await db.query(info_sql, userUID, function (err, result, fields) {
+	db.query(info_sql, userUID, function (err, result, fields) {
 		if (err) throw err;
 
 		if(result.length != 0){
-			if(result[0].birthday != null){
-				result[0].birthday = toHypenDateFormat(result[0].birthday);
-			}
 			responseData = result[0];
 		}
 	});
@@ -71,7 +68,7 @@ api.get('/:userUID', verifyToken, async function (req, res) {
 					+ "from my_category "
 					+ "join category on my_category.categoryUID = category.UID "
 					+ "where my_category.userUID = ?";
-	await db.query(category_sql, userUID, function (err, result, fields) {
+	db.query(category_sql, userUID, function (err, result, fields) {
 		if (err) throw err;
 
 		responseData.categories = [];

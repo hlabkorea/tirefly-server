@@ -14,7 +14,7 @@ api.get('/auth/:userUID', verifyToken, function (req, res) {
 			
 			if(result.length != 0){
 				var endDate = result[0].endDate;
-				endDate = toHypenDateFormat(endDate);
+				//endDate = toHypenDateFormat(endDate);
 				var currentDateTime = getCurrentDateTime();
 
 				if(currentDateTime <= endDate)

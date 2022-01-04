@@ -3,7 +3,7 @@ const db = require('./config/database.js');
 const api = express.Router();
 const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
 const axios = require('axios');
-const { toHypenDateFormat } = require('./config/toDateFormat.js');
+//const { toHypenDateFormat } = require('./config/toDateFormat.js');
 const { generateRandomNumber } = require('./config/generateRandomNumber.js');
 const { getPageInfo } = require('./config/paging.js'); 
 const { getCurrentDateTime, getNextDateTime } = require('./config/date.js');
@@ -1100,7 +1100,7 @@ function saveOrder(paidId, paymentData) {
 
                 if (result[0].endDate != undefined) {
                     var endDate = result[0].endDate;
-                    endDate = toHypenDateFormat(endDate);
+                    //endDate = toHypenDateFormat(endDate);
                     var currentDateTime = getCurrentDateTime();
 
                     if (endDate >= currentDateTime) {
