@@ -39,10 +39,10 @@ api.post('/',
 							
 							var isFull = false;
 							if (level == "friends"){
-								if(result[0].count >= 2) // owner를 제외
+								if(result[0].count >= 2) // owner를 제외하고 2명
 									isFull = true;
 							} else if (level == "family"){
-								if(result[0].count >= 4) // owner를 제외
+								if(result[0].count >= 4) // owner를 제외하고 4명
 									isFull = true;
 							}		
 
