@@ -101,7 +101,7 @@ api.put("/file/:inquiryUID", upload.single("file"), function(req, res) {
 });
 
 // 문의 완료하기
-api.put("/complete/:inquiryUID", 
+api.put("/:inquiryUID", 
         verifyAdminToken, 
         [
           check("completeMsg", "completeMsg is required").not().isEmpty()
