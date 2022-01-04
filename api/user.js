@@ -12,7 +12,6 @@ const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 const { sendJoinMail, sendPasswdMail } = require('./config/mail.js');
 const { maskEmail } = require('./config/masking');
-const { toHypenDateFormat } = require('./config/date.js');
 const { addSearchSql } = require('./config/searchSql.js');
 const { getPageInfo } = require('./config/paging.js'); 
 const pageCnt15 = 15;

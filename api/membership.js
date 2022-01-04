@@ -2,7 +2,7 @@ const express = require('express');
 const db = require('./config/database.js');
 const { verifyToken } = require("./config/authCheck.js");
 const api = express.Router();
-const { getCurrentDateTime, toHypenDateFormat } = require('./config/date.js');
+const { getCurrentDateTime } = require('./config/date.js');
 
 // 멤버십 소유자인지 조회
 api.get('/auth/:userUID', verifyToken, function (req, res) {
@@ -14,7 +14,6 @@ api.get('/auth/:userUID', verifyToken, function (req, res) {
 			
 			if(result.length != 0){
 				var endDate = result[0].endDate;
-				//endDate = toHypenDateFormat(endDate);
 				var currentDateTime = getCurrentDateTime();
 
 				if(currentDateTime <= endDate)
