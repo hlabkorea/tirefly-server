@@ -8,7 +8,9 @@ const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 const pageCnt15 = 15;
 
-// 후기 조회
+// 강사 평점을 조회하는 /:teacherUID를 /teacher/:teacherUID 로 수정하고, 리뷰를 조회하는 /detail/:reviewUID를 /:reviewUID 로 수정해야합니다
+
+// 후기 전체 조회
 api.get('/', verifyAdminToken, function (req, res) {
     var searchType = req.query.searchType ? req.query.searchType : '';
     var searchWord = req.query.searchWord ? req.query.searchWord : '';
@@ -42,10 +44,10 @@ api.get('/', verifyAdminToken, function (req, res) {
     });
 });
 
-// 후기 조회
+// 후기 상세조회
 api.get('/detail/:reviewUID', verifyAdminToken, function (req, res) {
     var reviewUID = req.params.reviewUID;
-    var sql = "select review.videoUID, video.videoName, teacher.teacherName, review.userUID, user.nickName, review.reviewLevel, review.reviewPoint, review.reviewContents " +
+    var sql = "select review.videoUID, video.videoName, teacher.teacherName, review.userUID, user.nickName, review.reviewLevel, review.reviewPoint, review.reviewContents, review.regDate " +
         "from review " +
         "join user on review.userUID = user.UID " +
         "join video on review.videoUID = video.UID " +
@@ -64,7 +66,6 @@ api.get('/detail/:reviewUID', verifyAdminToken, function (req, res) {
 });
 
 // 강사에 대한 평점 조회
-// /point/:teacherUID 로 수정하고, 리뷰 조회를 /:reviewUID 로 수정하면 좋을 것 같습니다
 api.get('/:teacherUID', verifyToken, function (req, res) {
     var sql = "select ifnull(round(avg(review.reviewPoint), 1), 0) as point " +
         "from review " +
