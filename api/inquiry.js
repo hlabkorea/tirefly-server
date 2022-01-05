@@ -113,14 +113,14 @@ api.put("/:inquiryUID",
 			var inquiryUID = req.params.inquiryUID;
             var completeMsg = req.body.completeMsg;
             console.log(completeMsg);
-            /*var sql = 'update inquiry set completeMsg = ?, inquiryComplete=1, updateUID = ? where UID = ?';
+            var sql = 'update inquiry set completeMsg = ?, inquiryComplete=1, updateUID = ? where UID = ?';
             var data = [completeMsg, adminUID, inquiryUID];
 
             db.query(sql, data, function (err, result) {
                 if (err) throw err;
 
                 res.status(200).json({status:200, data: "true", message:"success"});
-            });*/
+            });
           }
         }
 );
