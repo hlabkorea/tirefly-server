@@ -22,6 +22,10 @@ const onlyUploadStorage = multer.diskStorage({
 
 const upload = multer({storage: storage});
 const onlyUpload = multer({storage: onlyUploadStorage});
+const memoryUpload = multer({
+    storage: multer.memoryStorage()
+});
 
 module.exports.upload = upload;
 module.exports.onlyUpload = onlyUpload;
+module.exports.memoryUpload = memoryUpload;

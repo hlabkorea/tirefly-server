@@ -12,7 +12,9 @@ exports.addSearchSql = (searchType, searchWord) => {
 		else if (searchType == "userTel")
 			sql = "and user.cellNumber ";
 		else if (searchType == "programName")
-			sql = "and program.programName ";
+            sql = "and program.programName ";
+        else if (searchType == "serialNo")
+            sql = "and stock.serialNo ";
 
 		sql += "LIKE '%" + searchWord + "%' ";
 	}

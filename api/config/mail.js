@@ -233,7 +233,7 @@ exports.sendInviteEmail = (ownerEmail, userEmail) => {
 	this.sendMail(userEmail, subject, html);
 }
 
-// 멤버십 초대 메일
+// 관리자에게 문의 메일 전달
 exports.sendInquiryMail = (type, title, name, email, group, cellNumber, contents) => {	
 	var html = '<div style="color: black;">'
 			 + '<br><br>'
@@ -258,5 +258,17 @@ exports.sendInquiryMail = (type, title, name, email, group, cellNumber, contents
 	html += '</div>'
 		 + '</div>';
 	var hlabEmail = "support@motifme.io";
-	this.sendMail(hlabEmail, "[문의 - " + type + "] " + title, html);
+	var subject = "[문의 - " + type + "] " + title;
+	this.sendMail(hlabEmail, subject, html);
+}
+
+// 멤버십 초대 메일
+exports.sendAnswerMail = (emai, completeMsg) => {	
+	var html = '<div style="color: black;">'
+			 + '<pre>'
+			 + completeMsg
+			 + '</pre>'
+			 + '</div>';
+	var subject = "[모티프] 문의 답변";
+	this.sendMail(email, subject, html);
 }
