@@ -148,7 +148,7 @@ api.get('/excel', verifyAdminToken, function (req, res) {
     });
 });
 
-api.post('/excel', verifyAdminToken, memoryUpload.single('stock_file'), function (req, res) {
+api.post('/excel', verifyAdminToken, memoryUpload.single('excel_file'), function (req, res) {
     // 엑셀 데이터 json으로 변환
     const result = excelToJson({
         source: req.file.buffer
