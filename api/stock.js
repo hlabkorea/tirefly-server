@@ -11,18 +11,25 @@ const pageCnt15 = 15;
 
 // 재고 전체 조회
 api.get('/', verifyAdminToken, async function (req, res) {
+    var status = req.query.status ? req.query.status : 'all';
     var searchType = req.query.searchType ? req.query.searchType : '';
     var searchWord = req.query.searchWord ? req.query.searchWord : '';
     var sql = "select stock.UID as stockUID, stock.serialNo, stock.testDate, ifnull(payment.shipRcpnt, '-') as shipRcpnt, ifnull(payment.buyerTel, '-') as buyerTel, "
             + "stock.regDate, ifnull(payment.shipConfDate, '-') as shipConfDate, if(stock.paymentUID = 0, '입고', '출고') as stockState "
             + "from stock "
             + "left join payment on stock.paymentUID = payment.UID ";
-        
-    sql += addSearchSql(searchType, searchWord);
+    
+    if(status == 'in')
+        sql += "where stock.paymentUID = 0 ";
+    else if(status == 'out')
+        sql += "where stock.paymentUID != 0 ";
+    
+    if(searchType.length != 0)
+        sql += addSearchSql(searchType, searchWord);
     var countSql = sql + ";";
 
-    sql += "order by stock.regDate desc, stock.UID desc ";
-    sql += " limit ?, " + pageCnt15;
+    sql += " order by stock.regDate desc, stock.UID desc"
+         + " limit ?, " + pageCnt15;
     var currentPage = req.query.page ? parseInt(req.query.page) : 1;
     var data = (parseInt(currentPage) - 1) * pageCnt15;
     
