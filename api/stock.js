@@ -47,7 +47,7 @@ api.get('/', verifyAdminToken, async function (req, res) {
 });
 
 // cms - 엑셀 양식 다운로드
-api.get('/excel/sample', verifyAdminToken, function (req, res) {
+api.get('/excel/sample', function (req, res) {
     var wb = new xl.Workbook({
         defaultFont: {
             color: '#000000',
@@ -62,7 +62,12 @@ api.get('/excel/sample', verifyAdminToken, function (req, res) {
         },
         alignment: {
             horizontal: 'center'
-        }
+        },
+        fill: { // §18.8.20 fill (Fill)
+            type: 'pattern', // Currently only 'pattern' is implemented. Non-implemented option is 'gradient'
+            patternType: 'solid', //§18.18.55 ST_PatternType (Pattern Type)
+            fgColor: '#CFE2F3'
+        },
     });
 
     var data_style = wb.createStyle({
@@ -83,7 +88,7 @@ api.get('/excel/sample', verifyAdminToken, function (req, res) {
     wb.write('stock_sample.xlsx', res);
 });
 
-api.get('/excel', verifyAdminToken, function (req, res) {
+api.get('/excel', function (req, res) {
     var sql = "select stock.UID as stockUID, stock.serialNo, stock.testDate, ifnull(payment.shipRcpnt, '-') as shipRcpnt, ifnull(payment.buyerTel, '-') as buyerTel, "
             + "ifnull(payment.shipConfDate, '-') as shipConfDate, if(stock.paymentUID = 0, '입고', '출고') as stockState "
             + "from stock "
@@ -107,7 +112,12 @@ api.get('/excel', verifyAdminToken, function (req, res) {
             },
             alignment: {
                 horizontal: 'center'
-            }
+            },
+            fill: { // §18.8.20 fill (Fill)
+                type: 'pattern', // Currently only 'pattern' is implemented. Non-implemented option is 'gradient'
+                patternType: 'solid', //§18.18.55 ST_PatternType (Pattern Type)
+                fgColor: '#CFE2F3'
+            },
         });
 
         var data_style = wb.createStyle({
