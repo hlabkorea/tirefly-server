@@ -1305,7 +1305,7 @@ api.post("/app-store/v1", async (req, res) => {
             var excludeOldTransactions = true;
             var verifiedReceipt = await verifyReceipt(receiptData, excludeOldTransactions);
             var originalTransactionId = verifiedReceipt.latest_receipt_info[0].original_transaction_id;
-            var userSql = "select userUID from payment where originalTransactionId = ? limit 1";
+            var userSql = "select userUID from payment where originalTransactionId = ? order by regDate desc limit 1";
             db.query(userSql, originalTransactionId, function (err, result) {
                 if (err) throw err;
 

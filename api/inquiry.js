@@ -5,7 +5,7 @@ const { upload } = require('./config/uploadFile.js');
 const { getPageInfo } = require('./config/paging.js'); 
 const { verifyAdminToken } = require("./config/authCheck.js");
 const { check } = require('express-validator');
-const { sendInquiryMail } = require('./config/mail.js');
+const { sendInquiryMail, sendAnswerMail } = require('./config/mail.js');
 const { getError } = require('./config/requestError.js');
 const pageCnt10 = 10;
 
@@ -112,14 +112,20 @@ api.put("/:inquiryUID",
 			var adminUID = req.adminUID;
 			var inquiryUID = req.params.inquiryUID;
 			var completeMsg = req.body.completeMsg;
-            var sql = 'update inquiry set completeMsg = ?, inquiryComplete=1, updateUID = ? where UID = ?';
-            var data = [completeMsg, adminUID, inquiryUID];
+			var selectSql = "select userEmail from inquiry where UID = ?";
+			db.query(selectSql, inquiryUID, function (err, result) {
+				if (err) throw err;
 
-            db.query(sql, data, function (err, result) {
-                if (err) throw err;
+				sendAnswerMail(result[0].userEmail, completeMsg);
+				var updateSql = 'update inquiry set completeMsg = ?, inquiryComplete=1, updateUID = ? where UID = ?';
+				var data = [completeMsg, adminUID, inquiryUID];
 
-                res.status(200).json({status:200, data: "true", message:"success"});
-            });
+				db.query(updateSql, data, function (err, result) {
+					if (err) throw err;
+
+					res.status(200).json({status:200, data: "true", message:"success"});
+				});
+			});
           }
         }
 );
