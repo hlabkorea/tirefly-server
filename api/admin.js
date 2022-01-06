@@ -47,9 +47,9 @@ api.post('/',
 
                 // 관리자 생성
                 var createSql = "insert into admin(email, password, name, department) " +
-                                "values (?, ?, ?, ?)";
+                                "values (?)";
                 var createData = [email, passwd, name, department];
-                const [rows] = await con.query(createSql, createData);
+                const [rows] = await con.query(createSql, [createData]);
 
                 var adminUID = rows.insertId;
 
@@ -73,9 +73,9 @@ api.post('/',
                 });
 
                 // 토큰 이력 추가
-                var tokenSql = "insert admin_log(adminUID, token) values(?, ?)";
+                var tokenSql = "insert admin_log(adminUID, token) values(?)";
                 var tokenData = [adminUID, token];
-                con.query(tokenSql, tokenData);
+                con.query(tokenSql, [tokenData]);
             } catch (err) {
                 throw err;
             }

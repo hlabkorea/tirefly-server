@@ -55,11 +55,11 @@ api.post('/',
                     var adminUID = req.adminUID;
                     var status = req.body.status;
                     var sql = `insert acc(accName, regUID, status) values('${accName}', ${adminUID}, '${status}')`;
-                    const [rows, fields] = await con.query(sql);
+                    const [rows] = await con.query(sql);
                     res.status(200).json({
                         status: 200,
                         data: {
-                            accUID: rows.insertId
+                            accUID: rows.insertId // 생성된 auto increment id
                         },
                         message: "success"
                     });
@@ -82,6 +82,7 @@ api.put('/image/:accUID',
                     var filename = req.file.filename;
                     var imgType = req.body.imgType;
                     const query = `update acc set ${imgType} = '${filename}' where UID = ${accUID}`;
+                    // const query = "update acc set " + imgType = " where UID = ?"; // imgType은 칼럼명인데, prepared statement(? 형식)를 사용하게 되면 string 으로 들어가서, 이렇게 해주어야 한다
                     await con.query(query);
                     res.status(200).json({
                         status: 200,

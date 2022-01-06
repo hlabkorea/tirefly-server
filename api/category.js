@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('./config/database.js');
+const { con } = require('./config/database.js');
 const { verifyAdminToken } = require("./config/authCheck.js");
 const { upload } = require('./config/uploadFile.js');
 const api = express.Router();
@@ -7,35 +8,37 @@ const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 
 // 카테고리 조회
-api.get('/', function (req, res) {
-    var type = req.query.type ? req.query.type : '';
-    var sql = "select UID, categoryName, categoryImg, status from category ";
-    if (type != "cms")
-        sql += "where status = 'act'";
-    db.query(sql, function (err, result) {
-        if (err) throw err;
-
+api.get('/', async function (req, res) {
+    try{
+        var type = req.query.type ? req.query.type : ''; 
+        var sql = "select UID, categoryName, categoryImg, status from category ";
+        if (type != "cms") // 카테고리의 활성화 상태에 상관없이 모두 조회할 대는 type을 cms로 보낸다
+            sql += "where status = 'act'";
+        const [result] = await con.query(sql);
         res.status(200).json({
             status: 200,
             data: result,
             message: "success"
         });
-    });
+    } catch (err) {
+        throw err;
+    }
 });
 
 // cms - 카테고리 상세조회
-api.get('/:categoryUID', function (req, res) {
-    var categoryUID = req.params.categoryUID;
-    var sql = "select categoryName, categoryImg, status, calorie1, calorie2, calorie3 from category where UID = ?";
-    db.query(sql, categoryUID, function (err, result) {
-        if (err) throw err;
-
+api.get('/:categoryUID', async function (req, res) {
+    try{
+        var categoryUID = req.params.categoryUID;
+        var sql = "select categoryName, categoryImg, status, calorie1, calorie2, calorie3 from category where UID = ?";
+        const [result] = await con.query(sql, categoryUID);
         res.status(200).json({
             status: 200,
             data: result,
             message: "success"
         });
-    });
+    } catch (err) {
+        throw err;
+    }
 });
 
 // cms - 카테고리 등록
@@ -48,28 +51,29 @@ api.post('/',
         check("calorie2", "calorie2 is required").not().isEmpty(),
         check("calorie3", "calorie3 is required").not().isEmpty()
     ], 
-    function (req, res) {
+    async function (req, res) {
         const errors = getError(req, res);
 		if(errors.isEmpty()){
-            var categoryName = req.body.categoryName;
-            var adminUID = req.adminUID;
-            var status = req.body.status;
-            var calorie1 = req.body.calorie1;
-            var calorie2 = req.body.calorie2;
-            var calorie3 = req.body.calorie3;
-            var sql = "insert category(categoryName, regUID, status, calorie1, calorie2, calorie3) values(?, ?, ?, ?, ?, ?)";
-            var data = [categoryName, adminUID, status, calorie1, calorie2, calorie3];
-
-            db.query(sql, data, function (err, result) {
-                if (err) throw err;
+            try{
+                var categoryName = req.body.categoryName;
+                var adminUID = req.adminUID;
+                var status = req.body.status;
+                var calorie1 = req.body.calorie1;
+                var calorie2 = req.body.calorie2;
+                var calorie3 = req.body.calorie3;
+                var sql = "insert category(categoryName, regUID, status, calorie1, calorie2, calorie3) values(?)";
+                var data = [categoryName, adminUID, status, calorie1, calorie2, calorie3];
+                const [rows] = await con.query(sql, [data]);
                 res.status(200).json({
                     status: 200,
                     data: {
-                        categoryUID: result.insertId
+                        categoryUID: rows.insertId // 생성된 auto increment id
                     },
                     message: "success"
                 });
-            });
+            } catch (err) {
+                throw err;
+            }
         }
     }
 );
@@ -78,14 +82,13 @@ api.post('/',
 api.put('/image/:categoryUID',
     verifyAdminToken,
     upload.single("img"),
-    function (req, res) {
-        var categoryUID = req.params.categoryUID;
-        var filename = req.file.filename;
-        var sql = "update category set categoryImg = ? where UID = ?";
-        var data = [filename, categoryUID];
-        db.query(sql, data, function (err, result, fields) {
-            if (err) throw err;
-
+    async function (req, res) {
+        try{
+            var categoryUID = req.params.categoryUID;
+            var filename = req.file.filename;
+            var sql = "update category set categoryImg = ? where UID = ?";
+            var data = [filename, categoryUID];
+            await con.query(sql, data);
             res.status(200).json({
                 status: 200,
                 data: {
@@ -93,7 +96,9 @@ api.put('/image/:categoryUID',
                 },
                 message: "success"
             });
-        });
+        } catch (err) {
+            throw err;
+        }
     }
 );
 
@@ -103,22 +108,23 @@ api.put('/status/:categoryUID',
     [
         check("status", "status is required").not().isEmpty()
     ], 
-    function (req, res) {
+    async function (req, res) {
         const errors = getError(req, res);
 		if(errors.isEmpty()){
-            var categoryUID = req.params.categoryUID;
-            var status = req.body.status;
-            var sql = "update category set status = ? where UID = ?";
-            var data = [status, categoryUID];
-            db.query(sql, data, function (err, result, fields) {
-                if (err) throw err;
-
+            try{
+                var categoryUID = req.params.categoryUID;
+                var status = req.body.status;
+                var sql = "update category set status = ? where UID = ?";
+                var data = [status, categoryUID];
+                await con.query(sql, data);
                 res.status(200).send({
                     status: 200,
                     data: "true",
                     message: "success"
                 });
-            });
+            } catch (err) {
+                throw err;
+            }
         }
     }
 );
@@ -133,26 +139,28 @@ api.put('/:categoryUID',
         check("calorie2", "calorie2 is required").not().isEmpty(),
         check("calorie3", "calorie3 is required").not().isEmpty()
     ], 
-    function (req, res) {
+    async function (req, res) {
         const errors = getError(req, res);
 		if(errors.isEmpty()){
-            var categoryUID = req.params.categoryUID;
-            var categoryName = req.body.categoryName;
-            var status = req.body.status;
-            var adminUID = req.adminUID;
-            var calorie1 = req.body.calorie1;
-            var calorie2 = req.body.calorie2;
-            var calorie3 = req.body.calorie3;
-            var sql = "update category set categoryName = ?, status = ?, calorie1 = ?, calorie2 = ?, calorie3 = ?, updateUID = ? where UID = ?";
-            var data = [categoryName, status, calorie1, calorie2, calorie3, adminUID, categoryUID];
-            db.query(sql, data, function (err, result) {
-                if (err) throw err;
-                res.status(200).json({
+            try{
+                var categoryUID = req.params.categoryUID;
+                var categoryName = req.body.categoryName;
+                var status = req.body.status;
+                var adminUID = req.adminUID;
+                var calorie1 = req.body.calorie1;
+                var calorie2 = req.body.calorie2;
+                var calorie3 = req.body.calorie3;
+                var sql = "update category set categoryName = ?, status = ?, calorie1 = ?, calorie2 = ?, calorie3 = ?, updateUID = ? where UID = ?";
+                var data = [categoryName, status, calorie1, calorie2, calorie3, adminUID, categoryUID];
+                await con.query(sql, data);
+                res.status(200).send({
                     status: 200,
                     data: "true",
                     message: "success"
                 });
-            });
+            } catch (err) {
+                throw err;
+            }
         }
     }
 );

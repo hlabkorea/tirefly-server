@@ -87,7 +87,7 @@ api.post('/',
                 });
 
                 // admin_log 에 로그 추가
-                var tokenSql = `insert admin_log(adminUID, token) values (${adminUID}, '${token}')`
+                var tokenSql = `insert admin_log(adminUID, token) values (${adminUID}, '${token}')`;
                 con.query(tokenSql);
             } catch (err) {
                 throw err;
