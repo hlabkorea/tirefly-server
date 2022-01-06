@@ -1,5 +1,4 @@
 const express = require('express');
-const db = require('./config/database.js');
 const { con } = require('./config/database.js');
 const { verifyAdminToken } = require("./config/authCheck.js");
 const { upload } = require('./config/uploadFile.js');
