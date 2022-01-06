@@ -26,14 +26,18 @@ api.get('/', async function (req, res) {
 
 // cms - 악세사리 상세조회
 api.get('/:accUID', async function (req, res) {
-    var accUID = req.params.accUID;
-    var sql = `select accName, imgPath, actImgPath, rectImgPath, status from acc where UID = ${accUID}`;
-    const [result] = await con.query(sql);
-    res.status(200).json({
-        status: 200,
-        data: result,
-        message: "success"
-    });
+    try{
+        var accUID = req.params.accUID;
+        var sql = `select accName, imgPath, actImgPath, rectImgPath, status from acc where UID = ${accUID}`;
+        const [result] = await con.query(sql);
+        res.status(200).json({
+            status: 200,
+            data: result,
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
 });
 
 // cms - 악세사리 등록
