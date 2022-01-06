@@ -101,33 +101,36 @@ api.put("/file/:inquiryUID", upload.single("file"), function(req, res) {
 });
 
 // 문의 완료하기
-api.put("/:inquiryUID", 
-        verifyAdminToken, 
-        [
-          check("completeMsg", "completeMsg is required").not().isEmpty()
-        ],
-        function(req, res) {
-          const errors = getError(req, res);
-          if(errors.isEmpty()){
-			var adminUID = req.adminUID;
-			var inquiryUID = req.params.inquiryUID;
-			var completeMsg = req.body.completeMsg;
-			var selectSql = "select userEmail from inquiry where UID = ?";
-			db.query(selectSql, inquiryUID, function (err, result) {
-				if (err) throw err;
+api.put("/:inquiryUID",
+    verifyAdminToken,
+    [
+        check("completeMsg", "completeMsg is required").not().isEmpty()
+    ],
+    function (req, res) {
+        const errors = getError(req, res);
+        if (errors.isEmpty()) {
+            var adminUID = req.adminUID;
+            var inquiryUID = req.params.inquiryUID;
+            var completeMsg = req.body.completeMsg;
+            var selectSql = "select userEmail from inquiry where UID = ?";
+            db.query(selectSql, inquiryUID, function (err, result) {
+                if (err) throw err;
 
-				sendAnswerMail(result[0].userEmail, completeMsg);
-				var updateSql = 'update inquiry set completeMsg = ?, inquiryComplete=1, updateUID = ? where UID = ?';
-				var data = [completeMsg, adminUID, inquiryUID];
+                sendAnswerMail(result[0].userEmail, completeMsg);
+                var updateSql = 'update inquiry set completeMsg = ?, inquiryComplete=1, updateUID = ? where UID = ?';
+                var data = [completeMsg, adminUID, inquiryUID];
 
-				db.query(updateSql, data, function (err, result) {
-					if (err) throw err;
-
-					res.status(200).json({status:200, data: "true", message:"success"});
-				});
-			});
-          }
+                db.query(updateSql, data, function (err, result) {
+                    if (err) throw err;
+                    res.status(200).json({
+                        status: 200,
+                        data: "true",
+                        message: "success"
+                    });
+                });
+            });
         }
+    }
 );
 
 module.exports = api;
