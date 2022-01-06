@@ -93,7 +93,7 @@ api.get('/excel', function (req, res) {
             + "ifnull(payment.shipConfDate, '-') as shipConfDate, if(stock.paymentUID = 0, '입고', '출고') as stockState "
             + "from stock "
             + "left join payment on stock.paymentUID = payment.UID "
-            + "order by stock.regDate desc";
+            + "order by stock.regDate desc, stock.UID desc";
 
     db.query(sql, function (err, result) {
         if (err) throw err;
