@@ -1,6 +1,5 @@
 const express = require('express');
-const db = require('./config/database.js');
-const { con } = require('./config/database.js')
+const { con } = require('./config/database.js');
 const { verifyAdminToken } = require("./config/authCheck.js");
 const { upload } = require('./config/uploadFile.js');
 const api = express.Router();
@@ -12,7 +11,7 @@ api.get('/', async function (req, res) {
     try{
         var type = req.query.type ? req.query.type : ''; 
         var sql = "select UID, accName, imgPath, actImgPath, rectImgPath, status from acc ";
-        if (type != "cms") // type이 cms가 아니라면 앱에서 조회하는 것이므로 활성화 상태인 악세사리만 조회한다
+        if (type != "cms") // 운동기구의 활성화 상태에 상관없이 모두 조회할 대는 type을 cms로 보낸다
             sql += "where status = 'act'";
         const [result] = await con.query(sql);
         res.status(200).json({

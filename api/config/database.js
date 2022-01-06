@@ -31,7 +31,8 @@ var con = mysql2.createPool({
 	port : '63934',
 	user : 'hlab_dev',
 	password : 'hlab0901',
-	database : 'motif'
+    database : 'motif',
+    multipleStatements: true, // 다중 쿼리 가능
 });
 
 module.exports.con = con;
