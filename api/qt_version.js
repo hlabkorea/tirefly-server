@@ -13,7 +13,7 @@ const { getError } = require('./config/requestError.js');
 api.post('/check', 
 		verifyToken, 
 		[
-			check("version", "email is required").not().isEmpty()
+			check("version", "version is required").not().isEmpty()
 		],
 		function (req, res) {
 			const errors = getError(req, res);
