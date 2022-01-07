@@ -7,7 +7,7 @@ const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 const pageCnt10 = 10;
 
-// faq 리스트 조회
+// cms - faq 리스트 조회
 api.get("/", verifyAdminToken, async function(req, res) {
     try{
         var sql = "select UID, category, question, answer, type from faq";
@@ -98,7 +98,7 @@ api.get("/:faqUID", verifyAdminToken, async function(req, res) {
     }
 });
 
-// faq 추가
+// cms - faq 추가
 api.post("/", 
         verifyAdminToken, 
         [
@@ -128,7 +128,7 @@ api.post("/",
         }
 );
 
-// faq 수정
+// cms - faq 수정
 api.put("/:faqUID", 
         verifyAdminToken, 
         [
@@ -161,7 +161,7 @@ api.put("/:faqUID",
         }
 );
 
-// faq 삭제
+// cms - faq 삭제
 api.delete('/:faqUID',
     verifyAdminToken,
     async function (req, res) {

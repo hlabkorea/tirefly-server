@@ -23,7 +23,7 @@ api.get('/', verifyAdminToken, function (req, res) {
 	var searchWord = req.query.searchWord ? req.query.searchWord : '';
 	sql += addSearchSql(searchType, searchWord);
 	
-	sql += "order by UID ";
+	sql += "order by regDate desc, UID desc ";
 	
 	var countSql = sql + ";";
 

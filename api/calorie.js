@@ -20,12 +20,12 @@ api.post('/',
             const errors = getError(req, res);
 			if(errors.isEmpty()){
                 try{
-                    var categoryUID = req.body.categoryUID;
-                    var adminUID = req.adminUID;
-                    var lv1Consume = req.body.lv1Consume;
-                    var lv2Consume = req.body.lv2Consume;
-                    var lv3Consume = req.body.lv3Consume;
-                    var status = req.body.status;
+                    const categoryUID = req.body.categoryUID;
+                    const adminUID = req.adminUID;
+                    const lv1Consume = req.body.lv1Consume;
+                    const lv2Consume = req.body.lv2Consume;
+                    const lv3Consume = req.body.lv3Consume;
+                    const status = req.body.status;
 
                     var lv1Sql = "insert calorie(categoryUID, level, consume, status, regUID) values(?);";
                     var lv2Sql = "insert calorie(categoryUID, level, consume, status, regUID) values(?);";
@@ -50,7 +50,7 @@ api.post('/',
 
 // cms - 카테고리의 칼로리 조회
 api.get('/:categoryUID', verifyAdminToken, function (req, res) {
-    var categoryUID = req.params.categoryUID;
+    const categoryUID = req.params.categoryUID;
     var sql = "select UID as calorieUID, level, consume from calorie where categoryUID = ?";
 
     db.query(sql, categoryUID, function (err, result) {
@@ -66,14 +66,14 @@ api.get('/:categoryUID', verifyAdminToken, function (req, res) {
 
 // cms - 카테고리의 칼로리 수정
 api.put('/:categoryUID', verifyAdminToken, function (req, res) {
-    var adminUID = req.adminUID;
-    var calorieList = req.body.calorieList;
-    var categoryUID = req.params.categoryUID;
+    const adminUID = req.adminUID;
+    const calorieList = req.body.calorieList;
+    const categoryUID = req.params.categoryUID;
     var sql = "";
     var data = [];
     for (var i in calorieList) {
-        var consume = calorieList[i].consume;
-        var calorieUID = calorieList[i].calorieUID;
+        const consume = calorieList[i].consume;
+        const calorieUID = calorieList[i].calorieUID;
         sql += "update calorie set categoryUID = ?, consume = ?, updateUID = ? where UID = ?;";
         data.push(categoryUID);
         data.push(consume);

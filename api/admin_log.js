@@ -10,7 +10,7 @@ api.get('/',
         verifyAdminToken, 
         async function (req, res) {
             try{
-                var currentPage = req.query.page ? parseInt(req.query.page) : 1;
+                const currentPage = req.query.page ? parseInt(req.query.page) : 1;
                 var sql = "select admin_log.UID as logUID, admin_log.adminUID, admin.email, admin.name, admin.department, admin_log.regDate "
                         + "from admin_log "
                         + "join admin on admin_log.adminUID = admin.UID "

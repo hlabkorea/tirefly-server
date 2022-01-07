@@ -9,7 +9,7 @@ const { getError } = require('./config/requestError.js');
 // 카테고리 조회
 api.get('/', async function (req, res) {
     try{
-        var type = req.query.type ? req.query.type : ''; 
+        const type = req.query.type ? req.query.type : ''; 
         var sql = "select UID, categoryName, categoryImg, status from category ";
         if (type != "cms") // 카테고리의 활성화 상태에 상관없이 모두 조회할 대는 type을 cms로 보낸다
             sql += "where status = 'act'";
@@ -27,7 +27,7 @@ api.get('/', async function (req, res) {
 // cms - 카테고리 상세조회
 api.get('/:categoryUID', async function (req, res) {
     try{
-        var categoryUID = req.params.categoryUID;
+        const categoryUID = req.params.categoryUID;
         var sql = "select categoryName, categoryImg, status, calorie1, calorie2, calorie3 from category where UID = ?";
         const [result] = await con.query(sql, categoryUID);
         res.status(200).json({
@@ -54,14 +54,14 @@ api.post('/',
         const errors = getError(req, res);
 		if(errors.isEmpty()){
             try{
-                var categoryName = req.body.categoryName;
-                var adminUID = req.adminUID;
-                var status = req.body.status;
-                var calorie1 = req.body.calorie1;
-                var calorie2 = req.body.calorie2;
-                var calorie3 = req.body.calorie3;
+                const categoryName = req.body.categoryName;
+                const adminUID = req.adminUID;
+                const status = req.body.status;
+                const calorie1 = req.body.calorie1;
+                const calorie2 = req.body.calorie2;
+                const calorie3 = req.body.calorie3;
                 var sql = "insert category(categoryName, regUID, status, calorie1, calorie2, calorie3) values(?)";
-                var data = [categoryName, adminUID, status, calorie1, calorie2, calorie3];
+                const data = [categoryName, adminUID, status, calorie1, calorie2, calorie3];
                 const [rows] = await con.query(sql, [data]);
                 res.status(200).json({
                     status: 200,
@@ -83,10 +83,10 @@ api.put('/image/:categoryUID',
     upload.single("img"),
     async function (req, res) {
         try{
-            var categoryUID = req.params.categoryUID;
-            var filename = req.file.filename;
+            const categoryUID = req.params.categoryUID;
+            const filename = req.file.filename;
             var sql = "update category set categoryImg = ? where UID = ?";
-            var data = [filename, categoryUID];
+            const data = [filename, categoryUID];
             await con.query(sql, data);
             res.status(200).json({
                 status: 200,
@@ -111,10 +111,10 @@ api.put('/status/:categoryUID',
         const errors = getError(req, res);
 		if(errors.isEmpty()){
             try{
-                var categoryUID = req.params.categoryUID;
-                var status = req.body.status;
+                const categoryUID = req.params.categoryUID;
+                const status = req.body.status;
                 var sql = "update category set status = ? where UID = ?";
-                var data = [status, categoryUID];
+                const data = [status, categoryUID];
                 await con.query(sql, data);
                 res.status(200).send({
                     status: 200,
@@ -142,15 +142,15 @@ api.put('/:categoryUID',
         const errors = getError(req, res);
 		if(errors.isEmpty()){
             try{
-                var categoryUID = req.params.categoryUID;
-                var categoryName = req.body.categoryName;
-                var status = req.body.status;
-                var adminUID = req.adminUID;
-                var calorie1 = req.body.calorie1;
-                var calorie2 = req.body.calorie2;
-                var calorie3 = req.body.calorie3;
+                const categoryUID = req.params.categoryUID;
+                const categoryName = req.body.categoryName;
+                const status = req.body.status;
+                const adminUID = req.adminUID;
+                const calorie1 = req.body.calorie1;
+                const calorie2 = req.body.calorie2;
+                const calorie3 = req.body.calorie3;
                 var sql = "update category set categoryName = ?, status = ?, calorie1 = ?, calorie2 = ?, calorie3 = ?, updateUID = ? where UID = ?";
-                var data = [categoryName, status, calorie1, calorie2, calorie3, adminUID, categoryUID];
+                const data = [categoryName, status, calorie1, calorie2, calorie3, adminUID, categoryUID];
                 await con.query(sql, data);
                 res.status(200).send({
                     status: 200,

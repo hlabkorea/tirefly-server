@@ -7,7 +7,7 @@ const sha256 = require('sha256');
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 
-// 로그인
+// cms - 로그인
 api.post('/',
     [
         check("email", "email is required").not().isEmpty(),
@@ -17,12 +17,12 @@ api.post('/',
         const errors = getError(req, res);
         if (errors.isEmpty()) {
             try{
-                var email = req.body.email;
-                var password = sha256(req.body.password);
+                const email = req.body.email;
+                const password = sha256(req.body.password);
 
                 // 이메일 가입 확인
                 var existSql = "select UID from admin where email = ?";
-                var existData = [email];
+                const existData = [email];
                 const [existRes] = await con.query(existSql, existData);
                 if(existRes.length == 0){
                     res.status(403).send({
@@ -63,11 +63,11 @@ api.post('/',
                 */
 
                 // 토큰 발급
-                var adminUID = loginRes[0].UID;
-                var name = loginRes[0].name;
-                var department = loginRes[0].department;
+                const adminUID = loginRes[0].UID;
+                const name = loginRes[0].name;
+                const department = loginRes[0].department;
 
-                var token = jwt.sign({
+                const token = jwt.sign({
                         adminUID: adminUID,
                         auth: "admin"
                     },
