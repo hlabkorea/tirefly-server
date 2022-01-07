@@ -33,7 +33,7 @@ api.post('/check',
 							message: "success"
 						});
 					else{
-						const hash = md5File.sync(path.join('/', 'usr', 'share', 'nginx', 'motif-server', 'views', 'files', 'main_01.png'));
+						const hash = md5File.sync(path.join('/', 'usr', 'share', 'nginx', 'motif-server', 'views', 'files', 'motif.tar.gz'));
 						res.status(403).json({
 							status: 403,
 							data: {

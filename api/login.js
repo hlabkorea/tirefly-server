@@ -162,6 +162,7 @@ api.post('/function',
     }
 );
 
+// 비밀번호 일치 여부 확인
 async function checkPasswd(email, password) {
     var loginSql = "select UID, status, nickName from user where email = ? and password = ? and status != 'delete'";
     const loginData = [email, password];
@@ -182,6 +183,7 @@ async function checkPasswd(email, password) {
     }
 }
 
+// 멤버십 소유자인지 확인
 async function checkMembership(userUID) {
     var membershipSql = "select level, endDate from membership " +
                     "where date_format(membership.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') and userUID = ?";
@@ -192,6 +194,7 @@ async function checkMembership(userUID) {
         return {auth: "normal", endDate: 0};
 }
 
+// 멤버십 초대자인지 확인
 async function checkMembershipGroup(userUID) {
     var membershipGroupSql = "select b.endDate " +
                         "from membership_group a " +
@@ -207,12 +210,14 @@ async function checkMembershipGroup(userUID) {
         return {auth: "normal", endDate: 0};
 }
 
+// 사용자 로그인 이력 추가
 async function insertToken(userUID, token) {
     var tokenSql = "insert into user_log(userUID, token) values(?, ?)";
     const tokenData = [userUID, token];
     con.query(tokenSql, tokenData);
 }
 
+// jwt 생성
 function makeJWT(userUID, auth) {
     var token = jwt.sign({
         userUID: userUID,
