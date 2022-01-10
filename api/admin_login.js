@@ -35,19 +35,6 @@ api.post('/',
                 }
 
                 // 비밀번호 확인
-                var loginSql = `select * from admin where email = '${email}' and password = '${password}'`
-                const [loginRes] = await con.query(loginSql);
-                if(loginRes.length == 0){
-                    res.status(403).send({
-                        status: 403,
-                        data: [],
-                        message: "비밀번호가 맞지 않아요!"
-                    });
-
-                    return false;
-                }
-
-                /*
                 var loginSql = "select * from admin where email = ? and password = ?";
                 var loginData = [email, password];
                 const [loginRes] = await con.query(loginSql, loginData);
@@ -60,7 +47,6 @@ api.post('/',
 
                     return false;
                 }
-                */
 
                 // 토큰 발급
                 const adminUID = loginRes[0].UID;
