@@ -20,11 +20,7 @@ api.post('/',
                 const email = req.body.email;
                 const password = sha256(req.body.password);
 
-                // 이메일 가입 확인
-                var existSql = "select UID from admin where email = ?";
-                const existData = [email];
-                const [existRes] = await con.query(existSql, existData);
-                if(existRes.length == 0){
+                if(!isExistEmail(email)){
                     res.status(403).send({
                         status: 403,
                         data: [],
@@ -34,10 +30,8 @@ api.post('/',
                     return false;
                 }
 
-                // 비밀번호 확인
-                var loginSql = `select * from admin where email = '${email}' and password = '${password}'`
-                const [loginRes] = await con.query(loginSql);
-                if(loginRes.length == 0){
+                const result = await checkPasswd(email, password);
+                if(result.length == 0){
                     res.status(403).send({
                         status: 403,
                         data: [],
@@ -47,34 +41,11 @@ api.post('/',
                     return false;
                 }
 
-                /*
-                var loginSql = "select * from admin where email = ? and password = ?";
-                var loginData = [email, password];
-                const [loginRes] = await con.query(loginSql, loginData);
-                if(loginRes.length == 0){
-                    res.status(403).send({
-                        status: 403,
-                        data: [],
-                        message: "비밀번호가 맞지 않아요!"
-                    });
+                const adminUID = result[0].UID;
+                const name = result[0].name;
+                const department = result[0].department;
 
-                    return false;
-                }
-                */
-
-                // 토큰 발급
-                const adminUID = loginRes[0].UID;
-                const name = loginRes[0].name;
-                const department = loginRes[0].department;
-
-                const token = jwt.sign({
-                        adminUID: adminUID,
-                        auth: "admin"
-                    },
-                    secretObj.secret,
-                    {
-                        expiresIn: '1440m' // 유효 시간은 1440분
-                    });
+                const token = makeAdminJWT(adminUID);
 
                 res.status(200).send({
                     status: 200,
@@ -86,14 +57,50 @@ api.post('/',
                     }
                 });
 
-                // admin_log 에 로그 추가
-                var tokenSql = `insert admin_log(adminUID, token) values (${adminUID}, '${token}')`;
-                con.query(tokenSql);
+                insertAdminLog(adminUID, token);
             } catch (err) {
                 throw err;
             }
         }
     }
 );
+
+// 이메일 가입 여부 확인
+async function isExistEmail(email){
+    var sql = "select UID from admin where email = ?";
+    const sqlData = [email];
+    const [result] = await con.query(sql, sqlData);
+    if(result.length != 0)
+        return true;
+    else    
+        return false;
+}
+
+// 비밀번호 확인 & 관리저 정보 반환
+async function checkPasswd(email, password){
+    var sql = "select * from admin where email = ? and password = ?";
+    const sqlData = [email, password];
+    const [result] = await con.query(sql, sqlData);
+    return result;
+}
+
+// 관리자 JWT 생성
+function makeAdminJWT(adminUID){
+    return token = jwt.sign({
+        adminUID: adminUID,
+        auth: "admin"
+    },
+    secretObj.secret,
+    {
+        expiresIn: '1440m' // 유효 시간은 1440분
+    });
+}
+
+// 관리자 로그 추가
+function insertAdminLog(adminUID, token){
+    var sql = "insert admin_log(adminUID, token) values (?, ?)";
+    var sqlData = [adminUID, token];
+    con.query(sql, sqlData);
+}
 
 module.exports = api;
