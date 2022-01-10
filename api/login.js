@@ -145,9 +145,10 @@ function insertUserLog(userUID, token) {
     con.query(sql, sqlData);
 }
 
-// 회원 jwt 생성
+// jwt 생성
 function makeJWT(userUID, auth) {
-    return jwt.sign({
+    console.log("makeJWT 호출");
+    var token = jwt.sign({
             userUID: userUID,
             auth: auth
         },
@@ -156,6 +157,8 @@ function makeJWT(userUID, auth) {
             expiresIn: '30d'
             //expiresIn: '1440m'    // 유효 시간은 1440분
         });
+
+    return token;
 }
 
 module.exports = api;
