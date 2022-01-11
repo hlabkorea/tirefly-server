@@ -230,7 +230,8 @@ api.post('/findPw',
 api.post('/pwd_token', 
         verifyToken,
 		[
-			check("email", "email is required").not().isEmpty()
+            check("email", "email is required").not().isEmpty(),
+            check("password", "password is required").not().isEmpty()
 		],
 		async function (req, res) {
 			const errors = getError(req, res);
@@ -244,8 +245,8 @@ api.post('/pwd_token',
 						return false;
 					}
 
-					const authKey = randomString();
-					await insertPwdToken(email, authKey);
+					const key = randomString();
+					await insertPwdToken(email, key);
 
 					res.status(200).json({status:200, data:{authKey: key}, message: "success"});
 				} catch (err) {
@@ -569,7 +570,7 @@ async function deleteProfileFile(filename){
 	});
 }
 
-// 회원 프로필 이미지 
+// 회원 프로필 기본 이미지로 변경
 async function updateBasicImg(userUID){
 	var sql = "update user set profileImg = '' where UID = ?";
 	await con.query(sql, userUID);

@@ -20,7 +20,7 @@ api.post('/',
                 const email = req.body.email;
                 const password = sha256(req.body.password);
 
-                if(!isExistEmail(email)){
+                if(await isExistEmail(email) == false){
                     res.status(403).send({
                         status: 403,
                         data: [],
@@ -70,6 +70,7 @@ async function isExistEmail(email){
     var sql = "select UID from admin where email = ?";
     const sqlData = [email];
     const [result] = await con.query(sql, sqlData);
+
     if(result.length != 0)
         return true;
     else    

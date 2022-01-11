@@ -1,5 +1,5 @@
 const express = require('express');
-const { con } = require('./config/database.js')
+const { con } = require('./config/database.js');
 const { verifyAdminToken } = require("./config/authCheck.js");
 const { getPageInfo } = require('./config/paging.js'); 
 const api = express.Router();

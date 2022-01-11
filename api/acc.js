@@ -28,8 +28,8 @@ api.get('/', async function (req, res) {
 api.get('/:accUID', async function (req, res) {
     try{
         const accUID = req.params.accUID;
-        var sql = `select accName, imgPath, actImgPath, rectImgPath, status from acc where UID = ${accUID}`;
-        const [result] = await con.query(sql);
+        var sql = "select accName, imgPath, actImgPath, rectImgPath, status from acc where UID = ?";
+        const [result] = await con.query(sql, accUID);
         res.status(200).json({
             status: 200,
             data: result,
@@ -54,8 +54,9 @@ api.post('/',
                     const accName = req.body.accName;
                     const adminUID = req.adminUID;
                     const status = req.body.status;
-                    var sql = `insert acc(accName, regUID, status) values('${accName}', ${adminUID}, '${status}')`;
-                    const [rows] = await con.query(sql);
+                    var sql = "insert acc(accName, regUID, status) values(?)";
+                    const sqlData = [accName, adminUID, status];
+                    const [rows] = await con.query(sql, [sqlData]);
                     res.status(200).json({
                         status: 200,
                         data: {
@@ -81,9 +82,9 @@ api.put('/image/:accUID',
                     const accUID = req.params.accUID;
                     const filename = req.file.filename;
                     const imgType = req.body.imgType;
-                    const query = `update acc set ${imgType} = '${filename}' where UID = ${accUID}`;
-                    // const query = "update acc set " + imgType = " where UID = ?"; // imgType은 칼럼명인데, prepared statement(? 형식)를 사용하게 되면 string 으로 들어가서, 이렇게 해주어야 한다
-                    await con.query(query);
+                    var sql = `update acc set ${imgType} = ? where UID = ?`; // imgType은 칼럼명인데, prepared statement(? 형식)를 사용하게 되면 string 으로 들어가서, 이렇게 해주어야 한다
+                    const sqlData = [filename, accUID];
+                    await con.query(sql, sqlData);
                     res.status(200).json({
                         status: 200,
                         data: { filename: filename },
@@ -108,8 +109,9 @@ api.put('/status/:accUID',
                 try{
                     const accUID = req.params.accUID;
                     const status = req.body.status;
-                    var query = `update acc set status = '${status}' where UID = ${accUID}`;
-                    await con.query(query);
+                    var sql = "update acc set status = ? where UID = ?";
+                    const sqlData = [status, accUID];
+                    await con.query(sql, sqlData);
                     res.status(200).json({
                         status: 200,
                         data: "true",
@@ -125,16 +127,20 @@ api.put('/status/:accUID',
 // cms - 악세사리 수정
 api.put('/:accUID', 
         verifyAdminToken, 
+        [
+            check("status", "status is required").not().isEmpty(),
+        ],
         async function (req, res) {
             const errors = getError(req, res);
 			if(errors.isEmpty()){
                 try{
-                    const accUID = req.params.accUID;
-                    const accName = req.body.accName;
-                    const status = req.body.status;
                     const adminUID = req.adminUID;
-                    var query = `update acc set accName = '${accName}', status = '${status}', updateUID = ${adminUID} where UID = ${accUID}`;
-                    await con.query(query);
+                    const accUID = req.params.accUID;
+                    const accName = req.body.accName; // cms에서는 accName 수정 불가능하게 처리되어 있음
+                    const status = req.body.status;
+                    var sql = "update acc set accName = ?, status = ?, updateUID = ? where UID = ?";
+                    const sqlData = [accName, status, adminUID, accUID];
+                    await con.query(sql, sqlData);
                     res.status(200).json({
                         status: 200,
                         data: "true",

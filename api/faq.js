@@ -8,27 +8,38 @@ const { getError } = require('./config/requestError.js');
 const pageCnt10 = 10;
 
 // cms - faq 리스트 조회
-api.get("/", verifyAdminToken, async function(req, res) {
-    try{
+api.get("/", verifyAdminToken, async function (req, res) {
+    try {
         var sql = "select UID, category, question, answer, type from faq";
-        var type = req.query.type ? req.query.type : 'all';
-        var currentPage = req.query.page ? parseInt(req.query.page) : 1;
+        const type = req.query.type ? req.query.type : 'all';
+        const currentPage = req.query.page ? parseInt(req.query.page) : 1;
 
-        if (type != "all") 
+        if (type != "all")
             sql += ` where type = '${type}'`;
-     
-         sql += " order by regDate desc, UID desc";
-         var countSql = sql + ";";
-     
-         sql += ` limit ${(parseInt(currentPage) - 1) * pageCnt10}, ${pageCnt10}`;
-        const [result] = await con.query(countSql+sql);
-        var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length, pageCnt10);
-        res.status(200).json({status:200, 
-                data: {
-                  paging: {startPage: startPage, endPage: endPage, totalPage: totalPage},
-                  result: result[1]
-                }, 
-                message:"success"});
+
+        sql += " order by regDate desc, UID desc";
+        var countSql = sql + ";";
+
+        const offset = (parseInt(currentPage) - 1) * pageCnt10;
+        sql += ` limit ${offset}, ${pageCnt10}`;
+        const [result] = await con.query(countSql + sql);
+        var {
+            startPage,
+            endPage,
+            totalPage
+        } = getPageInfo(currentPage, result[0].length, pageCnt10);
+        res.status(200).json({
+            status: 200,
+            data: {
+                paging: {
+                    startPage: startPage,
+                    endPage: endPage,
+                    totalPage: totalPage
+                },
+                result: result[1]
+            },
+            message: "success"
+        });
     } catch (err) {
         throw err;
     }
@@ -52,7 +63,8 @@ api.get("/web", async function(req, res) {
         sql += " order by regDate desc, UID desc";
         var countSql = sql + ";";
 
-        sql += ` limit ${(parseInt(currentPage) - 1) * pageCnt10}, ${pageCnt10}`;
+        const offset = (parseInt(currentPage) - 1) * pageCnt10;
+        sql += ` limit ${offset}, ${pageCnt10}`;
 
         const [result] = await con.query(countSql+sql);
         var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length, pageCnt10);
@@ -116,7 +128,7 @@ api.post("/",
                 var answer = req.body.answer;
                 var type = req.body.type;
 
-                var sql = 'insert faq(category, question, answer, type, regUID) values (?)';
+                var sql = "insert faq(category, question, answer, type, regUID) values (?)";
                 var data = [category, question, answer, type, adminUID];
 
                 await con.query(sql, [data]);
@@ -146,7 +158,7 @@ api.put("/:faqUID",
                 var question = req.body.question;
                 var answer = req.body.answer;
                 var type = req.body.type;
-                var sql = 'update faq set category=?, question=?, answer=?, type = ?, updateUID = ? where UID = ?';
+                var sql = "update faq set category=?, question=?, answer=?, type = ?, updateUID = ? where UID = ?";
                 var data = [category, question, answer, type, adminUID, faqUID];
                 await con.query(sql, data);
                 res.status(200).json({
@@ -167,7 +179,7 @@ api.delete('/:faqUID',
     async function (req, res) {
         try{
             var faqUID = req.params.faqUID;
-            var sql = 'delete from faq where UID = ?';
+            var sql = "delete from faq where UID = ?";
             await con.query(sql, faqUID);
             res.status(200).json({
                 status: 200,

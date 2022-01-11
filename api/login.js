@@ -21,8 +21,8 @@ api.post('/',
                 const password = sha256(req.body.password);
 
                 // 비밀번호 확인
-                const loginRes = await checkPasswd(email, password);
-                if (!loginRes.isEqual) { // 비밀번호 불일치
+                const loginRes = await getLoginResult(email, password);
+                if (loginRes.length == 0) { // 비밀번호 불일치
                     res.status(403).send({
                         status: 403,
                         data: [],
@@ -32,23 +32,23 @@ api.post('/',
                     return false;
                 }
 
-                const userUID = loginRes.userUID;
-                const redirect = loginRes.redirect;
+                const userUID = loginRes[0].UID;
+                const redirect = getRedirectPage(loginRes);
 
                 // 멤버십 소유자인지 확인
-                const membershipRes = await checkMembership(userUID);
-                var auth = membershipRes.auth;
+                const membershipRes = await selectMembership(userUID);
+                var level = membershipRes.level;
                 var endDate = membershipRes.endDate;
 
-                if (auth == "normal") {
+                if (level == "normal") {
                     // 멤버십 초대자인지 확인
-                    const membershipGroupRes = await checkMembershipGroup(userUID);
-                    auth = membershipGroupRes.auth;
+                    const membershipGroupRes = await selectMembershipGroup(userUID);
+                    level = membershipGroupRes.level;
                     endDate = membershipGroupRes.endDate;
                 }
 
                 // jwt 토큰 생성
-                const token = makeJWT(userUID, auth);
+                const token = makeJWT(userUID, level);
 
                 res.status(200).send({
                     status: 200,
@@ -57,7 +57,7 @@ api.post('/',
                         email: email,
                         token: token,
                         redirect: redirect,
-                        auth: auth,
+                        auth: level,
                         endDate: endDate
                     }
                 });
@@ -72,68 +72,63 @@ api.post('/',
 );
 
 // 비밀번호 일치 여부 확인
-async function checkPasswd(email, password) {
+async function getLoginResult(email, password) {
     var sql = "select UID, status, nickName from user where email = ? and password = ? and status != 'delete'";
     const sqlData = [email, password];
-    const [res] = await con.query(sql, sqlData);
+    const [result] = await con.query(sql, sqlData);
 
-    if (res.length == 0)
-        return {
-            isEqual: false,
-            userUID: 0,
-            redirect: ""
-        };
-    else {
-        var redirect = "";
-        if (res[0].status == "sleep") // 휴면 페이지
-            redirect = "sleep";
-        else if (res[0].nickName.length > 0) // vod 메인 페이지
-            redirect = "contents";
-        else // 세팅 정보 페이지
-            redirect = "setting";
+    return result;
+}
 
-        return {
-            isEqual: true,
-            userUID: res[0].UID,
-            redirect: redirect
-        };
-    }
+// redirect 페이지 조회
+function getRedirectPage(result){
+    if (result[0].status == "sleep") // 휴면 페이지
+        return "sleep";
+    else if (result[0].nickName.length > 0) // vod 메인 페이지
+        return "contents";
+    else // 세팅 정보 페이지
+        return "setting";
 }
 
 // 멤버십 소유자인지 확인
-async function checkMembership(userUID) {
-    var sql = "select level, endDate from membership " +
+async function selectMembership(userUID) {
+    var sql = "select level, startDate, endDate from membership " +
         "where date_format(membership.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') and userUID = ?";
-    const [res] = await con.query(sql, userUID);
-    if (res.length != 0)
+    const [result] = await con.query(sql, userUID);
+
+    if (result.length != 0)
         return {
-            auth: res[0].level,
-            endDate: res[0].endDate
+            auth: result[0].level,
+            startDate: result[0].startDate,
+            endDate: result[0].endDate
         };
     else
         return {
             auth: "normal",
+            startDate: 0,
             endDate: 0
         };
 }
 
 // 멤버십 초대자인지 확인
-async function checkMembershipGroup(userUID) {
-    var sql = "select b.endDate " +
+async function selectMembershipGroup(userUID) {
+    var sql = "select b.startDate, b.endDate " +
         "from membership_group a " +
         "join membership b on b.userUID = a.ownerUID " +
         "where date_format(b.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') and a.userUID = ? " +
         "order by b.endDate desc " +
         "limit 1";
-    const [res] = await con.query(sql, userUID);
-    if (res.length != 0) { //멤버십 초대자일 때
+    const [result] = await con.query(sql, userUID);
+    if (result.length != 0) { //멤버십 초대자일 때
         return {
-            auth: "invited",
-            endDate: res[0].endDate
+            level: "invited",
+            startDate: result[0].startDate,
+            endDate: result[0].endDate
         };
     } else
         return {
-            auth: "normal",
+            level: "normal",
+            startDate: 0,
             endDate: 0
         };
 }
@@ -146,11 +141,10 @@ function insertUserLog(userUID, token) {
 }
 
 // jwt 생성
-function makeJWT(userUID, auth) {
-    console.log("makeJWT 호출");
+function makeJWT(userUID, level) {
     var token = jwt.sign({
             userUID: userUID,
-            auth: auth
+            auth: level
         },
         secretObj.secret, // 비밀 키
         {
