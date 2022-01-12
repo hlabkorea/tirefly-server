@@ -88,7 +88,7 @@ api.post('/',
                     return false;
                 }
 
-                const memberCnt = await selectGroupCount(userUID);
+                const memberCnt = await selectGroupCount(ownerUID);
                 if (isFull(level, memberCnt)) {
                     res.status(403).json({
                         status: 403,
@@ -149,7 +149,7 @@ async function selectUserUID(email) {
     const [result] = await con.query(sql, email);
 
     if (result.length != 0)
-        return result[0].userUID;
+        return result[0].UID;
     else
         return 0;
 }

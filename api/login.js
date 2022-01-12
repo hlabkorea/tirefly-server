@@ -47,6 +47,7 @@ api.post('/',
                     endDate = membershipGroupRes.endDate;
                 }
 
+                console.log(level);
                 // jwt 토큰 생성
                 const token = makeJWT(userUID, level);
 
@@ -98,13 +99,13 @@ async function selectMembership(userUID) {
 
     if (result.length != 0)
         return {
-            auth: result[0].level,
+            level: result[0].level,
             startDate: result[0].startDate,
             endDate: result[0].endDate
         };
     else
         return {
-            auth: "normal",
+            level: "normal",
             startDate: 0,
             endDate: 0
         };
