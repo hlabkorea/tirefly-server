@@ -135,7 +135,7 @@ async function selectMembershipGroup(userUID) {
         "from membership_group a " +
         "join membership b on b.userUID = a.ownerUID " +
         "where date_format(b.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') and a.userUID = ? " +
-        "order by b.endDate desc " +
+        "order by b.endDate desc " + // 여러 명에게 초대될 수 있으므로, 리스트 중 가장 긴 유효기간이 출력되어야 함
         "limit 1";
     const [result] = await con.query(sql, userUID);
     if (result.length != 0) { //멤버십 초대자일 때

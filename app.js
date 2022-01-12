@@ -77,6 +77,7 @@ app.use('/payment', require('./api/payment.js'));
 
 app.use('/faq', require('./api/faq.js'));
 app.use('/inquiry', require('./api/inquiry.js'));
+app.use('/notice', require('./api/notice.js'));
 
 app.use('/preorder', require('./api/preorder.js'));
 app.use('/pwdAuth', require('./api/pwdAuth.js'));
@@ -96,6 +97,6 @@ app.use('/admin', require('./api/admin.js'));
 app.use('/admin_login', require('./api/admin_login.js'));
 app.use('/admin_log', require('./api/admin_log.js'));
 
-app.use('/qt_version', require('./api/qt_version.js'));
-app.use('/notice', require('./api/notice.js'));
 app.use('/stock', require('./api/stock.js'));
+app.use('/qt_version', require('./api/qt_version.js'));
+app.use('/vision', require('./api/vision.js'));

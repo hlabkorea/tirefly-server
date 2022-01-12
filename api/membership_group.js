@@ -73,18 +73,28 @@ api.post('/',
                         status: 403,
                         data: "false",
                         message: "초대가 불가능합니다."
-                    }); // 멘트 수정
+                    }); // 메시지 수정
                     return false;
                 }
 
                 const userUID = await selectUserUID(email);
+
+                if(ownerUID == userUID){
+                    res.status(403).json({
+                        status: 403,
+                        data: "false",
+                        message: "본인은 초대가 불가능합니다."
+                    }); // 메시지 수정
+                    return false;
+                }
+
                 const memberCnt = await selectGroupCount(userUID);
                 if (isFull(level, memberCnt)) {
                     res.status(403).json({
                         status: 403,
                         data: "false",
                         message: "인원이 초과하여 초대가 불가능합니다."
-                    });
+                    }); // 메시지 수정
                     return false;
                 }
 
