@@ -1,15 +1,39 @@
 const express = require('express');
 const { con } = require('./config/database.js');
+const db = require('./config/database.js');
 const { verifyToken } = require("./config/authCheck.js");
 const api = express.Router();
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 
 // 진행 중인 프로그램 조회
+api.get('/proceeding/:userUID', verifyToken, function (req, res) {
+    var sql = "select my_program.programUID, ifnull(sum(complete), 0) as completeCount " +
+        "from program_history " +
+        "right join my_program on program_history.programUID = my_program.programUID and program_history.userUID = my_program.userUID " +
+        "join program on my_program.programUID = program.UID " +
+        "where program.status = 'act' and my_program.userUID = ? " +
+        "group by my_program.programUID " +
+        "order by my_program.regDate desc";
+    var data = req.params.userUID;
+
+    db.query(sql, data, function (err, result) {
+        if (err) throw err;
+
+        res.json({
+            status: 200,
+            data: result,
+            message: "success"
+        });
+    });
+});
+
+/*
+// 진행 중인 프로그램 조회
 api.get('/proceeding/:userUID', verifyToken, async function (req, res) {
     try {
         const userUID = req.params.userUID;
-        var sql = "select b.programUID, ifnull(sum(complete), 0) as completeCount " +
+        var sql = "select b.programUID, ifnull(sum(a.complete), 0) as completeCount " +
             "from program_history a " +
             "right join my_program b on a.programUID = b.programUID and a.userUID = b.userUID " +
             "join program c on b.programUID = c.UID " +
@@ -27,7 +51,7 @@ api.get('/proceeding/:userUID', verifyToken, async function (req, res) {
         throw err;
     }
 });
-
+*/
 // 프로그램 상세정보 조회
 api.get('/:userUID', verifyToken, async function (req, res) {
     try {
