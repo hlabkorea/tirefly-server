@@ -74,12 +74,8 @@ api.put('/:programUID',
                     const historyUID = result[0].UID;
                     const playTime = result[0].playTime;
 
-                    if (userPlayTime > playTime) { // 현재 저장된 시간보다 더 시청했을 때 이력 업데이트
-                        if (complete)
-                            await completeProgramHistory(userPlayTime, complete, historyUID);
-                        else
-                            await updateProgramHistory(userPlayTime, historyUID);
-                    }
+                    if (userPlayTime > playTime)  // 현재 저장된 시간보다 더 시청했을 때 이력 업데이트
+                        await updateProgramHistory(userPlayTime, complete, historyUID);
                 } else // 재색 이력이 없는 경우
                     await insertProgramHistory(userUID, videoUID, programUID, userPlayTime);
 
@@ -105,14 +101,7 @@ async function selectProgramHistory(userUID, videoUID, programUID) {
 }
 
 // 프로그램의 비디오 재생 이력 업데이트
-async function updateProgramHistory(userPlayTime, historyUID) {
-    var sql = "update program_history set playTime = ? where UID = ?";
-    const sqlData = [userPlayTime, historyUID];
-    await con.query(sql, sqlData);
-}
-
-// 프로그램의 비디오 재생 완료 처리
-async function completeProgramHistory(userPlayTime, complete, historyUID) {
+async function updateProgramHistory(userPlayTime, complete, historyUID) {
     var sql = "update program_history set playTime = ?, complete = ? where UID = ?";
     const sqlData = [userPlayTime, complete, historyUID];
     await con.query(sql, sqlData);

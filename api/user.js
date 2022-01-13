@@ -91,6 +91,7 @@ api.post('/join',
                 const email = req.body.email;
                 const password = sha256(req.body.password);
                 const cellNumber = req.body.cellNumber;
+                
                 const userUID = await insertUser(email, password, cellNumber);
                 const memUIDs = await selectGroupUIDs(email);
 

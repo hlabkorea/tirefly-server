@@ -7,40 +7,37 @@ const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 
 // vision obj 파일 업로드
-api.post('/', 
-        visionUpload.single("vision_file"),
-        async function (req, res) {
-            const errors = getError(req, res);
-			if(errors.isEmpty()){
-                try{
-                    const visionUID = req.body.visionUID? req.body.visionUID : 0;
-                    const filename = req.file.filename;
+api.post('/',
+    visionUpload.single("vision_file"),
+    async function (req, res) {
+        const errors = getError(req, res);
+        if (errors.isEmpty()) {
+            try {
+                const filename = req.file.filename;
+                const shoulder = req.body.shoulder;
+                const waist = req.body.waist;
+                const hip = req.body.hip;
+                const thigh = req.body.thigh;
+                const calf = req.body.calf;
+                const status = '검사';
 
-                    if(visionUID == 0){
-                        var sql = "insert vision(objFilePath, status) values (?, '검사')";
-                        await con.query(sql, filename);
-                        
-                        res.status(200).json({
-                            status: 200,
-                            data: {filename: filename},
-                            message: "success"
-                        });
-                    }
-                    else{
-                        var sql = "update vision set txtFilePath = ? where UID = ?";
-                        const sqlData = [filename, visionUID];
-                        await con.query(sql, sqlData);
-                        res.status(200).json({
-                            status: 200,
-                            data: "success",
-                            message: "success"
-                        });
-                    }
-                } catch (err) {
-                    throw err;
-                }
+                var sql = "insert vision(filePath, shoulder, waist, hip, thigh, calf, status) values (?)";
+                const sqlData = [filename, shoulder, waist, hip, thigh, calf, status];
+                const [rows] = await con.query(sql, [sqlData]);
+
+                res.status(200).json({
+                    status: 200,
+                    data: {
+                        visionUID: rows.insertId,
+                        filename: filename
+                    },
+                    message: "success"
+                });
+            } catch (err) {
+                throw err;
             }
         }
+    }
 );
 
 module.exports = api;

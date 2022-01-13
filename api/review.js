@@ -87,7 +87,7 @@ api.get('/detail/:reviewUID', verifyAdminToken, async function (req, res) {
 api.get('/:teacherUID', verifyToken, async function (req, res) {
     try{
         const teacherUID = req.params.teacherUID;
-        var sql = "select ifnull(round(avg(a.reviewPoint), 1), 0) as point " +
+        var sql = "select cast(ifnull(round(avg(a.reviewPoint), 1), 0) as decimal(1, 1)) as point " +
             "from review a " +
             "join video b on a.videoUID = b.UID " +
             "where b.teacherUID = ?";
