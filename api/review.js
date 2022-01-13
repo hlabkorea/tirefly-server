@@ -87,15 +87,15 @@ api.get('/detail/:reviewUID', verifyAdminToken, async function (req, res) {
 api.get('/:teacherUID', verifyToken, async function (req, res) {
     try{
         const teacherUID = req.params.teacherUID;
-        var sql = "select cast(ifnull(round(avg(a.reviewPoint), 1), 0) as decimal(1, 1)) as point " +
+        var sql = "select ifnull(round(avg(a.reviewPoint), 1), 0) as point " +
             "from review a " +
             "join video b on a.videoUID = b.UID " +
             "where b.teacherUID = ?";
-        const [result] = await con.query(sql, teacherUID);
+        const [[result]] = await con.query(sql, teacherUID);
 
         res.status(200).json({
             status: 200,
-            data: result[0].point,
+            data: parseFloat(result.point),
             message: "success"
         });
     } catch (err) {
@@ -122,7 +122,7 @@ api.post('/:videoUID',
                 const reviewPoint = req.body.reviewPoint;
                 const reviewContents = req.body.reviewContents;
                 var sql = "insert into review(videoUID, userUID, reviewLevel, reviewPoint, reviewContents) values(?)";
-                var sqlData = [videoUID, userUID, reviewLevel, reviewPoint, reviewContents];
+                const sqlData = [videoUID, userUID, reviewLevel, reviewPoint, reviewContents];
                 await con.query(sql, [sqlData]);
 
                 res.status(200).json({
