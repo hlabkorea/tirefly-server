@@ -32,13 +32,13 @@ api.get('/owners/:userUID',
     async function (req, res, next) {
         try{
             const userUID = req.params.userUID;
-            var sql = "select user.email, membership.level, membership.startDate, membership.endDate " +
-                "from membership_group " +
-                "join user on membership_group.ownerUID = user.UID " +
-                "join membership on membership_group.ownerUID = membership.userUID " +
-                "where membership_group.userUID = ? and date_format(membership.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d')" +
-                "group by membership_group.ownerUID " +
-                "order by membership_group.email";
+            var sql = "select b.email, c.level, c.startDate, c.endDate " +
+                "from membership_group a " +
+                "join user b on a.ownerUID = b.UID " +
+                "join membership c on a.ownerUID = c.userUID " +
+                "where a.userUID = ? and date_format(c.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') " +
+                "group by a.ownerUID " +
+                "order by a.email";
             const [result] = await con.query(sql, userUID);
 
             res.status(200).json({

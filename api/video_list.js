@@ -1,65 +1,91 @@
 const express = require('express');
-const db = require('./config/database.js');
+const { con } = require('./config/database.js');
 const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
 const api = express.Router();
 
 // 비디오 운동 리스트 조회
-api.get('/:videoUID', verifyToken, function (req, res) {
-    var sql = "select UID as listUID, listName, listStartTime, listPlayTime, video_list.order from video_list where videoUID = ? order by video_list.order";
-    var data = [req.params.videoUID];
-
-    db.query(sql, data, function (err, result, fields) {
-        if (err) throw err;
+api.get('/:videoUID', verifyToken, async function (req, res) {
+    try{
+        const videoUID = req.params.videoUID;
+        var sql = "select UID as listUID, listName, listStartTime, listPlayTime, video_list.order from video_list where videoUID = ? order by video_list.order";
+        const [result] = await con.query(sql, videoUID);
 
         res.status(200).json({
             status: 200,
             data: result,
             message: "success"
         });
-    });
+    } catch (err) {
+        throw err;
+    }
 });
 
+
 // cms - 비디오 리스트 추가
-api.put('/:videoUID', verifyAdminToken, function (req, res) {
-    var adminUID = req.adminUID;
-    var videoUID = req.params.videoUID;
-    var data = [];
-    var videoList = req.body.videoList;
+api.put('/:videoUID', verifyAdminToken, async function (req, res) {
+    try{
+        const adminUID = req.adminUID;
+        const videoUID = req.params.videoUID;
+        const videoList = req.body.videoList;
 
-    for (var i in videoList) {
-        data.push([videoUID, videoList[i].listName, videoList[i].order, videoList[i].listStartTime, videoList[i].listPlayTime, adminUID]);
-    }
-
-    var selectSql = "select UID from video_list where videoUID = ?";
-    db.query(selectSql, videoUID, function (err, selectResult, fields) {
-        if (err) throw err;
-
-        // 이미 video에 대한 리스트가 존재하면 삭제
-        if (selectResult.length != 0) {
-            var deleteData = [];
-            for (var i in selectResult) {
-                deleteData.push(selectResult[i].UID);
-            }
-
-            var deleteSql = "delete from video_list where UID in (?);";
-            db.query(deleteSql, [deleteData], function (err, selectResult, fields) {
-                if (err) throw err;
-            });
-        }
-
-        if (videoList.length != 0) {
-            var sql = "insert into video_list(videoUID, listName, video_list.order, listStartTime, listPlayTime, regUID) values ?;";
-            db.query(sql, [data], function (err, result, fields) {
-                if (err) throw err;
-            });
-        }
+        const listUIDs = await selectVideoListUIDs(videoUID);
+        if(listUIDs.length != 0) // 이미 video에 대한 리스트가 존재하면 삭제
+            await deleteVideoList(listUIDs);
+        
+        const sqlListData = makeSqlListData(videoUID, adminUID, videoList);
+        await insertVideoList(sqlListData);
 
         res.status(200).send({
             status: 200,
             data: "true",
             message: "success"
         });
-    });
+    } catch (err) {
+        throw err;
+    }
 });
+
+// 비디오 리스트 UID 조회
+async function selectVideoListUIDs(videoUID){
+    var sql = "select UID from video_list where videoUID = ?";
+    const [result] = await con.query(sql, videoUID);
+    var UIDs = [];
+    if(result.length != 0){
+        for(var i in result)
+            UIDs.push(result[i].UID);
+    }
+
+    return UIDs;
+}
+
+// 비디오 리스트 삭제
+async function deleteVideoList(listUIDs){
+    var sql = "delete from video_list where UID in (?);";
+    await con.query(sql, [listUIDs]);
+}
+
+// 비디오 리스트 sql data 생성
+function makeSqlListData(videoUID, adminUID, videoList){
+    var result = [];
+
+    for (var i in videoList) {
+        const listName = videoList[i].listName;
+        const order = videoList[i].order;
+        const listStartTime = videoList[i].listStartTime;
+        const listPlayTime = videoList[i].listPlayTime;
+        result.push([videoUID, listName, order, listStartTime, listPlayTime, adminUID]);
+    }
+
+    return result;
+}
+
+// 비디오 리스트 등록
+async function insertVideoList(sqlListData){
+    if(sqlListData.length != 0){
+        var sql = "insert into video_list(videoUID, listName, video_list.order, listStartTime, listPlayTime, regUID) values ?;";
+        await con.query(sql, [sqlListData]);
+    }
+}
+
 
 module.exports = api;

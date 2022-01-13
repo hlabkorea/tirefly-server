@@ -1,28 +1,28 @@
 const express = require('express');
-const db = require('./config/database.js');
+const { con } = require('./config/database.js');
 const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
 const api = express.Router();
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 
 // 프로그램 참여하기 리스트 조회
-api.get('/all', verifyToken, function (req, res) {
-    var sql = "select program_list.programUID, program.programName, program.programThumbnail, program.weekNumber, program.programLevel,  count(program_list.UID) as totalCount " +
-        "from program_list " +
-        "join program on program_list.programUID = program.UID " +
-        "where program.status = 'act' " +
-        "group by program_list.programUID " +
-        "order by program.regDate desc";
-
-    db.query(sql, function (err, result) {
-        if (err) throw err;
-
+api.get('/all', verifyToken, async function (req, res) {
+    try{
+        var sql = "select a.programUID, b.programName, b.programThumbnail, b.weekNumber, b.programLevel,  count(a.UID) as totalCount " +
+            "from program_list a " +
+            "join program b on a.programUID = b.UID " +
+            "where b.status = 'act' " +
+            "group by a.programUID " +
+            "order by b.regDate desc";
+        const [result] = await con.query(sql);
         res.status(200).json({
             status: 200,
             data: result,
             message: "success"
         });
-    });
+    } catch (err) {
+        throw err;
+    }
 });
 
 // n주차 비디오 목록
@@ -31,36 +31,32 @@ api.get('/week/:programUID',
     [
         check("weekly", "weekly is required").not().isEmpty()
     ],
-    function (req, res) {
+    async function (req, res) {
         const errors = getError(req, res);
         if (errors.isEmpty()) {
-            var programUID = req.params.programUID;
-            var weekly = req.query.weekly;
-            var sql = "select ifnull(video.UID, 0) as videoUID, program_list.day, program_list.isRest, ifnull(teacher.teacherImg, '') as teacherImg, ifnull(video.contentsPath, '') as contentsPath, " +
-                "ifnull(video.videoName, '') as videoName, ifnull(teacher.teacherName, '') as teacherName, ifnull(category.categoryName, '') as categoryName, " +
-                "ifnull(video.videoLevel, '') as videoLevel, ifnull(video.playTimeValue, '') as playTimeValue " +
-                "from program_list " +
-                "left join video on program_list.videoUID = video.UID " +
-                "left join category on video.categoryUID = category.UID " +
-                "left join teacher on video.teacherUID = teacher.UID " +
-                "where program_list.programUID = ? and weekly = ? " +
-                "order by program_list.day";
-
-            var data = [programUID, weekly];
-
-            db.query(sql, data, function (err, result) {
-                if (err) throw err;
-
-                for (var i in result) {
-                    result[i].teacherImg = result[i].contentsPath;
-                }
+            try{
+                const programUID = req.params.programUID;
+                const weekly = req.query.weekly;
+                var sql = "select ifnull(b.UID, 0) as videoUID, a.day, a.isRest, ifnull(b.contentsPath, '') as teacherImg, ifnull(b.contentsPath, '') as contentsPath, " +
+                    "ifnull(b.videoName, '') as videoName, ifnull(d.teacherName, '') as teacherName, ifnull(c.categoryName, '') as categoryName, " +
+                    "ifnull(b.videoLevel, '') as videoLevel, ifnull(b.playTimeValue, '') as playTimeValue " +
+                    "from program_list a " +
+                    "left join video b on a.videoUID = b.UID " +
+                    "left join category c on b.categoryUID = c.UID " +
+                    "left join teacher d on b.teacherUID = d.UID " +
+                    "where a.programUID = ? and a.weekly = ? " +
+                    "order by a.day";
+                const sqlData = [programUID, weekly];
+                const [result] = await con.query(sql, sqlData);
 
                 res.status(200).json({
                     status: 200,
                     data: result,
                     message: "success"
                 });
-            });
+            } catch (err) {
+                throw err;
+            }
         }
     }
 );
@@ -72,31 +68,31 @@ api.get('/complete/:programUID',
         check("weekly", "weekly is required").not().isEmpty(),
         check("userUID", "userUID is required").not().isEmpty()
     ],
-    function (req, res) {
+    async function (req, res) {
         const errors = getError(req, res);
         if (errors.isEmpty()) {
-            var programUID = req.params.programUID;
-            var userUID = req.query.userUID;
-            var weekly = req.query.weekly;
+            try{
+                const programUID = req.params.programUID;
+                const userUID = req.query.userUID;
+                const weekly = req.query.weekly;
 
-            var sql = "select program_list.videoUID, program_history.complete " +
-                "from program_list " +
-                "join program_history on program_list.programUID = program_history.programUID and program_list.videoUID = program_history.videoUID " +
-                "where program_list.programUID = ? and program_history.userUID = ? and program_list.weekly = ? and program_history.complete = 1 " +
-                "group by program_history.UID " +
-                "order by program_list.day";
-
-            var data = [programUID, userUID, weekly];
-
-            db.query(sql, data, function (err, result) {
-                if (err) throw err;
+                var sql = "select a.videoUID, b.complete " +
+                    "from program_list a " +
+                    "join program_history b on a.programUID = b.programUID and a.videoUID = b.videoUID " +
+                    "where a.programUID = ? and b.userUID = ? and a.weekly = ? and b.complete = 1 " +
+                    "group by b.UID " +
+                    "order by a.day";
+                const sqlData = [programUID, userUID, weekly];
+                const [result] = await con.query(sql, sqlData);
 
                 res.status(200).json({
                     status: 200,
                     data: result,
                     message: "success"
                 });
-            });
+            } catch (err) {
+                throw err;
+            }
         }
     }
 );
@@ -104,69 +100,90 @@ api.get('/complete/:programUID',
 // 프로그램 상세 정보 조회
 api.get('/:programUID',
     verifyAdminToken,
-    function (req, res) {
-        var programUID = req.params.programUID;
-
-        // 프로그램 정보 조회
-        var sql = "select videoUID, weekly, day, isRest from program_list where programUID = ?";
-
-        db.query(sql, programUID, function (err, result) {
-            if (err) throw err;
+    async function (req, res) {
+        try{
+            const programUID = req.params.programUID;
+            var sql = "select videoUID, weekly, day, isRest from program_list where programUID = ?";
+            const [result] = await con.query(sql, programUID);
 
             res.status(200).json({
                 status: 200,
                 data: result,
                 message: "success"
             });
-        });
+        } catch (err) {
+            throw err;
+        }
     }
 );
 
 // cms - 프로그램 리스트 추가
 api.put('/:programUID',
     verifyAdminToken,
-    function (req, res) {
-        var adminUID = req.adminUID;
-        var programUID = req.params.programUID;
-        var programList = req.body.programList;
+    async function (req, res) {
+        try{
+            const adminUID = req.adminUID;
+            const programUID = req.params.programUID;
+            const programList = req.body.programList;
 
-        var selectSql = "select UID from program_list where programUID = ?";
-        db.query(selectSql, programUID, function (err, selectResult, fields) {
-            if (err) throw err;
+            const listUIDs = await selectProgramListUIDs(programUID);
+            if(listUIDs.length != 0) // 이미 program에 대한 리스트가 존재하면 삭제
+                await deleteProgramList(listUIDs)
+            
+            const sqlListData = makeSqlListData(programUID, adminUID, programList);
+            await insertProgramList(sqlListData);
 
-            // 이미 program에 대한 리스트가 존재하면 삭제
-            if (selectResult.length != 0) {
-                var deleteData = [];
-                for (var i in selectResult) {
-                    deleteData.push(selectResult[i].UID);
-                }
-
-                var deleteSql = "delete from program_list where UID in (?);";
-                db.query(deleteSql, [deleteData], function (err, selectResult, fields) {
-                    if (err) throw err;
-                });
-            }
-            var data = [];
-            for (var i in programList) {
-                var videoUID = programList[i].videoUID;
-                var day = programList[i].day;
-                var weekly = programList[i].weekly;
-                var isRest = programList[i].isRest;
-                data.push([programUID, videoUID, weekly, day, isRest, adminUID]);
-            }
-
-            var sql = "insert program_list(programUID, videoUID, weekly, day, isRest, regUID) values ?;";
-            db.query(sql, [data], function (err, result, fields) {
-                if (err) throw err;
-
-                res.status(200).json({
-                    status: 200,
-                    data: "true",
-                    message: "success"
-                });
+            res.status(200).json({
+                status: 200,
+                data: "true",
+                message: "success"
             });
-        });
+        } catch (err) {
+            throw err;
+        }
     }
 );
+
+// 프로그램 리스트 UID 조회
+async function selectProgramListUIDs(programUID){
+    var sql = "select UID from program_list where programUID = ?";
+    const [result] = await con.query(sql, programUID);
+    var UIDs = [];
+    if(result.length != 0){
+        for(var i in result)
+            UIDs.push(result[i].UID);
+    }
+
+    return UIDs;
+}
+
+// 프로그램 리스트 삭제
+async function deleteProgramList(listUIDs){
+    var sql = "delete from program_list where UID in (?);";
+    await con.query(sql, [listUIDs]);
+}
+
+// 프로그램 리스트 sql data 생성
+function makeSqlListData(programUID, adminUID, programList){
+    var result = [];
+
+    for (var i in programList) {
+        var videoUID = programList[i].videoUID;
+        var day = programList[i].day;
+        var weekly = programList[i].weekly;
+        var isRest = programList[i].isRest;
+        result.push([programUID, videoUID, weekly, day, isRest, adminUID]);
+    }
+
+    return result;
+}
+
+// 프로그램 리스트 등록
+async function insertProgramList(sqlListData){
+    if(sqlListData.length != 0){
+        var sql = "insert program_list(programUID, videoUID, weekly, day, isRest, regUID) values ?;";
+        await con.query(sql, [sqlListData]);
+    }
+}
 
 module.exports = api;

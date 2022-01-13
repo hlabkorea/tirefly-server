@@ -1,57 +1,55 @@
 const express = require('express');
-const db = require('./config/database.js');
+const { con } = require('./config/database.js');
 const api = express.Router();
 
-// 상품 리스트 조회
+// 상품 전체 조회
 api.get('/',
-    function (req, res, next) {
-        var category = req.query.category;
-        var sql = "select product.UID, product_img_list.imgPath, korName, engName, originPrice, discountRate, discountPrice, dcShippingFee as shippingFee " +
-            "from product " +
-            "join product_img_list on product.UID = product_img_list.productUID " +
-            "where status='act' and category != 'membership' ";
+    async function (req, res, next) {
+        try{
+            const category = req.query.category ? req.query.category : '';
+            var sql = "select a.UID, b.imgPath, a.korName, a.engName, a.originPrice, a.discountRate, a.discountPrice, a.dcShippingFee as shippingFee " +
+                "from product a " +
+                "join product_img_list b on a.UID = b.productUID " +
+                "where a.status='act' and a.category != 'membership' ";
 
-        if (category != undefined) {
-            if (category.length != 0) {
-                sql += "and category = ? ";
-            }
-        }
+            if (category.length != 0) 
+                sql += `and a.category = '${category}'`;
 
-        sql += "group by product.UID " +
-            "order by product_img_list.UID ";
+            sql += "group by a.UID " +
+                "order by b.UID ";
 
-        db.query(sql, category, function (err, result) {
-            if (err) throw err;
+            const [result] = await con.query(sql);
 
             res.status(200).json({
                 status: 200,
                 data: result,
                 message: "success"
             });
-        });
+        } catch (err) {
+            throw err;
+        }
     }
 );
 
-// 상품 정보 조회
+// 상품 상세정보 조회
 api.get('/:productUID',
-    function (req, res, next) {
-        var productUID = req.params.productUID;
-        var sql = "select product.UID, korName, engName, originPrice, discountRate, discountPrice, originShippingFee, dcShippingFee, composition, benefitInfo, shippingInfo, detailImgPath, detailMobileImgPath " +
-            "from product " +
-            "join product_img_list on product.UID = product_img_list.productUID " +
-            "where product.UID = ?" +
-            "order by product_img_list.UID " +
-            "limit 1";
-
-        db.query(sql, productUID, function (err, result) {
-            if (err) throw err;
+    async function (req, res, next) {
+        try{
+            const productUID = req.params.productUID;
+            var sql = "select UID, korName, engName, originPrice, discountRate, discountPrice, originShippingFee, dcShippingFee, " +
+                "ifnull(composition, '') as composition, ifnull(benefitInfo, '') as benefitInfo, ifnull(shippingInfo, '') as shippingInfo, detailImgPath, detailMobileImgPath " +
+                "from product " +
+                "where UID = ?";
+            const [result] = await con.query(sql, productUID);
 
             res.status(200).json({
                 status: 200,
                 data: result,
                 message: "success"
             });
-        });
+        } catch (err) {
+            throw err;
+        }
     }
 );
 

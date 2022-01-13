@@ -1,6 +1,6 @@
 const express = require('express');
-const db = require('./config/database.js');
-const { verifyToken } = require("./config/authCheck.js");
+const { con } = require('./config/database.js');
+const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
 const api = express.Router();
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
@@ -13,71 +13,91 @@ api.put('/:videoUID',
         check("playTime", "playTime is required").not().isEmpty(),
         check("complete", "complete is required").not().isEmpty()
     ],
-    function (req, res) {
+    async function (req, res) {
         const errors = getError(req, res);
         if (errors.isEmpty()) {
-            var sql = "select UID, playTime from video_history where userUID = ? and videoUID = ?";
-            var data = [req.body.userUID, req.params.videoUID];
+            try{
+                const userUID = req.body.userUID;
+                const videoUID = req.params.videoUID;
+                const userPlayTime = req.body.playTime;
+                const complete = req.body.complete;
 
-            db.query(sql, data, function (err, result, fields) {
-                if (err) throw err;
+                const result = await selectVideoHistory(userUID, videoUID);
+                
+                if(result.length > 0) { // 재생 이력이 있는 경우
+                    const historyUID = result[0].UID;
+                    const playTime = result[0].playTime;
 
-                var clientPlayTime = req.body.playTime;
-                var clientComplete = req.body.complete;
-                var changed = true;
-
-                if (result.length != 0) {
-                    var videoHistoryUID = result[0].UID;
-
-                    if (clientPlayTime > result[0].playTime) { // 현재 저장된 시간보다 더 시청했을 때 이력 업데이트
-                        if (clientComplete) {
-                            sql = "update video_history set playTime = ?, complete = ? where UID=?";
-                            data = [clientPlayTime, clientComplete, videoHistoryUID];
-                        } else {
-                            sql = "update video_history set playTime = ? where UID = ?";
-                            data = [clientPlayTime, videoHistoryUID];
-                        }
-                    } else {
-                        changed = false;
+                    if(userPlayTime > playTime){
+                        if(complete)
+                            await completeVideoHistory(userPlayTime, complete, historyUID);
+                        else
+                            await updateVideoHistory(userPlayTime, historyUID);
                     }
-                } else { // 현재 저장된 이력이 없다면 저장
-                    sql = "insert into video_history(userUID, videoUID, playTime, complete) values(?, ?, ?, ?)";
-                    data.push(clientPlayTime);
-                    data.push(clientComplete);
-                }
-
-                if (changed) {
-                    db.query(sql, data, function (err, result, fields) {
-                        if (err) throw err;
-                    });
-                }
+                } else
+                    await insertVideoHistory(userUID, videoUID, userPlayTime);
 
                 res.status(200).json({
                     status: 200,
                     data: "true",
                     message: "success"
                 });
-            });
+            } catch (err) {
+                throw err;
+            }
         }
     }
 );
 
 // 비디오 재생 이력 조회
-api.get('/:userUID', function (req, res) {
-    var userUID = req.params.userUID;
-    var sql = "select video_history.videoUID, video.videoName, video_history.playTime, video_history.complete, video_history.updateDate " +
-        "from video_history " +
-        "join video on video_history.videoUID = video.UID " +
-        "where video_history.userUID = ?";
-    db.query(sql, userUID, function (err, result) {
-        if (err) throw err;
+async function selectVideoHistory(userUID, videoUID){
+    var sql = "select UID, playTime from video_history where userUID = ? and videoUID = ?";
+    const sqlData = [userUID, videoUID];
+    const [result] = await con.query(sql, sqlData);
+
+    return result;
+}
+
+// 비디오 재생 이력 업데이트
+async function updateVideoHistory(userPlayTime, historyUID) {
+    var sql = "update video_history set playTime = ? where UID = ?";
+    const sqlData = [userPlayTime, historyUID];
+    await con.query(sql, sqlData);
+}
+
+// 비디오 재생 완료 처리
+async function completeVideoHistory(userPlayTime, complete, historyUID) {
+    var sql = "update video_history set playTime = ?, complete = ? where UID=?";
+    const sqlData = [userPlayTime, complete, historyUID];
+    await con.query(sql, sqlData);
+}
+
+// 비디오 재생 이력 등록
+async function insertVideoHistory(userUID, videoUID, userPlayTime) {
+    const complete = false;
+    var sql = "insert into video_history(userUID, videoUID, playTime, complete) values(?)";
+    const sqlData = [userUID, videoUID, userPlayTime, complete];
+    await con.query(sql, [sqlData]);
+}
+
+// cms - 비디오 재생 이력 조회
+api.get('/:userUID', verifyAdminToken, async function (req, res) {
+    try{
+        const userUID = req.params.userUID;
+        var sql = "select a.videoUID, b.videoName, a.playTime, a.complete, a.updateDate " +
+            "from video_history a " +
+            "join video b on a.videoUID = b.UID " +
+            "where a.userUID = ?";
+        const [result] = await con.query(sql, userUID);
 
         res.status(200).json({
             status: 200,
             data: result,
             message: "success"
         });
-    });
+    } catch (err) {
+        throw err;
+    }
 });
 
 module.exports = api;

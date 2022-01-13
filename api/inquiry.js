@@ -30,7 +30,7 @@ api.get("/", verifyAdminToken, async function (req, res) {
         sql += ` limit ${offset}, ${pageCnt10}`;
 
         const [result] = await con.query(countSql + sql);
-        var {
+        const {
             startPage,
             endPage,
             totalPage

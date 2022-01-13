@@ -1,5 +1,4 @@
 const express = require('express');
-const db = require('./config/database.js');
 const { con } = require('./config/database.js');
 const {verifyToken} = require("./config/authCheck.js");
 const api = express.Router();

@@ -1,67 +1,89 @@
 const express = require('express');
-const db = require('./config/database.js');
+const { con } = require('./config/database.js');
 const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
 const api = express.Router();
 
 // 비디오에 대한 운동 기구 조회
-api.get('/:videoUID', verifyToken, function (req, res) {
-    var sql = "select acc.UID, acc.accName, acc.rectImgPath as imgPath " +
-        "from video_acclist join acc on video_acclist.accUID = acc.UID " +
-        "where videoUID = ?";
-    var data = req.params.videoUID;
-
-    db.query(sql, data, function (err, result, fields) {
-        if (err) throw err;
+api.get('/:videoUID', verifyToken, async function (req, res) {
+    try{
+        const videoUID = req.params.videoUID;
+        var sql = "select b.UID, b.accName, b.rectImgPath as imgPath " +
+            "from video_acclist a " +
+            "join acc b on a.accUID = b.UID " +
+            "where a.videoUID = ?";
+        const [result] = await con.query(sql, videoUID);
 
         res.status(200).json({
             status: 200,
             data: result,
             message: "success"
         });
-    });
+    } catch (err) {
+        throw err;
+    }
 });
 
 // cms - 비디오에 대한 운동 기구 추가
-api.put('/:videoUID', verifyAdminToken, function (req, res) {
-    var adminUID = req.adminUID;
-    var videoUID = req.params.videoUID;
-    var data = [];
-    var acc = req.body.acc;
+api.put('/:videoUID', verifyAdminToken, async function (req, res) {
+    try{
+        const adminUID = req.adminUID;
+        const videoUID = req.params.videoUID;
+        const accList = req.body.acc;
 
-    for (var i in acc) {
-        data.push([videoUID, acc[i], adminUID]);
-    }
+        const listUIDs = await selectVideoListUIDs(videoUID);
+        if(listUIDs.length != 0) // 이미 video에 대한 운동 기구들이 존재하면 삭제
+            await deleteVideoList(listUIDs);
 
-    var selectSql = "select UID, regUID from video_acclist where videoUID = ?";
-    db.query(selectSql, videoUID, function (err, selectResult, fields) {
-        if (err) throw err;
+        const sqlListData = makeSqlListData(videoUID, adminUID, accList);
+        await insertVideoList(sqlListData);
 
-        // 이미 video에 대한 운동 기구들이 존재하면 삭제
-        if (selectResult.length != 0) {
-            var deleteData = [];
-            for (var i in selectResult) {
-                deleteData.push(selectResult[i].UID);
-            }
-
-            var deleteSql = "delete from video_acclist where UID in (?);";
-            db.query(deleteSql, [deleteData], function (err, selectResult, fields) {
-                if (err) throw err;
-            });
-        }
-
-        if (acc.length != 0) {
-            var insertSql = "insert into video_acclist(videoUID, accUID, regUID) values ?;";
-
-            db.query(insertSql, [data], function (err, result, fields) {
-                if (err) throw err;
-            });
-        }
         res.status(200).send({
             status: 200,
             data: "true",
             message: "success"
         });
-    });
+    } catch (err) {
+        throw err;
+    }
 });
+
+// 비디오 리스트 UID 조회
+async function selectVideoListUIDs(videoUID){
+    var sql = "select UID from video_acclist where videoUID = ?";
+    const [result] = await con.query(sql, videoUID);
+    var UIDs = [];
+    if(result.length != 0){
+        for(var i in result)
+            UIDs.push(result[i].UID);
+    }
+
+    return UIDs;
+}
+
+// 비디오 운동 기구 삭제
+async function deleteVideoList(listUIDs){
+    var sql = "delete from video_acclist where UID in (?);";
+    await con.query(sql, [listUIDs]);
+}
+
+// 비디오 운동 기구 sql data 생성
+function makeSqlListData(videoUID, adminUID, accList){
+    var result = [];
+
+    for (var i in accList) {
+        result.push([videoUID, accList[i], adminUID]);
+    }
+
+    return result;
+}
+
+// 비디오 운동 기구 등록
+async function insertVideoList(sqlListData) {
+    if (sqlListData.length != 0) {
+        var sql = "insert into video_acclist(videoUID, accUID, regUID) values ?;";
+        await con.query(sql, [sqlListData]);
+    }
+}
+
 
 module.exports = api;

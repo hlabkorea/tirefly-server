@@ -1,87 +1,106 @@
 const express = require('express');
-const db = require('./config/database.js');
+const { con } = require('./config/database.js');
 const { getPageInfo } = require('./config/paging.js'); 
 const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
-const { addSearchSql } = require('./config/searchSql.js');
 const api = express.Router();
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
+const e = require('express');
 const pageCnt15 = 15;
 
 // 강사 평점을 조회하는 /:teacherUID를 /teacher/:teacherUID 로 수정하고, 리뷰를 조회하는 /detail/:reviewUID를 /:reviewUID 로 수정해야합니다
 
 // 후기 전체 조회
-api.get('/', verifyAdminToken, function (req, res) {
-    var searchType = req.query.searchType ? req.query.searchType : '';
-    var searchWord = req.query.searchWord ? req.query.searchWord : '';
-    var sql = "select review.UID as reviewUID, review.videoUID, video.videoName, teacher.teacherName, review.userUID, user.nickName, review.reviewLevel, review.reviewPoint, " +
-        "review.reviewContents, review.regDate " +
-        "from review " +
-        "join user on review.userUID = user.UID " +
-        "join video on review.videoUID = video.UID " +
-        "join teacher on video.teacherUID = teacher.UID ";
+api.get('/', verifyAdminToken, async function (req, res) {
+    try {
+        const searchType = req.query.searchType ? req.query.searchType : '';
+        const searchWord = req.query.searchWord ? req.query.searchWord : '';
+        const currentPage = req.query.page ? parseInt(req.query.page) : 1;
+        var sql = "select a.UID as reviewUID, a.videoUID, c.videoName, d.teacherName, a.userUID, b.nickName, a.reviewLevel, a.reviewPoint, " +
+            "a.reviewContents, a.regDate " +
+            "from review a " +
+            "join user b on a.userUID = b.UID " +
+            "join video c on a.videoUID = c.UID " +
+            "join teacher d on c.teacherUID = d.UID ";
 
-    sql += addSearchSql(searchType, searchWord);
-
-    sql += "order by review.regDate desc";
+        if (searchType.length != 0){ // 검색
+            if (searchType == "videoName") 
+                sql += "and c.videoName ";
+            else if (searchType == "teacherName")
+                sql += "and d.teacherName ";
     
-    var countSql = sql + ";";
+            sql += `LIKE '%${searchWord}%' `;
+        }
 
-    sql += " limit ?, " + pageCnt15;
-    var currentPage = req.query.page ? parseInt(req.query.page) : 1;
-    var data = (parseInt(currentPage) - 1) * pageCnt15;
+        sql += "order by a.regDate desc ";
 
-    db.query(countSql+sql, data, function (err, result) {
-      if (err) throw err;
+        var countSql = sql + ";";
+        const offset = (parseInt(currentPage) - 1) * pageCnt15;
+        sql += `limit ${offset}, ${pageCnt15}`;
 
-      var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length, pageCnt15);
-      res.status(200).json({status:200, 
-                data: {
-                  paging: {startPage: startPage, endPage: endPage, totalPage: totalPage},
-                  result: result[1]
-                }, 
-                message:"success"});
-    });
+        const [result] = await con.query(countSql + sql);
+
+        const {
+            startPage,
+            endPage,
+            totalPage
+        } = getPageInfo(currentPage, result[0].length, pageCnt15);
+        res.status(200).json({
+            status: 200,
+            data: {
+                paging: {
+                    startPage: startPage,
+                    endPage: endPage,
+                    totalPage: totalPage
+                },
+                result: result[1]
+            },
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
 });
 
 // 후기 상세조회
-api.get('/detail/:reviewUID', verifyAdminToken, function (req, res) {
-    var reviewUID = req.params.reviewUID;
-    var sql = "select review.videoUID, video.videoName, teacher.teacherName, review.userUID, user.nickName, review.reviewLevel, review.reviewPoint, review.reviewContents, review.regDate " +
-        "from review " +
-        "join user on review.userUID = user.UID " +
-        "join video on review.videoUID = video.UID " +
-        "join teacher on video.teacherUID = teacher.UID " +
-        "where review.UID = ?";
-
-    db.query(sql, reviewUID, function (err, result, fields) {
-        if (err) throw err;
-
+api.get('/detail/:reviewUID', verifyAdminToken, async function (req, res) {
+    try{
+        const reviewUID = req.params.reviewUID;
+        var sql = "select a.videoUID, c.videoName, d.teacherName, a.userUID, b.nickName, a.reviewLevel, a.reviewPoint, a.reviewContents, a.regDate " +
+            "from review a " +
+            "join user b on a.userUID = b.UID " +
+            "join video c on a.videoUID = c.UID " +
+            "join teacher d on c.teacherUID = d.UID " +
+            "where a.UID = ?";
+        const [result] = await con.query(sql, reviewUID);
         res.status(200).json({
             status: 200,
             data: result[0],
             message: "success"
         });
-    });
+    } catch (err) {
+        throw err;
+    }
 });
 
 // 강사에 대한 평점 조회
-api.get('/:teacherUID', verifyToken, function (req, res) {
-    var sql = "select ifnull(round(avg(review.reviewPoint), 1), 0) as point " +
-        "from review " +
-        "join video on review.videoUID = video.UID " +
-        "where video.teacherUID = ?";
-    var data = req.params.teacherUID;
-
-    db.query(sql, data, function (err, result, fields) {
-        if (err) throw err;
+api.get('/:teacherUID', verifyToken, async function (req, res) {
+    try{
+        const teacherUID = req.params.teacherUID;
+        var sql = "select ifnull(round(avg(a.reviewPoint), 1), 0) as point " +
+            "from review a " +
+            "join video b on a.videoUID = b.UID " +
+            "where b.teacherUID = ?";
+        const [result] = await con.query(sql, teacherUID);
 
         res.status(200).json({
             status: 200,
             data: result[0].point,
             message: "success"
         });
-    });
+    } catch (err) {
+        throw err;
+    }
 });
 
 // 운동 평가하기
@@ -93,21 +112,27 @@ api.post('/:videoUID',
         check("reviewPoint", "reviewPoint is required").not().isEmpty(),
         check("reviewContents", "reviewContents is required").not().isEmpty()
     ],
-    function (req, res) {
+    async function (req, res) {
         const errors = getError(req, res);
         if (errors.isEmpty()) {
-            var sql = "insert into review(videoUID, userUID, reviewLevel, reviewPoint, reviewContents) values(?, ?, ?, ?, ?)";
-            var data = [req.params.videoUID, req.body.userUID, req.body.reviewLevel, req.body.reviewPoint, req.body.reviewContents];
-
-            db.query(sql, data, function (err, result, fields) {
-                if (err) throw err;
+            try{
+                const videoUID = req.params.videoUID;
+                const userUID = req.body.userUID;
+                const reviewLevel = req.body.reviewLevel;
+                const reviewPoint = req.body.reviewPoint;
+                const reviewContents = req.body.reviewContents;
+                var sql = "insert into review(videoUID, userUID, reviewLevel, reviewPoint, reviewContents) values(?)";
+                var sqlData = [videoUID, userUID, reviewLevel, reviewPoint, reviewContents];
+                await con.query(sql, [sqlData]);
 
                 res.status(200).json({
                     status: 200,
                     data: "true",
                     message: "success"
                 });
-            });
+            } catch (err) {
+                throw err;
+            }
         }
     }
 );

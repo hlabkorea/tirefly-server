@@ -1,5 +1,4 @@
 const express = require('express');
-const db = require('./config/database.js');
 const { con } = require('./config/database.js');
 const { verifyToken } = require("./config/authCheck.js");
 const api = express.Router();
@@ -86,14 +85,18 @@ api.delete('/',
 // 테스트 - hurgoon@gmail.com 멤버십 삭제
 api.delete('/hurgoon',
     async function (req, res) {
-        var sql = "update membership set endDate = '0000-01-01' where userUID = 1584";
-        await con.query(sql);
+        try{
+            var sql = "update membership set endDate = '0000-01-01' where userUID = 1584";
+            await con.query(sql);
 
-        res.status(200).json({
-            status: 200,
-            data: "true",
-            message: "success"
-        });
+            res.status(200).json({
+                status: 200,
+                data: "true",
+                message: "success"
+            });
+        } catch (err) {
+            throw err;
+        }
     }
 );
 
