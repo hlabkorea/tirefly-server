@@ -49,9 +49,9 @@ api.post('/',
                 var createSql = "insert into admin(email, password, name, department) " +
                     "values (?)";
                 const createData = [email, passwd, name, department];
-                const [rows] = await con.query(createSql, [createData]);
+                const [result] = await con.query(createSql, [createData]);
 
-                const adminUID = rows.insertId;
+                const adminUID = result.insertId;
 
                 const token = jwt.sign({
                         adminUID: adminUID, // 토큰의 내용(payload)

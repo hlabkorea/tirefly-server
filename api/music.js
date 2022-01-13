@@ -55,9 +55,9 @@ api.post('/',
                     const artist = req.body.artist;
                     var sql = "insert music(categoryUID, musicPath, musicName, artist, regUID) values (?)";
                     const sqlData = [categoryUID, musicPath, musicName, artist, adminUID];
-                    const [rows] = await con.query(sql, [sqlData]);
+                    const [result] = await con.query(sql, [sqlData]);
 
-                    res.status(200).json({status:200, data: {musicUID: rows.insertId}, message: "success"});
+                    res.status(200).json({status:200, data: {musicUID: result.insertId}, message: "success"});
                 } catch (err) {
                     throw err;
                 }

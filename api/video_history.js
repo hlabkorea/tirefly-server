@@ -28,12 +28,8 @@ api.put('/:videoUID',
                     const historyUID = result[0].UID;
                     const playTime = result[0].playTime;
 
-                    if(userPlayTime > playTime){
-                        if(complete)
-                            await completeVideoHistory(userPlayTime, complete, historyUID);
-                        else
-                            await updateVideoHistory(userPlayTime, historyUID);
-                    }
+                    if(userPlayTime > playTime)
+                        await updateVideoHistory(userPlayTime, complete, historyUID);
                 } else
                     await insertVideoHistory(userUID, videoUID, userPlayTime);
 
@@ -66,7 +62,7 @@ async function updateVideoHistory(userPlayTime, historyUID) {
 }
 
 // 비디오 재생 완료 처리
-async function completeVideoHistory(userPlayTime, complete, historyUID) {
+async function updateVideoHistory(userPlayTime, complete, historyUID) {
     var sql = "update video_history set playTime = ?, complete = ? where UID=?";
     const sqlData = [userPlayTime, complete, historyUID];
     await con.query(sql, sqlData);

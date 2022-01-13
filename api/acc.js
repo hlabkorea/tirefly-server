@@ -56,11 +56,11 @@ api.post('/',
                     const status = req.body.status;
                     var sql = "insert acc(accName, regUID, status) values(?)";
                     const sqlData = [accName, adminUID, status];
-                    const [rows] = await con.query(sql, [sqlData]);
+                    const [result] = await con.query(sql, [sqlData]);
                     res.status(200).json({
                         status: 200,
                         data: {
-                            accUID: rows.insertId // 생성된 auto increment id
+                            accUID: result.insertId // 생성된 auto increment id
                         },
                         message: "success"
                     });

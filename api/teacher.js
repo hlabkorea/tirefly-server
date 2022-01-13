@@ -102,12 +102,12 @@ api.post('/', verifyAdminToken, async function (req, res) {
         const status = req.body.status;
         var sql = "insert teacher(teacherName, teacherNickName, teacherGender, teacherCareer, teacherIntroduce, teacherInstagram, teacherYoutube, status, regUID) values (?)";
         const sqlData = [tcName, tcNick, tcGender, tcCareer, tcInfo, tcInsta, tcYoutube, status, adminUID];
-        const [rows] = await con.query(sql, [sqlData]);
+        const [result] = await con.query(sql, [sqlData]);
 
         res.status(200).json({
             status: 200,
             data: {
-                teacherUID: rows.insertId
+                teacherUID: result.insertId
             },
             message: "success"
         });

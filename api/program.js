@@ -119,12 +119,12 @@ api.post('/',
                 var sql = "insert program(programName, programContents, programLevel, weekNumber, status, regUID) " +
                     "values (?)";
                 const sqlData = [programName, programContents, programLevel, weekNumber, status, adminUID];
-                const [rows] = await con.query(sql, [sqlData]);
+                const [result] = await con.query(sql, [sqlData]);
 
                 res.status(200).json({
                     status: 200,
                     data: {
-                        programUID: rows.insertId
+                        programUID: result.insertId
                     },
                     message: "success"
                 });

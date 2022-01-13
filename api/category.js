@@ -62,11 +62,11 @@ api.post('/',
                 const calorie3 = req.body.calorie3;
                 var sql = "insert category(categoryName, regUID, status, calorie1, calorie2, calorie3) values(?)";
                 const data = [categoryName, adminUID, status, calorie1, calorie2, calorie3];
-                const [rows] = await con.query(sql, [data]);
+                const [result] = await con.query(sql, [data]);
                 res.status(200).json({
                     status: 200,
                     data: {
-                        categoryUID: rows.insertId // 생성된 auto increment id
+                        categoryUID: result.insertId // 생성된 auto increment id
                     },
                     message: "success"
                 });

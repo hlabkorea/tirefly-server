@@ -542,8 +542,8 @@ async function insertUser(email, password, cellNumber) {
     var sql = "insert into user(email, password, cellNumber, status) " +
         "values (?, ?, ?, 'act')";
     const sqlData = [email, password, cellNumber];
-    const [rows] = await con.query(sql, sqlData);
-    return rows.insertId;
+    const [result] = await con.query(sql, sqlData);
+    return result.insertId;
 }
 
 // 초대된 멤버십 그룹의 UID

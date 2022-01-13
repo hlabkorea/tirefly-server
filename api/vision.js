@@ -23,12 +23,12 @@ api.post('/',
 
                 var sql = "insert vision(filePath, shoulder, waist, hip, thigh, calf, status) values (?)";
                 const sqlData = [filename, shoulder, waist, hip, thigh, calf, status];
-                const [rows] = await con.query(sql, [sqlData]);
+                const [result] = await con.query(sql, [sqlData]);
 
                 res.status(200).json({
                     status: 200,
                     data: {
-                        visionUID: rows.insertId,
+                        visionUID: result.insertId,
                         filename: filename
                     },
                     message: "success"

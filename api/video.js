@@ -1,5 +1,4 @@
 const express = require('express');
-const db = require('./config/database.js');
 const { con } = require('./config/database.js');
 const {verifyToken, verifyAdminToken} = require("./config/authCheck.js");
 const api = express.Router();
@@ -7,44 +6,45 @@ const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 const { getPageInfo } = require('./config/paging.js'); 
 const { upload } = require('./config/uploadFile.js');
-const { addSearchSql, addVodSearchSql } = require('./config/searchSql.js');
 var querystring = require("querystring");
 var crypto = require('crypto');
 const pageCnt15 = 15;
 
 // cms - vod 정보 조회
-api.get('/', verifyAdminToken, function (req, res) {
-    var searchType = req.query.searchType ? req.query.searchType : '';
-    var searchWord = req.query.searchWord ? req.query.searchWord : '';
-    var status = req.query.status ? req.query.status : 'act';
-    var sql = "select video.UID as videoUID, video.videoThumbnail, video.videoName, category.categoryName, teacher.teacherName, video.videoLevel, video.regDate, video.status, video.categoryUID " +
-        "from video " +
-        "join teacher on video.teacherUID = teacher.UID " +
-        "join category ON video.categoryUID = category.UID " +
-        "where videoType = 'vod' ";
+api.get('/', verifyAdminToken, async function (req, res) {
+    try{
+        const searchType = req.query.searchType ? req.query.searchType : '';
+        const searchWord = req.query.searchWord ? req.query.searchWord : '';
+        const status = req.query.status ? req.query.status : 'act';
+        const currentPage = req.query.page ? parseInt(req.query.page) : '';
 
-    sql += addSearchSql(searchType, searchWord);
+        var sql = "select a.UID as videoUID, a.videoThumbnail, a.videoName, c.categoryName, b.teacherName, a.videoLevel, a.regDate, a.status, a.categoryUID " +
+            "from video a " +
+            "join teacher b on a.teacherUID = b.UID " +
+            "join category c ON a.categoryUID = c.UID " +
+            "where a.videoType = 'vod' ";
 
-    var data = [];
+        if (searchType.length != 0){
+            if (searchType == "videoName") 
+                sql += "and a.videoName ";
+            else if (searchType == "teacherName")
+                sql += "and b.teacherName ";
 
-    if (status != "all") {
-        sql += "and video.status = ? ";
-        data.push(status);
-        data.push(status);
-    }
+            sql += `LIKE '%${searchWord}%' `;
+        }
 
-    sql += "order by video.UID desc ";
+        if (status != "all") 
+            sql += `and a.status = '${status}' `;
 
+        sql += "order by a.UID desc ";
 
-    var currentPage = req.query.page ? parseInt(req.query.page) : '';
-    if (currentPage != '') {
-        var countSql = sql + ";";
-        sql += "limit ?, " + pageCnt15;
-        data.push(parseInt(currentPage - 1) * pageCnt15);
+        if (currentPage != '') {
+            var countSql = sql + ";";
+            const offset = parseInt(currentPage - 1) * pageCnt15;
+            sql += `limit ${offset}, ${pageCnt15}`;
 
-        db.query(countSql + sql, data, function (err, result, fields) {
-            if (err) throw err;
-            var {
+            const [result] = await con.query(countSql + sql);
+            const {
                 startPage,
                 endPage,
                 totalPage
@@ -62,17 +62,17 @@ api.get('/', verifyAdminToken, function (req, res) {
                 },
                 message: "success"
             });
-        });
-    } else {
-        db.query(sql, data, function (err, result, fields) {
-            if (err) throw err;
+        } else {
+            const [result] = await con.query(sql);
 
             res.status(200).json({
                 status: 200,
                 data: result,
                 message: "success"
             });
-        });
+        }
+    } catch (err) {
+        throw err;
     }
 });
 
@@ -152,12 +152,12 @@ api.post('/',
                     var sql = "insert video(teacherUID, categoryUID, videoName, videoLevel, totalPlayTime, playContents, playTimeValue, status, videoType, videoURL, isPlayBGM, liveStartDate, liveEndDate, regUID) " +
                         "values (?)";
                     const sqlData = [teacherUID, categoryUID, videoName, videoLevel, totalPlayTime, playContents, playTimeValue, status, videoType, videoURL, isPlayBGM, liveStartDate, liveEndDate, adminUID];
-                    const [rows] = await con.query(sql, [sqlData]);
+                    const [result] = await con.query(sql, [sqlData]);
 
                     res.status(200).json({
                         status: 200,
                         data: {
-                            videoUID: rows.insertId
+                            videoUID: result.insertId
                         },
                         message: "success"
                     });
@@ -373,50 +373,52 @@ api.get('/live',
         check("startDate", "startDate is required").not().isEmpty(),
         check("endDate", "endDate is required").not().isEmpty()
     ],
-    function (req, res) {
+    async function (req, res) {
         const errors = getError(req, res);
         if (errors.isEmpty()) {
-            var startDate = req.query.startDate;
-            var endDate = req.query.endDate;
-            var sql = "select video.UID as videoUID, video.liveStartDate, teacher.teacherImg, video.videoName, teacher.teacherName, video.videoLevel, video.playTimeValue " +
-                "from video " +
-                "join teacher on teacher.UID = video.teacherUID " +
-                "where videoType = 'live' and (date_format(video.liveStartDate, '%Y-%m-%d') between ? and ?) and video.status = 'act' " +
-                "order by liveStartDate";
-            var data = [startDate, endDate];
-
-            db.query(sql, data, function (err, result, fields) {
-                if (err) throw err;
+            try{
+                const startDate = req.query.startDate;
+                const endDate = req.query.endDate;
+                var sql = "select a.UID as videoUID, a.liveStartDate, b.teacherImg, a.videoName, b.teacherName, a.videoLevel, a.playTimeValue " +
+                    "from video a " +
+                    "join teacher b on b.UID = a.teacherUID " +
+                    "where a.videoType = 'live' and (date_format(a.liveStartDate, '%Y-%m-%d') between ? and ?) and a.status = 'act' " +
+                    "order by a.liveStartDate";
+                const sqlData = [startDate, endDate];
+                const [result] = await con.query(sql, sqlData);
 
                 res.status(200).json({
                     status: 200,
                     data: result,
                     message: "success"
                 });
-            });
+            } catch (err) {
+                throw err;
+            }
         }
     }
 );
 
 // 추천 영상 조회
-api.get('/recommend/:userUID', verifyToken, function (req, res) {
-    var sql = "select video.UID, video.videoThumbnail " +
-        "from video " +
-        "join my_category on video.categoryUID = my_category.categoryUID " +
-        "where my_category.userUID = ? and video.status = 'act' " +
-        "order by video.regDate desc " +
-        "limit 20";
-    var data = req.params.userUID;
-
-    db.query(sql, data, function (err, result, fields) {
-        if (err) throw err;
+api.get('/recommend/:userUID', verifyToken, async function (req, res) {
+    try{
+        var sql = "select a.UID, a.videoThumbnail " +
+            "from video a " +
+            "join my_category b on a.categoryUID = b.categoryUID " +
+            "where b.userUID = ? and a.status = 'act' " +
+            "order by a.regDate desc " +
+            "limit 20";
+        const sqlData = req.params.userUID;
+        const [result] = await con.query(sql, sqlData);
 
         res.status(200).json({
             status: 200,
             data: result,
             message: "success"
         });
-    });
+    } catch (err) {
+        throw err;
+    }
 });
 
 // 운동 종목 카테고리 상세 목록
@@ -425,59 +427,59 @@ api.get('/category/:categoryUID',
     [
         check("videoType", "videoType is required").not().isEmpty()
     ],
-    function (req, res) {
+    async function (req, res) {
         const errors = getError(req, res);
         if (errors.isEmpty()) {
-            var sql = "select video.UID, video.contentsPath, teacher.teacherImg, video.videoName, teacher.teacherNickname, category.categoryName, video.videoLevel, video.playTimeValue, acc.rectImgPath as imgPath " +
-                "from video " +
-                "join teacher on video.teacherUID = teacher.UID " +
-                "join category on video.categoryUID = category.UID " +
-                "left join video_acclist on video.UID = video_acclist.videoUID " +
-                "left join acc on video_acclist.accUID = acc.UID " +
-                "where video.categoryUID = ? and video.videoType= ? and video.status = 'act' " +
-                "order by video.regDate desc, video.UID desc";
-            var data = [req.params.categoryUID, req.query.videoType];
+            try{
+                const categoryUID = req.params.categoryUID;
+                const videoType = req.query.videoType;
 
-            db.query(sql, data, function (err, result, fields) {
-                if (err) throw err;
-
-                var responseData = makevideoList(result);
-
+                var sql = "select a.UID, a.contentsPath, b.teacherImg, a.videoName, b.teacherNickname, c.categoryName, a.videoLevel, a.playTimeValue, e.rectImgPath as imgPath " +
+                    "from video a " +
+                    "join teacher b on a.teacherUID = b.UID " +
+                    "join category c on a.categoryUID = c.UID " +
+                    "left join video_acclist d on a.UID = d.videoUID " +
+                    "left join acc e on d.accUID = e.UID " +
+                    "where a.categoryUID = ? and a.videoType= ? and a.status = 'act' " +
+                    "order by a.regDate desc, a.UID desc";
+                const sqlData = [categoryUID, videoType];
+                const [result] = await con.query(sql, sqlData);
+                
                 res.status(200).send({
                     status: 200,
-                    data: responseData,
+                    data:  makevideoList(result),
                     message: "success"
                 });
-            });
+            } catch (err) {
+                throw err;
+            }
         }
     }
 );
 
 // 상세보기 - 비디오 설명
-api.get('/:videoUID', verifyToken, function (req, res) {
-    var sql = "select video.UID, video.videoType, video.videoName, video.categoryUID, category.categoryName, video.videoLevel, video.totalPlayTime, video.playTimeValue, video.videoThumbnail, video.contentsPath, " +
-        "video.playContents, video.teacherUID, video.videoURL, video.liveStartDate, video.liveEndDate, video.isPlayBGM, video.status, " +
-        "cast((case	when videoLevel = '초급'  then calorie1 " +
-        "when videoLevel = '중급' then calorie2 " +
-        "when videoLevel = '고급' then calorie3 end) as char(4)) AS consume " // float -> varchar : 처음 설정이 varchar 였어서 앱에서 타입 에러 발생하기 때문에
-        +
-        "from video " +
-        "join category on video.categoryUID = category.UID " +
-        "where video.UID = ?";
+api.get('/:videoUID', verifyToken, async function (req, res) {
+    try{
+        var sql = "select a.UID, a.videoType, a.videoName, a.categoryUID, b.categoryName, a.videoLevel, a.totalPlayTime, a.playTimeValue, a.videoThumbnail, a.contentsPath, " +
+            "a.playContents, a.teacherUID, a.videoURL, a.liveStartDate, a.liveEndDate, a.isPlayBGM, a.status, " +
+            "cast((case	when a.videoLevel = '초급'  then calorie1 " +
+            "when a.videoLevel = '중급' then calorie2 " +
+            "when a.videoLevel = '고급' then calorie3 end) as char(4)) as consume " + // float -> varchar : 처음 설정이 varchar 였어서 앱에서 타입 에러 발생하기 때문에
+            "from video a " +
+            "join category b on a.categoryUID = b.UID " +
+            "where a.UID = ?";
 
-    var data = req.params.videoUID;
-
-    db.query(sql, data, function (err, result, fields) {
-        if (err) throw err;
-
-        result[0].playContents = result[0].playContents.replace(/\\n/gi, "\n").replace(/\r/gi, "");
+        const videoUID = req.params.videoUID;
+        const [result] = await con.query(sql, videoUID);
 
         res.status(200).json({
             status: 200,
             data: result,
             message: "success"
         });
-    });
+    } catch (err) {
+        throw err;
+    }
 });
 
 function makevideoList(result) {

@@ -85,5 +85,4 @@ async function insertVideoList(sqlListData) {
     }
 }
 
-
 module.exports = api;
