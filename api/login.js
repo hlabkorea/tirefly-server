@@ -109,7 +109,7 @@ async function selectMembership(userUID) {
             UID: 0,
             level: "normal",
             startDate: "0000-01-01 00:00:00",
-            endDate: "0000-01-01 00:00:00"
+            endDate: "0000-01-01"
         };
 }
 
@@ -131,8 +131,8 @@ async function selectMembershipGroup(userUID) {
     } else
         return {
             level: "normal",
-            startDate: 0,
-            endDate: 0
+            startDate: "0000-01-01 00:00:00",
+            endDate: "0000-01-01"
         };
 }
 
