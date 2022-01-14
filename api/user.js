@@ -430,8 +430,10 @@ api.put('/basic_image/:userUID',
             const userUID = req.params.userUID;
 
             const filename = await selectProfileFile(userUID);
-            deleteProfileFile(filename);
-            await updateBasicImg(userUID);
+            if(filename.length != 0){ // 프로필 이미지가 있을 경우에만 기본 이미지로 변경
+                deleteProfileFile(filename);
+                await updateBasicImg(userUID);
+            }
 
             res.status(200).json({
                 status: 200,
@@ -650,7 +652,10 @@ async function insertPwdToken(email, authKey) {
 async function selectProfileFile(userUID) {
     var sql = "select profileImg from user where UID = ?";
     const [result] = await con.query(sql, userUID);
-    return result[0].profileImg;
+    if(result.length != 0)
+        return result[0].profileImg;
+    else  
+        return '';
 }
 
 // 프로필 이미지 파일 삭제
