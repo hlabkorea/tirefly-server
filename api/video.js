@@ -10,7 +10,7 @@ var querystring = require("querystring");
 var crypto = require('crypto');
 const pageCnt15 = 15;
 
-// cms - vod 정보 조회
+// cms - vod 전체 조회
 api.get('/', verifyAdminToken, async function (req, res) {
     try{
         const searchType = req.query.searchType ? req.query.searchType : '';

@@ -103,21 +103,23 @@ api.delete('/hurgoon',
 // login.js 에서도 사용하는 함수
 // 멤버십 소유자인지 확인
 async function selectMembership(userUID) {
-    var sql = "select level, startDate, endDate from membership " +
+    var sql = "select UID, level, startDate, endDate from membership " +
         "where date_format(membership.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') and userUID = ?";
     const [result] = await con.query(sql, userUID);
 
     if (result.length != 0)
         return {
+            UID: result[0].UID,
             auth: result[0].level,
             startDate: result[0].startDate,
             endDate: result[0].endDate
         };
     else
         return {
+            UID: 0,
             auth: "normal",
-            startDate: 0,
-            endDate: 0
+            startDate: "0000-01-01 00:00:00",
+            endDate: "0000-01-01 00:00:00"
         };
 }
 
@@ -150,8 +152,8 @@ async function selectMembershipGroup(userUID) {
     } else
         return {
             level: "normal",
-            startDate: 0,
-            endDate: 0
+            startDate: "0000-01-01 00:00:00",
+            endDate: "0000-01-01 00:00:00"
         };
 }
 
