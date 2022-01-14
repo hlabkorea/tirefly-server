@@ -36,16 +36,16 @@ app.use((req, res, next) => {
 
 
 app.use(express.urlencoded( {extended : false } ));
-app.set('views', __dirname + '/views');
-app.set('view engine', 'ejs');
-app.engine('html', require('ejs').renderFile);
-app.use(express.static("views"));
 app.use(function (req, res, next) {
 	res.header('Access-Control-Allow-Origin', '*');
-	res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');//cross origin
+	res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE'); //cross origin
 	res.header('Access-Control-Allow-Headers', 'content-type, x-access-token, token');
 	next();
 });
+app.use(express.static("views"));
+app.set('views', __dirname + '/views');
+app.set('view engine', 'ejs');
+app.engine('html', require('ejs').renderFile);
 
 // API
 //app.use('/crud', require('./api/crudSample.js'));
