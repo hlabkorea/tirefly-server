@@ -95,16 +95,16 @@ api.post('/join',
                 const userUID = await insertUser(email, password, cellNumber);
                 const memUIDs = await selectGroupUIDs(email);
 
-                var auth = "normal";
+                var level = "normal";
                 if (memUIDs.length > 0) {
-                    auth = "invited";
+                    level = "invited";
                     var updateUIDs = [];
                     for (var i in memUIDs)
                         updateUIDs.push(memUIDs[i].UID);
                     await updateGroupUserUID(userUID, updateUIDs);
                 }
 
-                const token = makeJWT(userUID, auth);
+                const token = makeJWT(userUID, level);
                 insertUserLog(userUID, token);
                 sendJoinMail(email);
 
@@ -114,7 +114,7 @@ api.post('/join',
                         UID: userUID,
                         email: email,
                         token: token,
-                        auth: auth
+                        auth: level
                     },
                     message: "success"
                 });

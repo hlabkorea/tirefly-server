@@ -108,7 +108,17 @@ api.post('/',
                 }
 
                 await insertMembershipGroup(ownerUID, userUID, email);
-                const ownerEmail = await selectOwnerEmail(ownerUID);
+                const ownerEmail = await selectEmailFromUID(ownerUID);
+
+                if (ownerEmail.length != 0){
+                    res.status(403).json({
+                        status: 403,
+                        data: "false",
+                        message: "멤버십 소유자가 가입되어 있지 않습니다." // 예외 처리 - 메시지 수정
+                    });
+                    return false;
+                }
+
                 sendInviteEmail(ownerEmail, email);
 
                 res.status(200).json({
@@ -155,10 +165,14 @@ async function selectUserUID(email) {
 }
 
 // 멤버십 소유자의 이메일 조회
-async function selectOwnerEmail(ownerUID) {
+async function selectEmailFromUID(userUID) {
     var sql = "select email from user where UID = ?";
-    const [result] = await con.query(sql, ownerUID);
-    return result[0].email;
+    const [result] = await con.query(sql, userUID);
+
+    if(result.length != 0)
+        return result[0].email;
+    else
+        return '';
 }
 
 // 초대한 회원의 수 조회
