@@ -302,7 +302,7 @@ api.get('/favorite', verifyToken, async function (req, res) {
         var sql = "select b.UID as videoUID, b.videoThumbnail " +
             "from video_history a " +
             "right join video b on b.UID = a.videoUID " +
-            "where b.status = 'act' b.videoType='vod' " +
+            "where b.status = 'act' and b.videoType = 'vod' " +
             "group by b.UID " +
             "order by count(a.videoUID) desc, a.updateDate desc " +
             "limit 20";
