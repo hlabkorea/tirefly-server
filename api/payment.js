@@ -881,7 +881,6 @@ async function payForMembership(customer_uid, name, amount, custom_data, email) 
             "Authorization": access_token
         },
         data: {
-            buyer_email: email,
             customer_uid: customer_uid,
             merchant_uid: generateMerchantUid("2", name), // 새로 생성한 결제(재결제)용 주문 번호
             amount: amount,
