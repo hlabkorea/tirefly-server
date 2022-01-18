@@ -405,7 +405,7 @@ api.get('/recommend/:userUID', verifyToken, async function (req, res) {
         var sql = "select a.UID, a.videoThumbnail " +
             "from video a " +
             "join my_category b on a.categoryUID = b.categoryUID " +
-            "where b.userUID = ? and a.status = 'act' " +
+            "where b.userUID = ? and a.status = 'act' and a.videoType = 'vod' " +
             "order by a.regDate desc " +
             "limit 20";
         const sqlData = req.params.userUID;

@@ -55,6 +55,25 @@ api.get('/', verifyAdminToken, async function (req, res) {
     }
 });
 
+// 회원 조회
+api.get('/status', verifyAdminToken, async function (req, res) {
+    try {
+        const totalCnt = await selectUserCnt();
+        const newCnt = await selectNewUserCnt();
+
+        res.status(200).json({
+            status: 200,
+            data: {
+                total: totalCnt,
+                new: newCnt
+            },
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
 // 프로필 조회
 api.get('/:userUID', verifyToken, async function (req, res) {
     try {
@@ -678,4 +697,15 @@ async function updateBasicImg(userUID) {
     await con.query(sql, userUID);
 }
 
+async function selectUserCnt(){
+    var sql = "select count(UID) as cnt from user where status != 'delete'";
+    const [result] = await con.query(sql);
+    return result[0].cnt;
+}
+
+async function selectNewUserCnt(){
+    var sql = "select count(UID) as cnt from user where date_format(regDate, '%Y-%m-%d') = date_format(now(), '%Y-%m-%d')";
+    const [result] = await con.query(sql);
+    return result[0].cnt;
+}
 module.exports = api;

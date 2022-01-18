@@ -110,7 +110,7 @@ api.post('/',
                 await insertMembershipGroup(ownerUID, userUID, email);
                 const ownerEmail = await selectEmailFromUID(ownerUID);
 
-                if (ownerEmail.length != 0){
+                if (ownerEmail.length == 0){
                     res.status(403).json({
                         status: 403,
                         data: "false",
