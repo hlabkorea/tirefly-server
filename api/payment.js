@@ -545,17 +545,18 @@ api.post("/billings", async (req, res) => {
         const amount = paymentData.amount ? parseInt(paymentData.amount) : 0;
         const payType = custom_data.payType;
         const buyerEmail = paymentData.buyer_email ? paymentData.buyer_email : '';
+		const buyerTel = paymentData.buyer_tel ? paymentData.buyer_tel : '';
 
         if (payType == "coupon" && name == "single") {
             // 앱 출시 이후에는 첫 달만 무료이고 그 이후부터는 정기 구독료 납부해야하므로 이 코드 실행
-            //appendFreeMembership(imp_uid, customer_uid, name, amount, custom_data);
+            //appendFreeMembership(imp_uid, customer_uid, name, amount, custom_data, buyerEmail, buyerTel);
             res.status(200).json({
                 status: 200,
                 data: "true",
                 message: "결제 승인 성공"
             });
         } else {
-            var result = await payForMembership(customer_uid, name, amount, custom_data, buyerEmail);
+            var result = await payForMembership(customer_uid, name, amount, custom_data, buyerEmail, buyerTel);
             if (result.status == 200)
                 res.status(200).json(result);
             else
@@ -835,7 +836,7 @@ async function getToken() {
 }
 
 // 아임포트 - 멤버십 구독 예약
-async function scheduleMembership(customer_uid, laterNum, amount, name, custom_data, email) {
+async function scheduleMembership(customer_uid, laterNum, amount, name, custom_data, email, cellNum) {
     const access_token = await getToken();
 
     await axios({
@@ -848,6 +849,7 @@ async function scheduleMembership(customer_uid, laterNum, amount, name, custom_d
             customer_uid: customer_uid, // 카드(빌링키)와 1:1로 대응하는 값
             schedules: [{
                 buyer_email: email,
+				buyer_tel: cellNum,
                 merchant_uid: generateMerchantUid("3", name), // 새로 생성한 예약용 주문 번호 주문 번호
                 schedule_at: getNextDateTime(laterNum), // 결제 시도 시각 in Unix Time Stamp
                 amount: amount,
@@ -859,17 +861,17 @@ async function scheduleMembership(customer_uid, laterNum, amount, name, custom_d
 }
 
 // 멤버십 무료 제공
-async function appendFreeMembership(imp_uid, customer_uid, name, custom_data, email) {
+async function appendFreeMembership(imp_uid, customer_uid, name, custom_data, email, cellNum) {
     delete custom_data.payType;
 
     var amount = 9900;
     const laterNum = 3; //3달 무료로 멤버십 제공
 
-    await scheduleMembership(customer_uid, laterNum, amount, name, custom_data, email);
+    await scheduleMembership(customer_uid, laterNum, amount, name, custom_data, email, cellNum);
 }
 
 // 아임포트 - 멤버십 결제
-async function payForMembership(customer_uid, name, amount, custom_data, email) {
+async function payForMembership(customer_uid, name, amount, custom_data, email, cellNum) {
     // 인증 토큰 발급 받기
     const access_token = await getToken();
 
@@ -896,7 +898,7 @@ async function payForMembership(customer_uid, name, amount, custom_data, email) 
         if (paymentResult.data.response.status == "paid") { //카드 정상 승인
             // 새로운 결제 예약
             const laterNum = 1; // 한 달 후 다시 결제
-            await scheduleMembership(customer_uid, laterNum, amount, name, custom_data, email);
+            await scheduleMembership(customer_uid, laterNum, amount, name, custom_data, email, cellNum);
 
             return {
                 status: 200,
@@ -1199,7 +1201,7 @@ async function savePayment(paidId, paymentData) {
             // 장바구니에서 삭제
             // deleteMyBasket(customData.myBasketUID);
             const count = 1;
-            insertPaymentProduct(paymentUID, productUID, optionUID, count, buyerEmail);
+            await insertPaymentProduct(paymentUID, productUID, optionUID, count, buyerEmail);
         } 
         else if (paidId == "2") { // membership - 처음 결제
             if (payMethod != "[미러구매 혜택] 무료 멤버십")
@@ -1219,7 +1221,7 @@ async function savePayment(paidId, paymentData) {
             const result = await selectMembership(userUID);
             const membershipUID = result.UID;
             if(membershipUID > 0){  // 구독하고 있는 멤버십이 있을 경우
-                await scheduleMembership(customerUid, laterNum, amount, level, customData, buyerEmail);
+                await scheduleMembership(customerUid, laterNum, amount, level, customData, buyerEmail, buyerTel);
                 await updateMembership(level, laterNum, membershipUID, paymentUID);
                 await insertPaymentMembership(paymentUID, membershipUID); 
             }
