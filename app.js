@@ -23,6 +23,7 @@ app.use(morgan('combined',
     }));
 
 app.use(bodyParser.urlencoded({ limit: "100mb", extended: false }));
+app.use(bodyParser.json({ limit: "100mb" }));
 app.use((req, res, next) => {
     bodyParser.json()(req, res, err => {
         if (err) 
@@ -31,9 +32,6 @@ app.use((req, res, next) => {
         next();
     });
 });
-app.use(bodyParser.json({ limit: "100mb" }));
-// parse application/x-www-form-urlencoded
-
 
 app.use(express.urlencoded( {extended : false } ));
 app.use(function (req, res, next) {
@@ -100,3 +98,5 @@ app.use('/admin_log', require('./api/admin_log.js'));
 app.use('/stock', require('./api/stock.js'));
 app.use('/qt_version', require('./api/qt_version.js'));
 app.use('/vision', require('./api/vision.js'));
+
+app.use('/check_ip', require('./api/check_ip.js'));
