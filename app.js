@@ -12,15 +12,15 @@ const server = app.listen(3001, () => {
 	console.log('Start server');
 });
 
-app.use(morgan('combined', 
-        {skip: function (req, res) {
-            if (req.url == '/') {
-                return true;
-            } else {
-                return false;
-            }
+app.use(morgan('combined', {
+    skip: function (req, res) {
+        if (req.url == '/') {
+            return true;
+        } else {
+            return false;
         }
-    }));
+    }
+}));
 
 app.use(bodyParser.urlencoded({ limit: "100mb", extended: false }));
 app.use(bodyParser.json({ limit: "100mb" }));

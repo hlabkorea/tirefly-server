@@ -76,6 +76,285 @@ api.get('/', verifyAdminToken, async function (req, res) {
     }
 });
 
+// 비디오 수 조회
+api.get('/count', verifyAdminToken, async function (req, res) {
+    try{
+        var sql = "select count(*) as cnt from video where status = 'act' and videoType='vod'";
+        const [result] = await con.query(sql);
+        res.status(200).send({
+            status: 200,
+            data: result[0].cnt,
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
+// 최신 업로드 영상 조회
+api.get('/latest', verifyToken, async function (req, res) {
+    try{
+        var sql = "select UID as videoUID, videoThumbnail from video where videoType='vod' and status='act' order by regDate desc limit 20";
+        const [result] = await con.query(sql);
+
+        res.status(200).json({
+            status: 200,
+            data: result,
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
+// 요즘 인기있는 영상 조회
+api.get('/favorite', verifyToken, async function (req, res) {
+    try{
+        // 시청 수 많은 순으로 조회
+        var sql = "select b.UID as videoUID, b.videoThumbnail " +
+            "from video_history a " +
+            "right join video b on b.UID = a.videoUID " +
+            "where b.status = 'act' and b.videoType = 'vod' " +
+            "group by b.UID " +
+            "order by count(a.videoUID) desc, a.updateDate desc " +
+            "limit 20";
+        const [result] = await con.query(sql);
+        res.status(200).json({
+            status: 200,
+            data: result,
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
+// vod 검색
+api.get('/search', verifyToken, async function (req, res) {
+    try{
+        var sql = "select a.UID, c.teacherImg, a.videoName, c.teacherNickName as teacherName, a.contentsPath, b.categoryName, a.videoLevel, a.playTimeValue, e.rectImgPath as imgPath " +
+            "from video a " +
+            "join category b on a.categoryUID = b.UID " +
+            "join teacher c on a.teacherUID = c.UID " +
+            "left join video_acclist d on a.UID = d.videoUID " +
+            "left join acc e on d.accUID = e.UID " +
+            "where a.status='act' ";
+
+        const categoryUIDs = req.query.categoryUIDs ? req.query.categoryUIDs : '';
+        const videoLevels = req.query.videoLevels ? req.query.videoLevels : '';
+        const playTimeValues = req.query.playTimeValues ? req.query.playTimeValues : '';
+        const teacherUIDs = req.query.teacherUIDs ? req.query.teacherUIDs : '';
+        const videoType = req.query.videoType ? req.query.videoType : '';
+
+        if(categoryUIDs.length != 0){
+            sql += `and b.UID in (${categoryUIDs}) `;
+        }
+
+        if(videoLevels.length != 0){
+            sql += `and a.videoLevel in (${videoLevels}) `;
+        }
+
+        if(playTimeValues.length != 0){
+            sql += `and a.playTimeValue in (${playTimeValues}) `;
+        }
+
+        if(teacherUIDs.length != 0){
+            sql += `and c.UID in (${teacherUIDs}) `;
+        }
+
+        sql += `and a.videoType = '${videoType}' `;
+
+        sql += "order by a.regDate desc, a.UID desc";
+
+        const [result] = await con.query(sql);
+        
+        res.status(200).send({
+            status: 200,
+            data:makevideoList(result),
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
+// 라이브 일정 조회
+api.get('/live',
+    verifyToken,
+    [
+        check("startDate", "startDate is required").not().isEmpty(),
+        check("endDate", "endDate is required").not().isEmpty()
+    ],
+    async function (req, res) {
+        const errors = getError(req, res);
+        if (errors.isEmpty()) {
+            try{
+                const startDate = req.query.startDate;
+                const endDate = req.query.endDate;
+                var sql = "select a.UID as videoUID, a.liveStartDate, b.teacherImg, a.videoName, b.teacherName, a.videoLevel, a.playTimeValue " +
+                    "from video a " +
+                    "join teacher b on b.UID = a.teacherUID " +
+                    "where a.videoType = 'live' and (date_format(a.liveStartDate, '%Y-%m-%d') between ? and ?) and a.status = 'act' " +
+                    "order by a.liveStartDate";
+                const sqlData = [startDate, endDate];
+                const [result] = await con.query(sql, sqlData);
+
+                res.status(200).json({
+                    status: 200,
+                    data: result,
+                    message: "success"
+                });
+            } catch (err) {
+                throw err;
+            }
+        }
+    }
+);
+
+// 예정된 라이브 수 조회
+api.get('/live/not_start', verifyAdminToken, async function (req, res) {
+    try{
+        var sql = "select count(*) as cnt from video where status = 'act' and videoType='live' and date_format(liveStartDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d')";
+        const [result] = await con.query(sql);
+        res.status(200).send({
+            status: 200,
+            data: result[0].cnt,
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
+// 라이브 top5 조회
+api.get('/live/top5', verifyAdminToken, async function (req, res) {
+    try {
+        var sql = "select b.videoName, c.categoryName, d.teacherName, count(a.videoUID) as count " +
+            "from video_history a " +
+            "join video b on a.videoUID = b.UID " +
+            "join category c on b.categoryUID = c.UID " +
+            "join teacher d on b.teacherUID = d.UID " +
+            "where b.videoType = 'live' " +
+            "group by a.videoUID " +
+            "order by count(a.videoUID) desc " +
+            "limit 5";
+        const [result] = await con.query(sql);
+        res.status(200).send({
+            status: 200,
+            data: result,
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
+// VOD top5 조회
+api.get('/top5', verifyAdminToken, async function (req, res) {
+    try {
+        var sql = "select b.videoName, c.categoryName, d.teacherName, count(a.videoUID) as count " +
+            "from video_history a " +
+            "join video b on a.videoUID = b.UID " +
+            "join category c on b.categoryUID = c.UID " +
+            "join teacher d on b.teacherUID = d.UID " +
+            "where b.videoType = 'vod' " +
+            "group by a.videoUID " +
+            "order by count(a.videoUID) desc " +
+            "limit 5";
+        const [result] = await con.query(sql);
+        res.status(200).send({
+            status: 200,
+            data: result,
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
+// 추천 영상 조회
+api.get('/recommend/:userUID', verifyToken, async function (req, res) {
+    try{
+        var sql = "select a.UID, a.videoThumbnail " +
+            "from video a " +
+            "join my_category b on a.categoryUID = b.categoryUID " +
+            "where b.userUID = ? and a.status = 'act' and a.videoType = 'vod' " +
+            "order by a.regDate desc " +
+            "limit 20";
+        const sqlData = req.params.userUID;
+        const [result] = await con.query(sql, sqlData);
+
+        res.status(200).json({
+            status: 200,
+            data: result,
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
+// 운동 종목 카테고리 상세 목록
+api.get('/category/:categoryUID',
+    verifyToken,
+    [
+        check("videoType", "videoType is required").not().isEmpty()
+    ],
+    async function (req, res) {
+        const errors = getError(req, res);
+        if (errors.isEmpty()) {
+            try{
+                const categoryUID = req.params.categoryUID;
+                const videoType = req.query.videoType;
+
+                var sql = "select a.UID, a.contentsPath, b.teacherImg, a.videoName, b.teacherNickname, c.categoryName, a.videoLevel, a.playTimeValue, e.rectImgPath as imgPath " +
+                    "from video a " +
+                    "join teacher b on a.teacherUID = b.UID " +
+                    "join category c on a.categoryUID = c.UID " +
+                    "left join video_acclist d on a.UID = d.videoUID " +
+                    "left join acc e on d.accUID = e.UID " +
+                    "where a.categoryUID = ? and a.videoType= ? and a.status = 'act' " +
+                    "order by a.regDate desc, a.UID desc";
+                const sqlData = [categoryUID, videoType];
+                const [result] = await con.query(sql, sqlData);
+                
+                res.status(200).send({
+                    status: 200,
+                    data:  makevideoList(result),
+                    message: "success"
+                });
+            } catch (err) {
+                throw err;
+            }
+        }
+    }
+);
+
+// 상세보기 - 비디오 설명
+api.get('/:videoUID', verifyToken, async function (req, res) {
+    try{
+        var sql = "select a.UID, a.videoType, a.videoName, a.categoryUID, b.categoryName, a.videoLevel, a.totalPlayTime, a.playTimeValue, a.videoThumbnail, a.contentsPath, " +
+            "a.playContents, a.teacherUID, a.videoURL, a.liveStartDate, a.liveEndDate, a.isPlayBGM, a.status, " +
+            "cast((case	when a.videoLevel = '초급'  then calorie1 " +
+            "when a.videoLevel = '중급' then calorie2 " +
+            "when a.videoLevel = '고급' then calorie3 end) as char(4)) as consume " + // float -> varchar : 처음 설정이 varchar 였어서 앱에서 타입 에러 발생하기 때문에
+            "from video a " +
+            "join category b on a.categoryUID = b.UID " +
+            "where a.UID = ?";
+
+        const videoUID = req.params.videoUID;
+        const [result] = await con.query(sql, videoUID);
+
+        res.status(200).json({
+            status: 200,
+            data: result,
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
 // cms - cloud에 비디오 업로드
 // 거의 모든 변수가 var이 아니라 const 인 것 같아서 검토 필요
 api.post('/signature', function (req, res) {
@@ -278,209 +557,6 @@ api.put('/status/:videoUID',
             }
         }
 );
-
-// 최신 업로드 영상 조회
-api.get('/latest', verifyToken, async function (req, res) {
-    try{
-        var sql = "select UID as videoUID, videoThumbnail from video where videoType='vod' and status='act' order by regDate desc limit 20";
-        const [result] = await con.query(sql);
-
-        res.status(200).json({
-            status: 200,
-            data: result,
-            message: "success"
-        });
-    } catch (err) {
-        throw err;
-    }
-});
-
-// 요즘 인기있는 영상 조회
-api.get('/favorite', verifyToken, async function (req, res) {
-    try{
-        // 시청 수 많은 순으로 조회
-        var sql = "select b.UID as videoUID, b.videoThumbnail " +
-            "from video_history a " +
-            "right join video b on b.UID = a.videoUID " +
-            "where b.status = 'act' and b.videoType = 'vod' " +
-            "group by b.UID " +
-            "order by count(a.videoUID) desc, a.updateDate desc " +
-            "limit 20";
-        const [result] = await con.query(sql);
-        res.status(200).json({
-            status: 200,
-            data: result,
-            message: "success"
-        });
-    } catch (err) {
-        throw err;
-    }
-});
-
-// vod 검색
-api.get('/search', verifyToken, async function (req, res) {
-    try{
-        var sql = "select a.UID, c.teacherImg, a.videoName, c.teacherNickName as teacherName, a.contentsPath, b.categoryName, a.videoLevel, a.playTimeValue, e.rectImgPath as imgPath " +
-            "from video a " +
-            "join category b on a.categoryUID = b.UID " +
-            "join teacher c on a.teacherUID = c.UID " +
-            "left join video_acclist d on a.UID = d.videoUID " +
-            "left join acc e on d.accUID = e.UID " +
-            "where a.status='act' ";
-
-        const categoryUIDs = req.query.categoryUIDs ? req.query.categoryUIDs : '';
-        const videoLevels = req.query.videoLevels ? req.query.videoLevels : '';
-        const playTimeValues = req.query.playTimeValues ? req.query.playTimeValues : '';
-        const teacherUIDs = req.query.teacherUIDs ? req.query.teacherUIDs : '';
-        const videoType = req.query.videoType ? req.query.videoType : '';
-
-        if(categoryUIDs.length != 0){
-            sql += `and b.UID in (${categoryUIDs}) `;
-        }
-
-        if(videoLevels.length != 0){
-            sql += `and a.videoLevel in (${videoLevels}) `;
-        }
-
-        if(playTimeValues.length != 0){
-            sql += `and a.playTimeValue in (${playTimeValues}) `;
-        }
-
-        if(teacherUIDs.length != 0){
-            sql += `and c.UID in (${teacherUIDs}) `;
-        }
-
-        sql += `and a.videoType = '${videoType}' `;
-
-        sql += "order by a.regDate desc, a.UID desc";
-
-        const [result] = await con.query(sql);
-        
-        res.status(200).send({
-            status: 200,
-            data:makevideoList(result),
-            message: "success"
-        });
-    } catch (err) {
-        throw err;
-    }
-});
-
-// 라이브 일정 조회
-api.get('/live',
-    verifyToken,
-    [
-        check("startDate", "startDate is required").not().isEmpty(),
-        check("endDate", "endDate is required").not().isEmpty()
-    ],
-    async function (req, res) {
-        const errors = getError(req, res);
-        if (errors.isEmpty()) {
-            try{
-                const startDate = req.query.startDate;
-                const endDate = req.query.endDate;
-                var sql = "select a.UID as videoUID, a.liveStartDate, b.teacherImg, a.videoName, b.teacherName, a.videoLevel, a.playTimeValue " +
-                    "from video a " +
-                    "join teacher b on b.UID = a.teacherUID " +
-                    "where a.videoType = 'live' and (date_format(a.liveStartDate, '%Y-%m-%d') between ? and ?) and a.status = 'act' " +
-                    "order by a.liveStartDate";
-                const sqlData = [startDate, endDate];
-                const [result] = await con.query(sql, sqlData);
-
-                res.status(200).json({
-                    status: 200,
-                    data: result,
-                    message: "success"
-                });
-            } catch (err) {
-                throw err;
-            }
-        }
-    }
-);
-
-// 추천 영상 조회
-api.get('/recommend/:userUID', verifyToken, async function (req, res) {
-    try{
-        var sql = "select a.UID, a.videoThumbnail " +
-            "from video a " +
-            "join my_category b on a.categoryUID = b.categoryUID " +
-            "where b.userUID = ? and a.status = 'act' and a.videoType = 'vod' " +
-            "order by a.regDate desc " +
-            "limit 20";
-        const sqlData = req.params.userUID;
-        const [result] = await con.query(sql, sqlData);
-
-        res.status(200).json({
-            status: 200,
-            data: result,
-            message: "success"
-        });
-    } catch (err) {
-        throw err;
-    }
-});
-
-// 운동 종목 카테고리 상세 목록
-api.get('/category/:categoryUID',
-    verifyToken,
-    [
-        check("videoType", "videoType is required").not().isEmpty()
-    ],
-    async function (req, res) {
-        const errors = getError(req, res);
-        if (errors.isEmpty()) {
-            try{
-                const categoryUID = req.params.categoryUID;
-                const videoType = req.query.videoType;
-
-                var sql = "select a.UID, a.contentsPath, b.teacherImg, a.videoName, b.teacherNickname, c.categoryName, a.videoLevel, a.playTimeValue, e.rectImgPath as imgPath " +
-                    "from video a " +
-                    "join teacher b on a.teacherUID = b.UID " +
-                    "join category c on a.categoryUID = c.UID " +
-                    "left join video_acclist d on a.UID = d.videoUID " +
-                    "left join acc e on d.accUID = e.UID " +
-                    "where a.categoryUID = ? and a.videoType= ? and a.status = 'act' " +
-                    "order by a.regDate desc, a.UID desc";
-                const sqlData = [categoryUID, videoType];
-                const [result] = await con.query(sql, sqlData);
-                
-                res.status(200).send({
-                    status: 200,
-                    data:  makevideoList(result),
-                    message: "success"
-                });
-            } catch (err) {
-                throw err;
-            }
-        }
-    }
-);
-
-// 상세보기 - 비디오 설명
-api.get('/:videoUID', verifyToken, async function (req, res) {
-    try{
-        var sql = "select a.UID, a.videoType, a.videoName, a.categoryUID, b.categoryName, a.videoLevel, a.totalPlayTime, a.playTimeValue, a.videoThumbnail, a.contentsPath, " +
-            "a.playContents, a.teacherUID, a.videoURL, a.liveStartDate, a.liveEndDate, a.isPlayBGM, a.status, " +
-            "cast((case	when a.videoLevel = '초급'  then calorie1 " +
-            "when a.videoLevel = '중급' then calorie2 " +
-            "when a.videoLevel = '고급' then calorie3 end) as char(4)) as consume " + // float -> varchar : 처음 설정이 varchar 였어서 앱에서 타입 에러 발생하기 때문에
-            "from video a " +
-            "join category b on a.categoryUID = b.UID " +
-            "where a.UID = ?";
-
-        const videoUID = req.params.videoUID;
-        const [result] = await con.query(sql, videoUID);
-
-        res.status(200).json({
-            status: 200,
-            data: result,
-            message: "success"
-        });
-    } catch (err) {
-        throw err;
-    }
-});
 
 function makevideoList(result) {
     var responseData = [];

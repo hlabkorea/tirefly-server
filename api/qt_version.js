@@ -1,7 +1,8 @@
 const express = require('express');
 const db = require('./config/database.js');
+const { con } = require('./config/database.js');
 const path = require('path');
-const {verifyToken} = require("./config/authCheck.js");
+const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
 const api = express.Router();
 const { onlyUpload } = require('./config/uploadFile.js');
 const fs = require('fs');
@@ -48,6 +49,34 @@ api.post('/check',
 			}
 		}
 );
+
+api.get('/', verifyAdminToken, async function (req, res) {
+    try{
+        var sql = "select UID as qtUID, version, regDate from qt_version order by regDate desc";
+        const [result] = await con.query(sql);
+        res.status(200).json({
+            status: 200,
+            data: result,
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
+api.post('/', verifyAdminToken, onlyUpload.single("qt_file"), async function (req, res) {
+    try{
+        var version = req.body.version;
+        var memo = req.body.memo;
+        var sql = "insert qt_version(version, memo) values (?)";
+        const sqlData = [version, memo];
+        await con.query(sql, [sqlData]);
+
+        res.status(200).json({status:200, data:"true", message: "success"});
+    } catch (err) {
+        throw err;
+    }
+});
 
 api.post('/test', onlyUpload.single("motif_file"), function (req, res) {
     var version = req.body.version;

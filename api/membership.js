@@ -1,6 +1,6 @@
 const express = require('express');
 const { con } = require('./config/database.js');
-const { verifyToken } = require("./config/authCheck.js");
+const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
 const api = express.Router();
 const { getCurrentDateTime } = require('./config/date.js');
 
@@ -22,6 +22,42 @@ api.get('/auth/:userUID', verifyToken, async function (req, res) {
         }
         else
             res.status(200).json({status:200,  data: "false", message:"fail"}); // status code 403으로 수정
+    } catch (err) {
+        throw err;
+    }
+});
+
+// 멤버십 구독자 현황 조회
+api.get('/count', verifyAdminToken, async function (req, res) {
+    try{
+        const memRes = await selectMembership();
+        var totalCnt = memRes.length;
+        totalCnt += await selectMemGroupCnt(memRes);
+        const newCnt = await selectTodayMemCnt();
+
+        res.status(200).send({
+            status: 200,
+            data: {
+                totalCnt: totalCnt,
+                newCnt: newCnt
+            },
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
+// 멤버십 구독자 현황 조회
+api.get('/level/count', verifyAdminToken, async function (req, res) {
+    try{
+        var sql = "select level, count(UID) as count from membership group by level";
+        const [result] = await con.query(sql);
+        res.status(200).send({
+            status: 200,
+            data: result,
+            message: "success"
+        });
     } catch (err) {
         throw err;
     }
@@ -100,27 +136,55 @@ api.delete('/hurgoon',
     }
 );
 
-// login.js 에서도 사용하는 함수
+// 멤버십 초대자 수 (멤버십 구매자는 제외)
+async function selectMemGroupCnt(sqlData){
+    var sql = "select count(distinct userUID) as cnt "
+            + "from membership_group "
+            + "where userUID not in (?)";
+    const [result] = await con.query(sql, [sqlData]);
+    console.log(result);
+    return result[0].cnt;
+}
+
+// 신규 멤버십 가입자 수
+async function selectTodayMemCnt(){
+    var sql = "select count(UID) as cnt from membership where date_format(startDate, '%Y-%m-%d') = date_format(now(), '%Y-%m-%d')";
+    const [result] = await con.query(sql);
+    return result[0].cnt;
+}
+
+// login.js 에서도 사용하는 함수 (login.js에서는 userUID == undefined 처리는 하지 않음)
 // 멤버십 소유자인지 확인
 async function selectMembership(userUID) {
-    var sql = "select UID, level, startDate, endDate from membership " +
+    if(userUID == undefined){
+        var sql = "select userUID from membership";
+        const [result] = await con.query(sql);
+        var userUIDs = [];
+        for(var i in result){
+            userUIDs.push(result[i].userUID);
+        }
+        return userUIDs;
+    }
+    else{
+        var sql = "select UID, level, startDate, endDate from membership " +
         "where date_format(membership.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') and userUID = ?";
-    const [result] = await con.query(sql, userUID);
+        const [result] = await con.query(sql, userUID);
 
-    if (result.length != 0)
-        return {
-            UID: result[0].UID,
-            auth: result[0].level,
-            startDate: result[0].startDate,
-            endDate: result[0].endDate
-        };
-    else
-        return {
-            UID: 0,
-            auth: "normal",
-            startDate: "0000-01-01 00:00:00",
-            endDate: "0000-01-01"
-        };
+        if (result.length != 0)
+            return {
+                UID: result[0].UID,
+                auth: result[0].level,
+                startDate: result[0].startDate,
+                endDate: result[0].endDate
+            };
+        else
+            return {
+                UID: 0,
+                auth: "normal",
+                startDate: "0000-01-01 00:00:00",
+                endDate: "0000-01-01"
+            };
+    }
 }
 
 // 멤버십 등급에 따라 maxCount 조회

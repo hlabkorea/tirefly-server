@@ -206,6 +206,47 @@ api.get('/ship',
     }
 );
 
+// 오늘 주문 상품 총 가격과 건수 조회
+api.get('/today',
+    verifyAdminToken,
+    async function (req, res, next) {
+        try{
+            var sql = "select sum(amount) as sales, count(UID) as count from payment where type='product' and date_format(regDate, '%Y-%m-%d') = date_format(now(), '%Y-%m-%d')";
+            const [result] = await con.query(sql);
+
+            res.status(200).json({
+                status: 200,
+                data: result[0],
+                message: "success"
+            });
+        } catch (err) {
+            throw err;
+        }
+    }
+);
+
+// 매출 (건수) 조회
+api.get('/week',
+    verifyAdminToken,
+    async function (req, res, next) {
+        try {
+            const productRes = await selectWeekProduct();
+            const membershipRes = await selectWeekMembership();
+
+            res.status(200).json({
+                status: 200,
+                data: {
+                    product: productRes,
+                    membership: membershipRes
+                },
+                message: "success"
+            });
+        } catch (err) {
+            throw err;
+        }
+    }
+);
+
 // 배송 스케쥴 조회
 api.get('/ship/schedule',
     verifyAdminToken,
@@ -504,6 +545,25 @@ api.get('/refund',
                 message: "success"
             });
         });
+    }
+);
+
+// 미처리 취소요청 조회
+api.get('/refund/incomplete',
+    verifyAdminToken,
+    async function (req, res, next) {
+        try{
+            var sql = "select count(UID) as cnt from payment where orderStatus = '취소요청'";
+            const [result] = await con.query(sql);
+
+            res.status(200).json({
+                status: 200,
+                data: result[0].cnt,
+                message: "success"
+            });
+        } catch (err) {
+            throw err;
+        }
     }
 );
 
@@ -1387,6 +1447,24 @@ async function insertAppleInApp(userUID, verifiedReceipt, res){
         await updateAppleMembership(level, membershipUID, endTimestamp, paymentUID);
 
     await insertApplePaymentMembership(paymentUID, membershipUID, paidTimestamp);
+}
+
+async function selectWeekProduct(){
+    var sql = "select date_format(regDate, '%Y-%m-%d') as date, count(UID) as count " +
+                "from payment " +
+                "where type='product' and regDate between date_format(date_add(now(), interval -6 day), '%Y-%m-%d') and date_format(date_add(now(), interval 1 day), '%Y-%m-%d') " +
+                "group by date_format(regDate, '%Y-%m-%d')";
+    const [result] = await con.query(sql);
+    return result;
+}
+
+async function selectWeekMembership(){
+    var sql = "select date_format(regDate, '%Y-%m-%d') as date, count(UID) as count " +
+                "from payment " +
+                "where type='membership' and regDate between date_format(date_add(now(), interval -6 day), '%Y-%m-%d') and date_format(date_add(now(), interval 1 day), '%Y-%m-%d') " +
+                "group by date_format(regDate, '%Y-%m-%d')";
+    const [result] = await con.query(sql);
+    return result;
 }
 
 module.exports = api;

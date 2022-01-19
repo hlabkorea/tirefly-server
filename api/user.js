@@ -56,16 +56,35 @@ api.get('/', verifyAdminToken, async function (req, res) {
 });
 
 // 회원 조회
-api.get('/status', verifyAdminToken, async function (req, res) {
+api.get('/count', verifyAdminToken, async function (req, res) {
     try {
         const totalCnt = await selectUserCnt();
-        const newCnt = await selectNewUserCnt();
+        const newCnt = await selectTodayNewUserCnt();
 
         res.status(200).json({
             status: 200,
             data: {
-                total: totalCnt,
-                new: newCnt
+                totalCnt: totalCnt,
+                newCnt: newCnt
+            },
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
+// 신규 회원 조회
+api.get('/week', verifyAdminToken, async function (req, res) {
+    try {
+        const weekNew = await selectWeekNewUserCnt();
+        const weekLogin = await selectWeekLoginUserCnt();
+
+        res.status(200).send({
+            status: 200,
+            data: {
+                "weekNew": weekNew,
+                "weekLogin": weekLogin
             },
             message: "success"
         });
@@ -133,7 +152,8 @@ api.post('/join',
                         UID: userUID,
                         email: email,
                         token: token,
-                        auth: level
+                        redirect: "setting",
+                        auth: level,
                     },
                     message: "success"
                 });
@@ -697,15 +717,38 @@ async function updateBasicImg(userUID) {
     await con.query(sql, userUID);
 }
 
+// 회원 전체 수 조회
 async function selectUserCnt(){
     var sql = "select count(UID) as cnt from user where status != 'delete'";
     const [result] = await con.query(sql);
     return result[0].cnt;
 }
 
-async function selectNewUserCnt(){
+// 하루 신규 회원 수 조회
+async function selectTodayNewUserCnt(){
     var sql = "select count(UID) as cnt from user where date_format(regDate, '%Y-%m-%d') = date_format(now(), '%Y-%m-%d')";
     const [result] = await con.query(sql);
     return result[0].cnt;
 }
+
+// 일주일 신규 회원 수 조회
+async function selectWeekNewUserCnt(){
+    var sql = "select date_format(regDate, '%Y-%m-%d') as date, count(UID) as count " +
+    "from user " +
+    "where regDate between date_format(date_add(now(), interval -6 day), '%Y-%m-%d') and date_format(date_add(now(), interval 1 day), '%Y-%m-%d') " +
+    "group by date_format(regDate, '%Y-%m-%d')";
+    const [result] = await con.query(sql);
+    return result;
+}
+
+// 일주일 방문 회원 수 조회
+async function selectWeekLoginUserCnt(){
+    var sql = "select date_format(regDate, '%Y-%m-%d') as date, count(UID) as count " +
+    "from user_log " +
+    "where regDate between date_format(date_add(now(), interval -6 day), '%Y-%m-%d') and date_format(date_add(now(), interval 1 day), '%Y-%m-%d') " +
+    "group by date_format(regDate, '%Y-%m-%d')";
+    const [result] = await con.query(sql);
+    return result;
+}
+
 module.exports = api;

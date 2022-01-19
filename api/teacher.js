@@ -69,6 +69,21 @@ api.get('/', verifyToken, async function (req, res) {
     }
 });
 
+// 강사 수 조회
+api.get('/count', verifyAdminToken, async function (req, res) {
+    try{
+        var sql = "select count(*) as cnt from teacher where status = 'act'";
+        const [result] = await con.query(sql);
+        res.status(200).send({
+            status: 200,
+            data: result[0].cnt,
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
 // 강사 정보 조회
 api.get('/:teacherUID', verifyToken, async function (req, res) {
     try{

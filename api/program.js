@@ -68,6 +68,41 @@ api.get('/',
     }
 );
 
+// 프로그램 수 조회
+api.get('/count', verifyAdminToken, async function (req, res) {
+    try{
+        var sql = "select count(*) as cnt from program where status = 'act'";
+        const [result] = await con.query(sql);
+        res.status(200).send({
+            status: 200,
+            data: result[0].cnt,
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
+// 프로그램 top5 조회
+api.get('/top5', verifyAdminToken, async function (req, res) {
+    try {
+        var sql = "select b.programName, count(a.programUID) as count " +
+            "from program_history a " +
+            "join program b on a.programUID = b.UID " +
+            "group by programUID " +
+            "order by count(a.programUID) desc " +
+            "limit 5";
+        const [result] = await con.query(sql);
+        res.status(200).send({
+            status: 200,
+            data: result,
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
 // 프로그램 상세 정보 조회
 api.get('/:programUID',
     verifyToken,

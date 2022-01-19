@@ -1,5 +1,4 @@
 const express = require("express"); 
-const db = require('./config/database.js');
 const { con } = require('./config/database.js');
 const api = express.Router();
 const { upload } = require('./config/uploadFile.js');
@@ -45,6 +44,22 @@ api.get("/", verifyAdminToken, async function (req, res) {
                 },
                 result: result[1]
             },
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
+// 미처리 문의 조회
+api.get('/incomplete', verifyAdminToken, async function (req, res) {
+    try {
+        var sql = "select UID as inquiryUID, inquiryType, inquiryTitle, inquiryContents, userName, userEmail, userGroup, userCellNumber, datediff(now(), regDate) as datediff, regDate " +
+            "from inquiry where inquiryComplete = 0";
+        const [result] = await con.query(sql);
+        res.status(200).send({
+            status: 200,
+            data: result,
             message: "success"
         });
     } catch (err) {
