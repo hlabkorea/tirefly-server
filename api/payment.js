@@ -91,7 +91,7 @@ api.get('/ship',
             const currentPage = req.query.page ? parseInt(req.query.page) : 1;
             const offset = parseInt(currentPage - 1) * pageCnt15;
 
-            const countRes = await selectPaymentShipStatus(status, searchType, searchType, startDate, endDate);
+            const countRes = await selectPaymentShipStatus(status, searchType, searchWord, startDate, endDate);
             const totalCnt = Number(countRes.totalCnt);
             const befShipCnt = Number(countRes.befShipCnt);
             const rdyShipCnt = Number(countRes.rdyShipCnt);
