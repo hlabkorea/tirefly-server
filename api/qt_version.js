@@ -52,7 +52,7 @@ api.post('/check',
 
 api.get('/', verifyAdminToken, async function (req, res) {
     try{
-        var sql = "select UID as qtUID, version, regDate from qt_version order by regDate desc";
+        var sql = "select UID as qtUID, version, memo, regDate from qt_version order by regDate desc";
         const [result] = await con.query(sql);
         res.status(200).json({
             status: 200,
