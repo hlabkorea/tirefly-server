@@ -17,6 +17,7 @@ api.post('/check',
 			check("version", "version is required").not().isEmpty()
 		],
 		function (req, res) {
+			console.log(req);
 			const errors = getError(req, res);
 			
 			if(errors.isEmpty()){
@@ -35,14 +36,14 @@ api.post('/check',
 						});
 					else{
 						const hash = md5File.sync(path.join('/', 'usr', 'share', 'nginx', 'motif-server', 'views', 'files', 'motif.tar.gz'));
-						res.status(403).json({
-							status: 403,
+						res.status(200).json({
+							status: 200,
 							data: {
 								version: qtVer,
 								filename: hash,
 								fileURL: "https://api.motifme.io/files/motif.tar.gz"
 							},
-							message: "fail"
+							message: "success"
 						});
 					}
 				}); 
