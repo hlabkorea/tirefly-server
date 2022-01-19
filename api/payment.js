@@ -11,6 +11,7 @@ const { sendPaymentMail, sendMembershipEmail } = require('./config/mail.js');
 const { addCellSearchSql } = require('./config/searchSql.js');
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
+const { start } = require('repl');
 const imp_key = "7260030924750208"; // REST API 키
 const imp_secret = "abc8d306c8df0b4354dd438c5ab9d5af9bf06094734cc1936780beef5fa4a6ab585b1219b7b09a4b"; // REST API Secret
 const apple_password = "157cd3c52883418cabfab06e2b206da7";
@@ -23,84 +24,30 @@ const pageCnt10 = 10;
 api.get('/',
     verifyAdminToken,
     async function (req, res, next) {
-        var type = req.query.type;
-        var searchType = req.query.searchType ? req.query.searchType : '' ;
-        var searchWord = req.query.searchWord ? req.query.searchWord : '';
-        var startDate = req.query.startDate ? req.query.startDate : '';
-        var endDate = req.query.endDate ? req.query.endDate : '';
+        try{
+            const type = req.query.type ? req.query.type : 'product'; // default로는 product를 조회하게
+            const searchType = req.query.searchType ? req.query.searchType : '' ;
+            const searchWord = req.query.searchWord ? req.query.searchWord : '';
+            const startDate = req.query.startDate ? req.query.startDate : '';
+            const endDate = req.query.endDate ? req.query.endDate : '';
+            const currentPage = req.query.page ? parseInt(req.query.page) : 1;
+            const offset = parseInt(currentPage - 1) * pageCnt15;
 
-        var countSql = "select ifnull(sum(amount), 0) as totalPrice, count(*) as totalCount, ifnull(sum(case when orderStatus = '취소승인' then amount end ), 0) as refundPrice, count(case when orderStatus = '취소승인' then 1 end ) as refundCount " +
-            ", ifnull(sum(case when orderStatus != '취소승인' then amount end ), 0) as profitPrice, count(case when orderStatus != '취소승인' then 1 end ) as profitCount " +
-            "from payment " +
-            "join user on payment.userUID = user.UID " +
-            "where (date_format(payment.regDate, '%Y-%m-%d') between ? and ?) ";
+            const countRes = await selectPaymentSales(type, searchType, searchWord, startDate, endDate);
+            const totalPrice = Number(countRes.totalPrice);
+            const totalCount = countRes.totalCount;
+            const refundPrice = Number(countRes.refundPrice);
+            const refundCount = countRes.refundCount;
+            const profitPrice = Number(countRes.profitPrice);
+            const profitCount = countRes.profitCount;
 
-        var productSql = "select payment.UID as paymentUID, payment.merchantUid, product.korName, product_option_list.optionName, payment.buyerEmail, user.cellNumber as buyerTel, payment.amount, " +
-            "payment.payMethod, payment.orderStatus, payment.regDate " +
-            "from payment " +
-            "join payment_product_list on payment.UID = payment_product_list.paymentUID " +
-            "join product on payment_product_list.productUID = product.UID " +
-            "join product_option_list on payment_product_list.optionUID = product_option_list.UID " +
-            "join user on payment.userUID = user.UID " +
-            "where (date_format(payment.regDate, '%Y-%m-%d') between ? and ?) ";
+            var result;
+            if (type == "product")
+                result = await selectPaymentProduct(type, searchType, searchWord, startDate, endDate, offset);
+            else if (type == "membership")
+                result = await selectPaymentMembership(type, searchType, searchWord, startDate, endDate, offset);
 
-        var membershipSql = "select payment.UID as paymentUID, payment.merchantUid, if(payment_product_list.optionUID = 0, '-', '') as optionName, membership.level as korName, payment.buyerEmail, user.cellNumber as buyerTel, payment.amount, payment.payMethod, payment.orderStatus, payment.regDate " +
-            "from payment " +
-            "join payment_product_list on payment.UID = payment_product_list.paymentUID " +
-            "join membership on payment_product_list.membershipUID = membership.UID " +
-            "join user on membership.userUID = user.UID " +
-            "where (date_format(payment.regDate, '%Y-%m-%d') between ? and ?) ";
-
-        var sql = "";
-        if (type == "product")
-            sql = productSql;
-        else if (type == "membership")
-            sql = membershipSql;
-
-        sql += "and payment.type = '" + type + "' ";
-        countSql += "and payment.type = '" + type + "' ";
-
-
-        sql += addCellSearchSql(searchType, searchWord, "user");
-        countSql += addCellSearchSql(searchType, searchWord, "user");
-
-        if(searchType.length != 0){
-            if(searchType == "buyerEmail") {
-                sql += "and user.email ";
-            } 
-            else if(searchType == "buyerTel"){
-                if(tellType == "user")
-                    sql += "and user.cellNumber ";
-                else if(tellType == "payment")
-                    sql += "and payment.buyerTel ";
-            }
-            else if(searchType == "merchantUid"){
-                sql += "and payment.merchantUid ";
-            }
-    
-            sql += "LIKE '%" + searchWord + "%' ";
-        }
-
-        sql += "group by payment.UID " +
-            "order by payment.regDate desc";
-
-        countSql += ";";
-
-        sql += " limit ?, " + pageCnt15;
-        var data = [startDate, endDate, startDate, endDate];
-        var currentPage = req.query.page ? parseInt(req.query.page) : 1;
-        data.push(parseInt(currentPage - 1) * pageCnt15);
-
-        db.query(countSql + sql, data, function (err, result) {
-            if (err) throw err;
-
-            var totalPrice = result[0][0].totalPrice;
-            var totalCount = result[0][0].totalCount;
-            var refundPrice = result[0][0].refundPrice;
-            var refundCount = result[0][0].refundCount;
-            var profitPrice = result[0][0].profitPrice;
-            var profitCount = result[0][0].profitCount;
-            var {
+            const {
                 startPage,
                 endPage,
                 totalPage
@@ -121,11 +68,13 @@ api.get('/',
                         profitPrice: profitPrice,
                         profitCount: profitCount
                     },
-                    result: result[1]
+                    result: result
                 },
                 message: "success"
             });
-        });
+        } catch (err) {
+            throw err;
+        }
     }
 );
 
@@ -133,53 +82,24 @@ api.get('/',
 api.get('/ship',
     verifyAdminToken,
     async function (req, res, next) {
-        const status = req.query.status ? req.query.status : '';
-        const searchType = req.query.searchType ? req.query.searchType : '';
-        const searchWord = req.query.searchWord ? req.query.searchWord : '';
-        const startDate = req.query.startDate ? req.query.startDate : '';
-        const endDate = req.query.endDate ? req.query.endDate : '';
+        try{
+            const status = req.query.status ? req.query.status : '';
+            const searchType = req.query.searchType ? req.query.searchType : '';
+            const searchWord = req.query.searchWord ? req.query.searchWord : '';
+            const startDate = req.query.startDate ? req.query.startDate : '';
+            const endDate = req.query.endDate ? req.query.endDate : '';
+            const currentPage = req.query.page ? parseInt(req.query.page) : 1;
+            const offset = parseInt(currentPage - 1) * pageCnt15;
 
-        var countSql = "select count(*) as totalCnt, count(case when shippingStatus = '배송전'  then 1 end ) as befShipCnt,  count(case when shippingStatus = '배송준비중'  then 1 end ) as rdyShipCnt, " +
-            "count(case when shippingStatus = '배송완료'  then 1 end ) as confShipCnt " +
-            "from payment " +
-            "join user on payment.userUID = user.UID " +
-            "where (date_format(payment.regDate, '%Y-%m-%d') between ? and ?) and payment.type = 'product' and payment.orderStatus != '취소요청' and payment.orderStatus != '취소승인' ";
-        var sql = "select payment.UID as paymentUID, payment.merchantUid, product.korName, product_option_list.optionName, payment.buyerName, payment.buyerEmail, payment.buyerTel, " +
-            "concat(payment.addr1, ' ', payment.addr2) as addr, payment.regDate, payment.shippingStatus, if(shipResDate = '0000-01-01 00:00:00', '', shipResDate) as shippingDate, " +
-            "if(shipConfDate = '0000-01-01 00:00:00', '', shipConfDate) as shipConfDate " +
-            "from payment " +
-            "join payment_product_list on payment.UID = payment_product_list.paymentUID " +
-            "join product on payment_product_list.productUID = product.UID " +
-            "join product_option_list on payment_product_list.optionUID = product_option_list.UID " +
-            "join user on payment.userUID = user.UID " +
-            "where (date_format(payment.regDate, '%Y-%m-%d') between ? and ?) and payment.type = 'product' and payment.orderStatus != '취소요청' and payment.orderStatus != '취소승인' ";
+            const countRes = await selectPaymentShipStatus(status, searchType, searchType, startDate, endDate);
+            const totalCnt = Number(countRes.totalCnt);
+            const befShipCnt = Number(countRes.befShipCnt);
+            const rdyShipCnt = Number(countRes.rdyShipCnt);
+            const confShipCnt = Number(countRes.confShipCnt);
 
-        if (status != "all") {
-            sql += `and payment.shippingStatus = '${status}' `;
-            countSql += `and payment.shippingStatus = '${status}' `;
-        }
+            const result = await selectPaymentShip(status, searchType, searchWord, startDate, endDate, offset);
 
-        sql += addCellSearchSql(searchType, searchWord, "payment");
-        countSql += addCellSearchSql(searchType, searchWord, "payment");
-
-        sql += "group by payment.UID " +
-            "order by payment.regDate desc";
-
-        countSql += ";";
-
-        sql += " limit ?, " + pageCnt15;
-        var data = [startDate, endDate, startDate, endDate];
-        var currentPage = req.query.page ? parseInt(req.query.page) : 1;
-        data.push(parseInt(currentPage - 1) * pageCnt15);
-
-        db.query(countSql + sql, data, function (err, result) {
-            if (err) throw err;
-
-            var totalCnt = result[0][0].totalCnt;
-            var befShipCnt = result[0][0].befShipCnt;
-            var rdyShipCnt = result[0][0].rdyShipCnt;
-            var confShipCnt = result[0][0].confShipCnt;
-            var {
+            const {
                 startPage,
                 endPage,
                 totalPage
@@ -198,11 +118,13 @@ api.get('/ship',
                         rdyShipCnt: rdyShipCnt,
                         confShipCnt: confShipCnt
                     },
-                    result: result[1]
+                    result: result
                 },
                 message: "success"
             });
-        });
+        } catch (err) {
+            throw err;
+        }
     }
 );
 
@@ -210,8 +132,9 @@ api.get('/ship',
 api.get('/today',
     verifyAdminToken,
     async function (req, res, next) {
-        try{
-            var sql = "select sum(amount) as sales, count(UID) as count from payment where type='product' and date_format(regDate, '%Y-%m-%d') = date_format(now(), '%Y-%m-%d')";
+        try {
+            var sql = "select sum(amount) as sales, count(UID) as count from payment " +
+                "where type='product' and date_format(regDate, '%Y-%m-%d') = date_format(now(), '%Y-%m-%d')";
             const [result] = await con.query(sql);
 
             res.status(200).json({
@@ -474,53 +397,23 @@ api.get('/product/:userUID',
 api.get('/refund',
     verifyAdminToken,
     async function (req, res, next) {
-        const status = req.query.status ? req.query.status : '';
-        const searchType = req.query.searchType ? req.query.searchType : '';
-        const searchWord = req.query.searchWord ? req.query.searchWord : '';
-        const startDate = req.query.startDate ? req.query.startDate : '';
-        const endDate = req.query.endDate ? req.query.endDate : '';
+        try{
+            const status = req.query.status ? req.query.status : '';
+            const searchType = req.query.searchType ? req.query.searchType : '';
+            const searchWord = req.query.searchWord ? req.query.searchWord : '';
+            const startDate = req.query.startDate ? req.query.startDate : '';
+            const endDate = req.query.endDate ? req.query.endDate : '';
+            const currentPage = req.query.page ? parseInt(req.query.page) : 1;
+            const offset = parseInt(currentPage - 1) * pageCnt15;
 
-        var countSql = "select count(*) as totalCnt, count(case when orderStatus = '취소요청'  then 1 end ) as refReqCnt,  count(case when orderStatus = '취소승인'  then 1 end ) as refOkCnt, " +
-            "count(case when orderStatus = '취소미승인'  then 1 end ) as refNoCnt " +
-            "from payment " +
-            "join user on payment.userUID = user.UID " +
-            "where payment.orderStatus != '결제완료' and payment.type = 'product' and (date_format(payment.reqDate, '%Y-%m-%d') between ? and ?) "
-        var sql = "select payment.UID as paymentUID, payment.merchantUid, product.korName, product_option_list.optionName, payment.buyerName, payment.buyerEmail, buyerTel, ifnull(payment.refundMsg, '') as refundMsg, " +
-            "ifnull(payment.refConfMsg, '') as refConfMsg, orderStatus, if(reqDate = '0000-01-01 00:00:00', '', reqDate) as reqDate, if(refConfDate = '0000-01-01 00:00:00', '', refConfDate) as refConfDate " +
-            "from payment " +
-            "join user on payment.userUID = user.UID " +
-            "join payment_product_list on payment.UID = payment_product_list.paymentUID " +
-            "join product on payment_product_list.productUID = product.UID " +
-            "join product_option_list on payment_product_list.optionUID = product_option_list.UID " +
-            "where payment.type = 'product' and (date_format(payment.reqDate, '%Y-%m-%d') between ? and ?) and payment.orderStatus != '결제완료' ";
+            const countRes = await selectPaymentRefundStatus(status, searchType, searchWord, startDate, endDate);
+            const totalCnt = countRes.totalCnt;
+            const refReqCnt = countRes.refReqCnt;
+            const refOkCnt = countRes.refOkCnt;
+            const refNoCnt = countRes.refNoCnt;
 
-        if (status != "all") {
-            sql += `and payment.orderStatus = '${status}' `;
-            countSql += `and payment.orderStatus = '${status}' `;
-        }
-
-        sql += addCellSearchSql(searchType, searchWord, "user");
-        countSql += addCellSearchSql(searchType, searchWord, "user");
-
-        sql += "group by payment.UID " +
-            "order by payment.reqDate desc";
-
-        countSql += ";";
-
-        sql += " limit ?, " + pageCnt15;
-
-        var data = [startDate, endDate, startDate, endDate];
-        var currentPage = req.query.page ? parseInt(req.query.page) : 1;
-        data.push(parseInt(currentPage - 1) * pageCnt15);
-
-        db.query(countSql + sql, data, function (err, result) {
-            if (err) throw err;
-
-            var totalCnt = result[0][0].totalCnt;
-            var refReqCnt = result[0][0].refReqCnt;
-            var refOkCnt = result[0][0].refOkCnt;
-            var refNoCnt = result[0][0].refNoCnt;
-            var {
+            const result = await selectPaymentRefund(status, searchType, searchWord, startDate, endDate, offset);
+            const {
                 startPage,
                 endPage,
                 totalPage
@@ -540,11 +433,13 @@ api.get('/refund',
                         refOkCnt: refOkCnt,
                         refNoCnt: refNoCnt
                     },
-                    result: result[1]
+                    result: result
                 },
                 message: "success"
             });
-        });
+        } catch (err) {
+            throw err;
+        }
     }
 );
 
@@ -877,6 +772,240 @@ api.put('/refund/:paymentUID', verifyToken, async function (req, res) {
         throw err;
     }
 });
+
+async function selectPaymentSales(type, searchType, searchWord, startDate, endDate) {
+    var sql = "select ifnull(sum(a.amount), 0) as totalPrice, count(a.UID) as totalCount, ifnull(sum(case when a.orderStatus = '취소승인' then a.amount end ), 0) as refundPrice, " +
+        "count(case when a.orderStatus = '취소승인' then 1 end ) as refundCount " +
+        ", ifnull(sum(case when a.orderStatus != '취소승인' then a.amount end ), 0) as profitPrice, count(case when a.orderStatus != '취소승인' then 1 end ) as profitCount " +
+        "from payment a " +
+        "join user b on a.userUID = b.UID " +
+        `where (date_format(a.regDate, '%Y-%m-%d') between '${startDate}' and '${endDate}') `;
+
+    sql += `and a.type = '${type}' `;
+
+    // 검색
+    if (searchType.length != 0) {
+        if (searchType == "buyerEmail") {
+            sql += "and b.email ";
+        } else if (searchType == "buyerTel") {
+            if (tellType == "user")
+                sql += "and b.cellNumber ";
+            else if (tellType == "payment")
+                sql += "and a.buyerTel ";
+        } else if (searchType == "merchantUid") {
+            sql += "and a.merchantUid ";
+        }
+
+        sql += `LIKE '%${searchWord}%' `;
+    }
+
+    const [result] = await con.query(sql);
+    console.log(result);
+    return result[0];
+}
+
+async function selectPaymentProduct(type, searchType, searchWord, startDate, endDate, offset) {
+    var sql = "select a.UID as paymentUID, a.merchantUid, c.korName, d.optionName, a.buyerEmail, e.cellNumber as buyerTel, a.amount, " +
+        "a.payMethod, a.orderStatus, a.regDate " +
+        "from payment a " +
+        "join payment_product_list b on a.UID = b.paymentUID " +
+        "join product c on b.productUID = c.UID " +
+        "join product_option_list d on b.optionUID = d.UID " +
+        "join user e on a.userUID = e.UID " +
+        `where (date_format(a.regDate, '%Y-%m-%d') between '${startDate}' and '${endDate}') `;
+
+    sql += `and a.type = '${type}' `;
+
+    // 검색
+    if (searchType.length != 0) {
+        if (searchType == "buyerEmail") {
+            sql += "and e.email ";
+        } else if (searchType == "buyerTel") {
+            if (tellType == "user")
+                sql += "and e.cellNumber ";
+            else if (tellType == "payment")
+                sql += "and a.buyerTel ";
+        } else if (searchType == "merchantUid") {
+            sql += "and a.merchantUid ";
+        }
+
+        sql += `LIKE '%${searchWord}%' `;
+    }
+
+    sql += "group by a.UID " +
+        "order by a.regDate desc " +
+        `limit ${offset}, ${pageCnt15}`;
+    const [result] = await con.query(sql);
+    return result;
+}
+
+async function selectPaymentMembership(type, searchType, searchWord, startDate, endDate, offset) {
+    var sql = "select a.UID as paymentUID, a.merchantUid, if(b.optionUID = 0, '-', '') as optionName, c.level as korName, a.buyerEmail, d.cellNumber as buyerTel, " +
+        "a.amount, a.payMethod, a.orderStatus, a.regDate " +
+        "from payment a " +
+        "join payment_product_list b on a.UID = b.paymentUID " +
+        "join membership c on b.membershipUID = c.UID " +
+        "join user d on c.userUID = d.UID " +
+        `where (date_format(a.regDate, '%Y-%m-%d') between '${startDate}' and '${endDate}') `;
+
+    sql += `and a.type = '${type}' `;
+
+    // 검색
+    if (searchType.length != 0) {
+        if (searchType == "buyerEmail") {
+            sql += "and d.email ";
+        } else if (searchType == "buyerTel") {
+            if (tellType == "user")
+                sql += "and d.cellNumber ";
+            else if (tellType == "payment")
+                sql += "and a.buyerTel ";
+        } else if (searchType == "merchantUid") {
+            sql += "and a.merchantUid ";
+        }
+
+        sql += `LIKE '%${searchWord}%' `;
+    }
+
+    sql += "group by a.UID " +
+        "order by a.regDate desc " +
+        `limit ${offset}, ${pageCnt15}`;
+
+    const [result] = await con.query(sql);
+    return result;
+}
+
+async function selectPaymentShipStatus(status, searchType, searchWord, startDate, endDate){
+    var sql = "select count(a.UID) as totalCnt, count(case when a.shippingStatus = '배송전'  then 1 end ) as befShipCnt,  count(case when a.shippingStatus = '배송준비중'  then 1 end ) as rdyShipCnt, " +
+            "count(case when a.shippingStatus = '배송완료'  then 1 end ) as confShipCnt " +
+            "from payment a " +
+            "join user b on a.userUID = b.UID " +
+            `where (date_format(a.regDate, '%Y-%m-%d') between '${startDate}' and '${endDate}') and a.type = 'product' and a.orderStatus != '취소요청' and a.orderStatus != '취소승인' `;
+
+    if (status != "all") 
+        sql += `and a.shippingStatus = '${status}' `;
+    
+    // 검색
+    if (searchType.length != 0) {
+        if (searchType == "buyerEmail") {
+            sql += "and b.email ";
+        } else if (searchType == "buyerTel") {
+            if (tellType == "user")
+                sql += "and b.cellNumber ";
+            else if (tellType == "payment")
+                sql += "and a.buyerTel ";
+        } else if (searchType == "merchantUid") {
+            sql += "and a.merchantUid ";
+        }
+
+        sql += `LIKE '%${searchWord}%' `;
+    } 
+
+    const [result] = await con.query(sql);
+
+    return result[0];
+}
+
+async function selectPaymentShip(status, searchType, searchWord, startDate, endDate, offset) {
+    var sql = "select a.UID as paymentUID, a.merchantUid, c.korName, d.optionName, a.buyerName, a.buyerEmail, a.buyerTel, " +
+        "concat(a.addr1, ' ', a.addr2) as addr, a.regDate, a.shippingStatus, if(a.shipResDate = '0000-01-01 00:00:00', '', a.shipResDate) as shippingDate, " +
+        "if(shipConfDate = '0000-01-01 00:00:00', '', shipConfDate) as shipConfDate " +
+        "from payment a " +
+        "join payment_product_list b on a.UID = b.paymentUID " +
+        "join product c on b.productUID = c.UID " +
+        "join product_option_list d on b.optionUID = d.UID " +
+        "join user e on a.userUID = e.UID " +
+        `where (date_format(a.regDate, '%Y-%m-%d') between '${startDate}' and '${endDate}') and a.type = 'product' and a.orderStatus != '취소요청' and a.orderStatus != '취소승인' `;
+
+    if (status != "all")
+        sql += `and a.shippingStatus = '${status}' `;
+
+    // 검색
+    if (searchType.length != 0) {
+        if (searchType == "buyerEmail") {
+            sql += "and e.email ";
+        } else if (searchType == "buyerTel") {
+            if (tellType == "user")
+                sql += "and e.cellNumber ";
+            else if (tellType == "payment")
+                sql += "and a.buyerTel ";
+        } else if (searchType == "merchantUid") {
+            sql += "and a.merchantUid ";
+        }
+
+        sql += `LIKE '%${searchWord}%' `;
+    }
+
+    sql += "group by a.UID " +
+        "order by a.regDate desc" +
+        ` limit ${offset}, ${pageCnt15}`;
+
+    const [result] = await con.query(sql);
+    return result;
+}
+
+async function selectPaymentRefundStatus(status, searchType, searchWord, startDate, endDate){
+    var sql = "select count(a.UID) as totalCnt, count(case when a.orderStatus = '취소요청'  then 1 end ) as refReqCnt,  count(case when a.orderStatus = '취소승인'  then 1 end ) as refOkCnt, " +
+    "count(case when a.orderStatus = '취소미승인'  then 1 end ) as refNoCnt " +
+    "from payment a " +
+    "join user b on a.userUID = b.UID " +
+    `where a.orderStatus != '결제완료' and a.type = 'product' and (date_format(a.reqDate, '%Y-%m-%d') between '${startDate}' and '${endDate}') `;
+
+    if (status != "all")
+        sql += `and a.orderStatus = '${status}' `;
+
+    // 검색
+    if (searchType.length != 0) {
+        if (searchType == "buyerEmail") {
+            sql += "and b.email ";
+        } else if (searchType == "buyerTel") {
+            if (tellType == "user")
+                sql += "and b.cellNumber ";
+            else if (tellType == "payment")
+                sql += "and a.buyerTel ";
+        } else if (searchType == "merchantUid") {
+            sql += "and a.merchantUid ";
+        }
+
+        sql += `LIKE '%${searchWord}%' `;
+    }
+
+    const [result] = await con.query(sql);
+    return result[0];
+}
+
+async function selectPaymentRefund(status, searchType, searchWord, startDate, endDate, offset){
+    var sql = "select a.UID as paymentUID, a.merchantUid, d.korName, e.optionName, a.buyerName, a.buyerEmail, a.buyerTel, ifnull(a.refundMsg, '') as refundMsg, " +
+    "ifnull(a.refConfMsg, '') as refConfMsg, orderStatus, if(a.reqDate = '0000-01-01 00:00:00', '', a.reqDate) as reqDate, if(a.refConfDate = '0000-01-01 00:00:00', '', a.refConfDate) as refConfDate " +
+    "from payment a " +
+    "join user b on a.userUID = b.UID " +
+    "join payment_product_list c on a.UID = c.paymentUID " +
+    "join product d on c.productUID = d.UID " +
+    "join product_option_list e on c.optionUID = e.UID " +
+    `where a.type = 'product' and (date_format(a.reqDate, '%Y-%m-%d') between '${startDate}' and '${endDate}') and a.orderStatus != '결제완료' `;
+
+    // 검색
+    if (searchType.length != 0) {
+        if (searchType == "buyerEmail") {
+            sql += "and b.email ";
+        } else if (searchType == "buyerTel") {
+            if (tellType == "user")
+                sql += "and b.cellNumber ";
+            else if (tellType == "payment")
+                sql += "and a.buyerTel ";
+        } else if (searchType == "merchantUid") {
+            sql += "and a.merchantUid ";
+        }
+
+        sql += `LIKE '%${searchWord}%' `;
+    }
+
+    sql += "group by a.UID " +
+            "order by a.reqDate desc " +
+            `limit ${offset}, ${pageCnt15}`;
+
+    const [result] = await con.query(sql);
+    return result;
+}
 
 // 아임포트 - 토큰 조회
 async function getToken() {
