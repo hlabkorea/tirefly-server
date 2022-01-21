@@ -92,7 +92,7 @@ api.post('/test', onlyUpload.single("motif_file"), async function (req, res) {
 api.get('/test', async function (req, res) {
     try{
         var sql = "select UID, version, regDate from qt_version order by regDate desc";
-        await con.query(sql);
+        const [result] = await con.query(sql);
 
         res.status(200).json({
             status: 200,
