@@ -19,7 +19,6 @@
     "express-paginate": "^1.0.2",
     "express-validator": "^6.12.1",
     "forever": "^4.0.1",
-    "geoip-country": "^4.0.103",
     "jsonwebtoken": "^8.5.1",
     "md5": "^2.3.0",
     "md5-file": "^5.0.0",
