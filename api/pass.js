@@ -1,6 +1,7 @@
 const express = require("express"); 
 const exec = require("child_process").exec; 
 const db = require('./config/database.js');
+const { con } = require('./config/database.js');
 const path = require('path');
 const api = express.Router();
 const sSiteCode = "BV365";
@@ -13,38 +14,54 @@ const domain = "https://api.motifme.io";
 var sErrorUrl = domain + "checkplus_fail";	  	// 실패시 이동될 URL (방식 : 프로토콜을 포함한 절대 주소)
 
 // 앱 response
-api.post("/join", function(req, res) {
-    var sEncData = req.body.EncodeData;
-    sendResponse('join', res, sEncData);
+api.post("/join", async function(req, res) {
+    try{
+        var sEncData = req.body.EncodeData;
+        await sendResponse('join', res, sEncData);
+    } catch (err) {
+        throw err;
+    }
 });
 
 //웹
-api.get("/join", function(req, res) {
-    if(req.query.EncodeData == undefined){
-        var successReturnUrl = domain + "/pass/join";	// 성공시 이동될 URL (방식 : 프로토콜을 포함한 절대 주소)
-        showPassAuth(res, successReturnUrl);
-    } else {
-        //chrome80 이상 대응
-        var sEncData = req.query.EncodeData;
-        sendResponse('join', res, sEncData);
+api.get("/join", async function(req, res) {
+    try{
+        if(req.query.EncodeData == undefined){
+            var successReturnUrl = domain + "/pass/join";	// 성공시 이동될 URL (방식 : 프로토콜을 포함한 절대 주소)
+            showPassAuth(res, successReturnUrl);
+        } else {
+            //chrome80 이상 대응
+            var sEncData = req.query.EncodeData;
+            await sendResponse('join', res, sEncData);
+        }
+    } catch (err) {
+        throw err;
     }
 });
 
 // 앱 response
-api.post("/findId", function(req, res) {
-    var sEncData = req.body.EncodeData;
-    sendResponse('findId', res, sEncData);
+api.post("/findId", async function(req, res) {
+    try{
+        var sEncData = req.body.EncodeData;
+        await sendResponse('findId', res, sEncData);
+    } catch (err) {
+        throw err;
+    }
 });
 
 //웹
-api.get("/findId", function(req, res) {
-    if(req.query.EncodeData == undefined){
-        var successReturnUrl = domain + "/pass/findId"; // 성공시 이동될 URL (방식 : 프로토콜을 포함한 절대 주소)
-        showPassAuth(res, successReturnUrl);
-    } else {
-        //chrome80 이상 대응
-        var sEncData = req.query.EncodeData;
-        sendResponse('findId', res, sEncData);
+api.get("/findId", async function(req, res) {
+    try{
+        if(req.query.EncodeData == undefined){
+            var successReturnUrl = domain + "/pass/findId"; // 성공시 이동될 URL (방식 : 프로토콜을 포함한 절대 주소)
+            showPassAuth(res, successReturnUrl);
+        } else {
+            //chrome80 이상 대응
+            var sEncData = req.query.EncodeData;
+            await sendResponse('findId', res, sEncData);
+        }
+    } catch (err) {
+        throw err;
     }
 });
 
@@ -78,7 +95,7 @@ function showPassAuth(res, successReturnUrl){
     });
 }
 
-function sendResponse(work, res, sEncData){
+async function sendResponse(work, res, sEncData){
     var cmd = "";
 
     if( /^0-9a-zA-Z+\/=/.test(sEncData) == true){
@@ -100,25 +117,23 @@ function sendResponse(work, res, sEncData){
     child.stdout.on("data", function(data) {
         sDecData += data;
     });
-    child.on("close", function() {
-        var mobileno = decodeURIComponent(getValue(sDecData , "MOBILE_NO"));        //휴대폰번호(계약된 경우)
+    child.on("close", async function() {
+        const mobileno = decodeURIComponent(getValue(sDecData , "MOBILE_NO"));        //휴대폰번호(계약된 경우)
         var sql = "select email from user where cellNumber = ?";
+        const [result] = await con.query(sql, mobileno);
 
-        db.query(sql, mobileno, (err, result, fields) => {
-            if(err) throw err;
-
-            if(work == 'findId'){
-                if(result.length == 0)
-                    res.render("checkplus_success", {status: 403, data: false, message: "가입된 번호가 아닙니다."});
-                else   
-                    res.render("checkplus_success", {status: 200, data: result[0].email, message: "success"});
-            } else if(work == 'join'){
-                if(result.length == 0)
-                    res.render("checkplus_success", {status: 200, data: mobileno, message: "success"});
-                else   
-                    res.render("checkplus_success", {status: 403, data: false, message: "이미_가입된_계정이_존재합니다"});
-            }
-        });
+        console.log(result);
+        if(work == 'findId'){
+            if(result.length == 0)
+                res.render("checkplus_success", {status: 403, data: false, message: "가입된 번호가 아닙니다."});
+            else   
+                res.render("checkplus_success", {status: 200, data: result[0].email, message: "success"});
+        } else if(work == 'join'){
+            if(result.length == 0)
+                res.render("checkplus_success", {status: 200, data: mobileno, message: "success"});
+            else   
+                res.render("checkplus_success", {status: 403, data: false, message: "이미_가입된_계정이_존재합니다"});
+        }
     });
 }
 
