@@ -782,10 +782,7 @@ async function selectPaymentSales(type, searchType, searchWord, startDate, endDa
         if (searchType == "buyerEmail") {
             sql += "and b.email ";
         } else if (searchType == "buyerTel") {
-            if (tellType == "user")
-                sql += "and b.cellNumber ";
-            else if (tellType == "payment")
-                sql += "and a.buyerTel ";
+            sql += "and b.cellNumber ";
         } else if (searchType == "merchantUid") {
             sql += "and a.merchantUid ";
         }
@@ -815,10 +812,7 @@ async function selectPaymentProduct(type, searchType, searchWord, startDate, end
         if (searchType == "buyerEmail") {
             sql += "and e.email ";
         } else if (searchType == "buyerTel") {
-            if (tellType == "user")
-                sql += "and e.cellNumber ";
-            else if (tellType == "payment")
-                sql += "and a.buyerTel ";
+            sql += "and e.cellNumber ";
         } else if (searchType == "merchantUid") {
             sql += "and a.merchantUid ";
         }
@@ -849,10 +843,7 @@ async function selectPaymentMembership(type, searchType, searchWord, startDate, 
         if (searchType == "buyerEmail") {
             sql += "and d.email ";
         } else if (searchType == "buyerTel") {
-            if (tellType == "user")
-                sql += "and d.cellNumber ";
-            else if (tellType == "payment")
-                sql += "and a.buyerTel ";
+            sql += "and d.cellNumber ";
         } else if (searchType == "merchantUid") {
             sql += "and a.merchantUid ";
         }
@@ -883,10 +874,7 @@ async function selectPaymentShipStatus(status, searchType, searchWord, startDate
         if (searchType == "buyerEmail") {
             sql += "and b.email ";
         } else if (searchType == "buyerTel") {
-            if (tellType == "user")
-                sql += "and b.cellNumber ";
-            else if (tellType == "payment")
-                sql += "and a.buyerTel ";
+            sql += "and a.buyerTel ";
         } else if (searchType == "merchantUid") {
             sql += "and a.merchantUid ";
         }
@@ -918,10 +906,7 @@ async function selectPaymentShip(status, searchType, searchWord, startDate, endD
         if (searchType == "buyerEmail") {
             sql += "and e.email ";
         } else if (searchType == "buyerTel") {
-            if (tellType == "user")
-                sql += "and e.cellNumber ";
-            else if (tellType == "payment")
-                sql += "and a.buyerTel ";
+            sql += "and a.buyerTel ";
         } else if (searchType == "merchantUid") {
             sql += "and a.merchantUid ";
         }
@@ -952,10 +937,7 @@ async function selectPaymentRefundStatus(status, searchType, searchWord, startDa
         if (searchType == "buyerEmail") {
             sql += "and b.email ";
         } else if (searchType == "buyerTel") {
-            if (tellType == "user")
-                sql += "and b.cellNumber ";
-            else if (tellType == "payment")
-                sql += "and a.buyerTel ";
+            sql += "and b.cellNumber ";
         } else if (searchType == "merchantUid") {
             sql += "and a.merchantUid ";
         }
@@ -982,10 +964,7 @@ async function selectPaymentRefund(status, searchType, searchWord, startDate, en
         if (searchType == "buyerEmail") {
             sql += "and b.email ";
         } else if (searchType == "buyerTel") {
-            if (tellType == "user")
-                sql += "and b.cellNumber ";
-            else if (tellType == "payment")
-                sql += "and a.buyerTel ";
+            sql += "and b.cellNumber ";
         } else if (searchType == "merchantUid") {
             sql += "and a.merchantUid ";
         }
