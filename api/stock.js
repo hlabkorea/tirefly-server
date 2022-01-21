@@ -1,5 +1,4 @@
 const express = require('express');
-const db = require('./config/database.js');
 const { con } = require('./config/database.js');
 const { verifyAdminToken } = require("./config/authCheck.js");
 const { memoryUpload } = require('./config/uploadFile.js');
@@ -9,7 +8,7 @@ const xl = require('excel4node');
 const excelToJson = require('convert-excel-to-json');
 const pageCnt15 = 15;
 
-// 재고 전체 조회
+// cms - 재고 전체 조회
 api.get('/', verifyAdminToken, async function (req, res) {
     try{
         const status = req.query.status ? req.query.status : 'all';
@@ -52,7 +51,7 @@ api.get('/', verifyAdminToken, async function (req, res) {
 });
 
 // cms - 엑셀 양식 다운로드
-api.get('/excel/sample', function (req, res) {
+api.get('/excel/sample', verifyAdminToken, function (req, res) {
     var wb = new xl.Workbook({
         defaultFont: {
             color: '#000000',
@@ -93,16 +92,16 @@ api.get('/excel/sample', function (req, res) {
     wb.write('stock_sample.xlsx', res);
 });
 
-api.get('/excel', function (req, res) {
-    var sql = "select stock.UID as stockUID, stock.serialNo, stock.testDate, ifnull(payment.shipRcpnt, '-') as shipRcpnt, ifnull(payment.buyerTel, '-') as buyerTel, "
-            + "ifnull(payment.shipConfDate, '-') as shipConfDate, if(stock.paymentUID = 0, '입고', '출고') as stockState "
-            + "from stock "
-            + "left join payment on stock.paymentUID = payment.UID "
-            + "order by stock.regDate desc, stock.UID desc";
+// cms - 재고 엑셀 파일 업로드
+api.get('/excel', verifyAdminToken, async function (req, res) {
+    try {
+        var sql = "select a.UID as stockUID, a.serialNo, a.testDate, ifnull(b.shipRcpnt, '-') as shipRcpnt, ifnull(b.buyerTel, '-') as buyerTel, " +
+            "ifnull(b.shipConfDate, '-') as shipConfDate, if(a.paymentUID = 0, '입고', '출고') as stockState " +
+            "from stock a " +
+            "left join payment b on a.paymentUID = b.UID " +
+            "order by a.regDate desc, a.UID desc";
 
-    db.query(sql, function (err, result) {
-        if (err) throw err;
-
+        const [result] = await con.query(sql);
         var wb = new xl.Workbook({
             defaultFont: {
                 color: '#000000',
@@ -148,7 +147,6 @@ api.get('/excel', function (req, res) {
         ws.cell(1, 6).string('출고일').style(header_style);
         ws.cell(1, 7).string('재고 상태').style(header_style);
 
-        console.log(result);
         for(var i in result){
             var row = Number(i)+2;
             ws.cell(row,1).string(String(result[i].stockUID)).style(data_style);
@@ -160,35 +158,40 @@ api.get('/excel', function (req, res) {
             ws.cell(row,7).string(result[i].stockState).style(data_style);
         }
         wb.write('stock_list.xlsx', res);
-    });
+    } catch (err) {
+        throw err;
+    }
 });
 
-api.post('/excel', verifyAdminToken, memoryUpload.single('excel_file'), function (req, res) {
-    // 엑셀 데이터 json으로 변환
-    const result = excelToJson({
-        source: req.file.buffer
-    });
+// cms - 재고 엑셀 데이터 다운로드
+api.post('/excel', verifyAdminToken, memoryUpload.single('excel_file'), async function (req, res) {
+    try{
+        // 엑셀 데이터 json으로 변환
+        const result = excelToJson({
+            source: req.file.buffer
+        });
 
-    const sample = result['Sheet 1'];
-    var data = [];
+        const sample = result['Sheet 1'];
+        var sqlData = [];
 
-    for(var i = 1; i < sample.length; i++){
-        var serialNo = sample[i].A;
-        var testDate = sample[i].B;
-        data.push([serialNo, testDate]);
-    }
+        for(var i = 1; i < sample.length; i++){
+            var serialNo = sample[i].A;
+            var testDate = sample[i].B;
+            sqlData.push([serialNo, testDate]);
+        }
 
-    var sql = "insert stock(serialNo, testDate) values ?;";
+        var sql = "insert stock(serialNo, testDate) values ?;";
 
-    db.query(sql, [data], function (err, result, fields) {
-        if (err) throw err;
+        await con.query(sql, [sqlData]);
 
         res.status(200).send({
             status: 200,
             data: "true",
             message: "success"
         });
-    });
+    } catch (err) {
+        throw err;
+    }
 });
 
 module.exports = api;
