@@ -1,5 +1,5 @@
 const express = require('express');
-const db = require('./config/database.js');
+const { con } = require('./config/database.js');
 const api = express.Router();
 const { verifyToken } = require("./config/authCheck.js");
 const { check } = require('express-validator');
@@ -11,28 +11,28 @@ api.post('/:productUID',
 		[
 			check("basketList", "basketList is required").not().isEmpty()
 		],
-        function (req, res, next) {
+        async function (req, res, next) {
 			const errors = getError(req, res);
 			if(errors.isEmpty()){
-				var productUID = req.params.productUID;
-				var basketList = req.body.basketList;
+                try{
+                    const productUID = req.params.productUID;
+                    const basketList = req.body.basketList;
 
-				var sql = "insert my_basket(userUID, productUID, optionUID, count) values ?;";
-				var datas = [];
-				for(var i in basketList){
-					var userUID = basketList[i].userUID;
-					var optionUID = basketList[i].optionUID;
-					var count = basketList[i].count;
-					datas.push([userUID, productUID, optionUID, count]);
-				}
+                    var sql = "insert my_basket(userUID, productUID, optionUID, count) values ?;";
+                    var sqlData = [];
+                    for(var i in basketList){
+                        var userUID = basketList[i].userUID;
+                        var optionUID = basketList[i].optionUID;
+                        var count = basketList[i].count;
+                        sqlData.push([userUID, productUID, optionUID, count]);
+                    }
+                    
+                    await con.query(sql, [sqlData]);
 
-				console.log(datas);
-
-				db.query(sql, [datas], function (err, result) {
-					if (err) throw err;
-
-					res.status(200).json({status:200, data: "true", message:"success"});
-				});
+                    res.status(200).json({status:200, data: "true", message:"success"});
+                } catch (err) {
+                    throw err;
+                }
 			}
         }
 );
@@ -40,23 +40,25 @@ api.post('/:productUID',
 // 장바구니 조회
 api.get('/:userUID', 
 		verifyToken,
-        function (req, res, next) {
-			var userUID = req.params.userUID;
-			var sql = "select my_basket.UID as myBasketUID, my_basket.productUID, product_img_list.imgPath, product.korName, product.engName, product.originPrice, product.discountRate, product.discountPrice, "
-					+ "product.shippingFee, product_option_list.optionName, my_basket.count "
-					+ "from my_basket "
-					+ "join product on my_basket.productUID = product.UID "
-					+ "join product_option_list on my_basket.optionUID = product_option_list.UID "
-					+ "join product_img_list on product_img_list.productUID = product.UID "
-					+ "where userUID = ? "
-					+ "group by my_basket.UID "
-					+ "order by my_basket.regDate desc";
+        async function (req, res, next) {
+            try{
+                const userUID = req.params.userUID;
+                var sql = "select a.UID as myBasketUID, a.productUID, d.imgPath, b.korName, b.engName, b.originPrice, b.discountRate, b.discountPrice, "
+                        + "b.shippingFee, c.optionName, a.count "
+                        + "from my_basket a "
+                        + "join product b on a.productUID = b.UID "
+                        + "join product_option_list c on a.optionUID = c.UID "
+                        + "join product_img_list d on d.productUID = b.UID "
+                        + "where a.userUID = ? "
+                        + "group by a.UID "
+                        + "order by a.regDate desc";
 
-			db.query(sql, userUID, function (err, result) {
-				if (err) throw err;
+                const [result] = await con.query(sql, userUID);
 
 				res.status(200).json({status:200, data: result, message:"success"});
-			});
+			} catch (err) {
+                throw err;
+            }
         }
 );
 
@@ -66,24 +68,24 @@ api.delete('/',
 		[
 			check("basketUIDList", "basketUIDList is required").not().isEmpty()
 		],
-        function (req, res, next) {
+        async function (req, res, next) {
 			const errors = getError(req, res);
 			if(errors.isEmpty()){
-				var basketUIDList = req.body.basketUIDList;
+                try{
+                    const basketUIDList = req.body.basketUIDList;
 
-				var sql = "delete from my_basket where UID in (?);";
-				var datas = [];
-				for(var i in basketUIDList){
-					datas.push(basketUIDList[i]);
-				}
+                    var sql = "delete from my_basket where UID in (?);";
+                    var sqlData = [];
+                    for(var i in basketUIDList){
+                        sqlData.push(basketUIDList[i]);
+                    }
 
-				const exect = db.query(sql, [datas], function (err, result) {
-					if (err) throw err;
+                    await con.query(sql, [sqlData]);
 
-					res.status(200).json({status:200, data: "true", message:"success"});
-				});
-
-				console.log(exect.sql);
+                    res.status(200).json({status:200, data: "true", message:"success"});
+                } catch (err) {
+                    throw err;
+                }
 			}
         }
 );

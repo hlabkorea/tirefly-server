@@ -1,6 +1,5 @@
 const express = require("express"); 
 const exec = require("child_process").exec; 
-const db = require('./config/database.js');
 const { con } = require('./config/database.js');
 const path = require('path');
 const api = express.Router();
