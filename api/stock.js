@@ -51,7 +51,7 @@ api.get('/', verifyAdminToken, async function (req, res) {
 });
 
 // cms - 엑셀 양식 다운로드
-api.get('/excel/sample', verifyAdminToken, function (req, res) {
+api.get('/excel/sample', function (req, res) {
     var wb = new xl.Workbook({
         defaultFont: {
             color: '#000000',
@@ -93,7 +93,7 @@ api.get('/excel/sample', verifyAdminToken, function (req, res) {
 });
 
 // cms - 재고 엑셀 파일 업로드
-api.get('/excel', verifyAdminToken, async function (req, res) {
+api.get('/excel', async function (req, res) {
     try {
         var sql = "select a.UID as stockUID, a.serialNo, a.testDate, ifnull(b.shipRcpnt, '-') as shipRcpnt, ifnull(b.buyerTel, '-') as buyerTel, " +
             "ifnull(b.shipConfDate, '-') as shipConfDate, if(a.paymentUID = 0, '입고', '출고') as stockState " +
