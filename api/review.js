@@ -5,7 +5,6 @@ const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
 const api = express.Router();
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
-const e = require('express');
 const pageCnt15 = 15;
 
 // 강사 평점을 조회하는 /:teacherUID를 /teacher/:teacherUID 로 수정하고, 리뷰를 조회하는 /detail/:reviewUID를 /:reviewUID 로 수정해야합니다

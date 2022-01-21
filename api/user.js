@@ -12,7 +12,6 @@ const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 const { sendJoinMail, sendPasswdMail } = require('./config/mail.js');
 const { maskEmail } = require('./config/masking');
-const { addSearchSql } = require('./config/searchSql.js');
 const { getPageInfo } = require('./config/paging.js'); 
 const pageCnt15 = 15;
 
@@ -22,7 +21,15 @@ api.get('/', verifyAdminToken, async function (req, res) {
         var sql = "select UID as userUID, email, nickName, cellNumber, gender, birthday, status from user where UID >= 1 ";
         const searchType = req.query.searchType ? req.query.searchType : '';
         const searchWord = req.query.searchWord ? req.query.searchWord : '';
-        sql += addSearchSql(searchType, searchWord);
+
+        if (searchType.length != 0){
+            if (searchType == "userEmail")
+                sql += "and email ";
+            else if (searchType == "userTel")
+                sql += "and cellNumber ";
+    
+            sql += "LIKE '%" + searchWord + "%' ";
+        }
 
         sql += "order by regDate desc, UID desc ";
 

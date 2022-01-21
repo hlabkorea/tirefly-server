@@ -2,7 +2,6 @@ const express = require('express');
 const { con } = require('./config/database.js');
 const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
 const { upload } = require('./config/uploadFile.js');
-const { addSearchSql } = require('./config/searchSql.js');
 const { getPageInfo } = require('./config/paging.js'); 
 const api = express.Router();
 const pageCnt15 = 15;
