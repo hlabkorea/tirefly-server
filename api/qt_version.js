@@ -1,5 +1,4 @@
 const express = require('express');
-const db = require('./config/database.js');
 const { con } = require('./config/database.js');
 const path = require('path');
 const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
@@ -16,26 +15,23 @@ api.post('/check',
 		[
 			check("version", "version is required").not().isEmpty()
 		],
-		function (req, res) {
-			console.log(req);
+		async function (req, res) {
 			const errors = getError(req, res);
 			
 			if(errors.isEmpty()){
-				var userQtVer = req.body.version;
-
-				var sql = "select version from qt_version order by regDate desc limit 1";
-				db.query(sql, function (err, result) {
-					if (err) throw err;    
-					var qtVer = result[0].version;
-
-					if (qtVer == userQtVer)
-						res.status(200).json({
+                try{
+                    const userQtVer = req.body.version;
+                    var sql = "select version from qt_version order by regDate desc limit 1";
+                    const [result] = await con.query(sql);
+                    if(result[0].version == userQtVer){
+                        res.status(200).json({
 							status: 200,
 							data: "true",
 							message: "success"
 						});
-					else{
-						const hash = md5File.sync(path.join('/', 'usr', 'share', 'nginx', 'motif-server', 'views', 'files', 'motif.tar.gz'));
+                    }
+                    else{
+                        const hash = md5File.sync(path.join('/', 'usr', 'share', 'nginx', 'motif-server', 'views', 'files', 'motif.tar.gz'));
 						res.status(200).json({
 							status: 200,
 							data: {
@@ -45,8 +41,10 @@ api.post('/check',
 							},
 							message: "success"
 						});
-					}
-				}); 
+                    }
+                } catch (err) {
+                    throw err;
+                }
 			}
 		}
 );
@@ -67,8 +65,8 @@ api.get('/', verifyAdminToken, async function (req, res) {
 
 api.post('/', verifyAdminToken, onlyUpload.single("qt_file"), async function (req, res) {
     try{
-        var version = req.body.version;
-        var memo = req.body.memo;
+        const version = req.body.version;
+        const memo = req.body.memo;
         var sql = "insert qt_version(version, memo) values (?)";
         const sqlData = [version, memo];
         await con.query(sql, [sqlData]);
@@ -79,31 +77,35 @@ api.post('/', verifyAdminToken, onlyUpload.single("qt_file"), async function (re
     }
 });
 
-api.post('/test', onlyUpload.single("motif_file"), function (req, res) {
-    var version = req.body.version;
-    var sql = "insert qt_version(version) values (?)";
-    db.query(sql, version, function (err, result) {
-        if (err) throw err;
-
+api.post('/test', onlyUpload.single("motif_file"), async function (req, res) {
+    try{
+        const version = req.body.version;
+        var sql = "insert qt_version(version) values (?)";
+        await con.query(sql, version);
+    
         res.status(200).json({status:200, data:"true", message: "motif.tar.gz 파일 업로드가 완료되었습니다."});
-    }); 
+    } catch (err) {
+        throw err;
+    }
 });
 
-api.get('/test', function (req, res) {
-    var sql = "select UID, version, regDate from qt_version order by regDate desc";
-    db.query(sql, function (err, result) {
-        if (err) throw err;
+api.get('/test', async function (req, res) {
+    try{
+        var sql = "select UID, version, regDate from qt_version order by regDate desc";
+        await con.query(sql);
 
         res.status(200).json({
             status: 200,
             data: result,
             message: "success"
         });
-    });
+    } catch (err) {
+        throw err;
+    }
 });
 
-api.get('/test/exist', function (req, res) {
-    var filePath = '../motif-server/views/files/motif.tar.gz';
+api.get('/test/exist', async function (req, res) {
+    const filePath = '../motif-server/views/files/motif.tar.gz';
 
     fs.exists(filePath, function (exists) {
         if(exists){							
@@ -116,7 +118,7 @@ api.get('/test/exist', function (req, res) {
 });
 
 api.delete('/test', function (req, res) {
-    var filePath = '../motif-server/views/files/motif.tar.gz';
+    const filePath = '../motif-server/views/files/motif.tar.gz';
 
     // 파일이 존재하면 삭제
     fs.exists(filePath, function (exists) {
@@ -133,15 +135,15 @@ api.delete('/test', function (req, res) {
     });
 });
 
-api.delete('/test/:versionUID', function (req, res) {
-    var sql = "delete from qt_version where UID = ?";
-    var versionUID = req.params.versionUID;
+api.delete('/test/:versionUID', async function (req, res) {
+    try{
+        const versionUID = req.params.versionUID;
+        var sql = "delete from qt_version where UID = ?";
 
-    db.query(sql, versionUID, function (err, result) {
-        if (err) throw err;
-
-        res.status(200).json({status:200, data:"true", message: "success"});
-    }); 
+        await con.query(sql, versionUID);
+    } catch (err) {
+        throw err;
+    }
 });
 
 module.exports = api;
