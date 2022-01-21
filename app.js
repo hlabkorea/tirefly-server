@@ -2,10 +2,6 @@
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
-const db = require('./api/config/database.js');
-const jwt = require("jsonwebtoken");
-const secretObj = require("./api/config/jwt.js");
-const process = require("process");
 const morgan = require('morgan');
 
 const server = app.listen(3001, () => {
@@ -98,5 +94,3 @@ app.use('/admin_log', require('./api/admin_log.js'));
 app.use('/stock', require('./api/stock.js'));
 app.use('/qt_version', require('./api/qt_version.js'));
 app.use('/vision', require('./api/vision.js'));
-
-app.use('/check_ip', require('./api/check_ip.js'));

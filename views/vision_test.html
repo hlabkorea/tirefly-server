@@ -1,0 +1,79 @@
+<html>
+
+<head>
+    <script src="https://code.jquery.com/jquery-3.6.0.js"
+        integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <h3>비전 테이블 데이터 (최신순)</h3>
+    <div id="visionList">
+    </div>
+</body>
+
+<script>
+    const domain = "https://api.motifme.io";
+
+    function getTimeStamp(changedate) {
+        var d = new Date(changedate);
+        var s =
+            leadingZeros(d.getFullYear(), 4) + '-' +
+            leadingZeros(d.getMonth() + 1, 2) + '-' +
+            leadingZeros(d.getDate(), 2) + ' ' +
+
+            leadingZeros(d.getHours(), 2) + ':' +
+            leadingZeros(d.getMinutes(), 2) + ':' +
+            leadingZeros(d.getSeconds(), 2);
+
+        return s;
+    }
+
+    function leadingZeros(n, digits) {
+        var zero = '';
+        n = n.toString();
+
+        if (n.length < digits) {
+            for (i = 0; i < digits - n.length; i++)
+            zero += '0';
+        }
+        return zero + n;
+    }
+
+    $(document).ready(function(){
+        getVisionList();
+    });
+
+    function getVisionList() {
+        $.ajax({
+            type: "GET",
+            url: domain + '/vision/all'
+        }).done(function (result, textStatus, xhr) {
+            var resultHtml = "<table border='1' style='text-align:center;'>"
+                           + "<th>파일명</th>"
+                           + "<th>어깨</th>"
+                           + "<th>허리</th>"
+                           + "<th>엉덩이</th>"
+                           + "<th>허벅지</th>"
+                           + "<th>종아리</th>"
+                           + "<th>등록일</th>";
+            var responseJSON = result.data;
+            for(var i=0; i<responseJSON.length; i++){
+                resultHtml += "<tr>"
+                           + `<td> ${responseJSON[i].filePath} </td>`
+                           + `<td> ${responseJSON[i].shoulder} </td>`
+                           + `<td> ${responseJSON[i].waist} </td>`
+                           + `<td> ${responseJSON[i].hip} </td>`
+                           + `<td> ${responseJSON[i].thigh} </td>`
+                           + `<td> ${responseJSON[i].calf} </td>`
+                           + "<td> " + getTimeStamp(responseJSON[i].regDate) + "</td>"
+                           + "</tr>";
+            }
+
+            resultHtml += "</table>";
+            
+			$('#visionList').html(resultHtml);
+        });
+    }
+</script>
+
+</html>

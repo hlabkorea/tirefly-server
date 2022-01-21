@@ -1,49 +1,54 @@
 const express = require('express');
 const db = require('./config/database.js');
+const { con } = require('./config/database.js');
 const { verifyAdminToken } = require("./config/authCheck.js");
 const { memoryUpload } = require('./config/uploadFile.js');
 const api = express.Router();
 const { getPageInfo } = require('./config/paging.js'); 
 const xl = require('excel4node');
 const excelToJson = require('convert-excel-to-json');
-const { addSearchSql } = require('./config/searchSql.js');
 const pageCnt15 = 15;
 
 // 재고 전체 조회
 api.get('/', verifyAdminToken, async function (req, res) {
-    var status = req.query.status ? req.query.status : 'all';
-    var searchType = req.query.searchType ? req.query.searchType : '';
-    var searchWord = req.query.searchWord ? req.query.searchWord : '';
-    var sql = "select stock.UID as stockUID, stock.serialNo, stock.testDate, ifnull(payment.shipRcpnt, '-') as shipRcpnt, ifnull(payment.buyerTel, '-') as buyerTel, "
-            + "stock.regDate, ifnull(payment.shipConfDate, '-') as shipConfDate, if(stock.paymentUID = 0, '입고', '출고') as stockState "
-            + "from stock "
-            + "left join payment on stock.paymentUID = payment.UID ";
-    
-    if(status == 'in')
-        sql += "where stock.paymentUID = 0 ";
-    else if(status == 'out')
-        sql += "where stock.paymentUID != 0 ";
-    
-    if(searchType.length != 0)
-        sql += addSearchSql(searchType, searchWord);
-    var countSql = sql + ";";
+    try{
+        const status = req.query.status ? req.query.status : 'all';
+        const searchType = req.query.searchType ? req.query.searchType : '';
+        const searchWord = req.query.searchWord ? req.query.searchWord : '';
+        const currentPage = req.query.page ? parseInt(req.query.page) : 1;
+        const offset = (parseInt(currentPage) - 1) * pageCnt15;
 
-    sql += " order by stock.regDate desc, stock.UID desc"
-         + " limit ?, " + pageCnt15;
-    var currentPage = req.query.page ? parseInt(req.query.page) : 1;
-    var data = (parseInt(currentPage) - 1) * pageCnt15;
-    
-    db.query(countSql+sql, data, function (err, result) {
-        if (err) throw err;
+        var sql = "select a.UID as stockUID, a.serialNo, a.testDate, ifnull(b.shipRcpnt, '-') as shipRcpnt, ifnull(b.buyerTel, '-') as buyerTel, "
+                + "a.regDate, ifnull(b.shipConfDate, '-') as shipConfDate, if(a.paymentUID = 0, '입고', '출고') as stockState "
+                + "from stock a "
+                + "left join payment b on a.paymentUID = b.UID "
+                + "where a.UID > 0 ";
         
+        if(status == 'in')
+            sql += "and a.paymentUID = 0 ";
+        else if(status == 'out')
+            sql += "and a.paymentUID != 0 ";
+        
+        if (searchType == "serialNo")
+            sql += `and a.serialNo LIKE '%${searchWord}%' `;
+
+        var countSql = sql + ";";
+
+        sql += "order by a.regDate desc, a.UID desc "
+            + `limit ${offset}, ${pageCnt15}`;
+        
+        const [result] = await con.query(countSql + sql);
+
         var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length, pageCnt15);
         res.status(200).json({status:200, 
-                  data: {
+                data: {
                     paging: {startPage: startPage, endPage: endPage, totalPage: totalPage},
                     result: result[1]
-                  }, 
-                  message:"success"});
-      });
+                }, 
+                message:"success"});
+    } catch (err) {
+        throw err;
+    }
 });
 
 // cms - 엑셀 양식 다운로드

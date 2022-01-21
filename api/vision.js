@@ -16,6 +16,16 @@ api.get('/', async function (req, res) {
     });
 });
 
+api.get('/all', async function (req, res) {
+    var sql = "select * from vision order by regDate desc";
+    const [result] = await con.query(sql);
+    res.status(200).json({
+        status: 200,
+        data: result,
+        message: "success"
+    });
+});
+
 // vision obj 파일 업로드
 api.post('/',
     visionUpload.single("vision_file"),
