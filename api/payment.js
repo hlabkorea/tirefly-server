@@ -1,5 +1,4 @@
 const express = require('express');
-const db = require('./config/database.js');
 const { con } = require('./config/database.js');
 const api = express.Router();
 const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
@@ -8,10 +7,8 @@ const { generateRandomNumber } = require('./config/generateRandomNumber.js');
 const { getPageInfo } = require('./config/paging.js'); 
 const { getNextDateTime } = require('./config/date.js');
 const { sendPaymentMail, sendMembershipEmail } = require('./config/mail.js');
-const { addCellSearchSql } = require('./config/searchSql.js');
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
-const { start } = require('repl');
 const imp_key = "7260030924750208"; // REST API 키
 const imp_secret = "abc8d306c8df0b4354dd438c5ab9d5af9bf06094734cc1936780beef5fa4a6ab585b1219b7b09a4b"; // REST API Secret
 const apple_password = "157cd3c52883418cabfab06e2b206da7";
@@ -34,11 +31,11 @@ api.get('/',
             const offset = parseInt(currentPage - 1) * pageCnt15;
 
             const countRes = await selectPaymentSales(type, searchType, searchWord, startDate, endDate);
-            const totalPrice = Number(countRes.totalPrice);
+            const totalPrice = parseInt(countRes.totalPrice);
             const totalCount = countRes.totalCount;
-            const refundPrice = Number(countRes.refundPrice);
+            const refundPrice = parseInt(countRes.refundPrice);
             const refundCount = countRes.refundCount;
-            const profitPrice = Number(countRes.profitPrice);
+            const profitPrice = parseInt(countRes.profitPrice);
             const profitCount = countRes.profitCount;
 
             var result;
@@ -92,10 +89,10 @@ api.get('/ship',
             const offset = parseInt(currentPage - 1) * pageCnt15;
 
             const countRes = await selectPaymentShipStatus(status, searchType, searchWord, startDate, endDate);
-            const totalCnt = Number(countRes.totalCnt);
-            const befShipCnt = Number(countRes.befShipCnt);
-            const rdyShipCnt = Number(countRes.rdyShipCnt);
-            const confShipCnt = Number(countRes.confShipCnt);
+            const totalCnt = parseInt(countRes.totalCnt);
+            const befShipCnt = parseInt(countRes.befShipCnt);
+            const rdyShipCnt = parseInt(countRes.rdyShipCnt);
+            const confShipCnt = parseInt(countRes.confShipCnt);
 
             const result = await selectPaymentShip(status, searchType, searchWord, startDate, endDate, offset);
 
@@ -233,42 +230,39 @@ api.get('/check/:userUID',
 // 멤버십을 무료로 구매할 수 있는 사용자인지 조회
 api.get('/check/free/:userUID',
     verifyToken,
-    function (req, res, next) {
-        const userUID = req.params.userUID;
-        var sql = "select a.UID " +
-            "from payment a " +
-            "join payment_product_list b on a.UID = b.paymentUID " +
-            "where a.userUID = ? and a.paymentStatus != 'cancelled' and orderStatus = '결제완료' and a.type = 'product' and b.productUID = 1 " +
-            "order by a.regDate " +
-            "limit 1";
-        db.query(sql, userUID, function (err, result) {
-            if (err) throw err;
+    async function (req, res, next) {
+        try{
+            const userUID = req.params.userUID;
+            const isPurchase = await isPurchaseMirror(userUID);
 
-            if (result.length > 0) {
-                var checkAuthSql = "select UID from membership where userUID = ?";
-                db.query(checkAuthSql, userUID, function (err, result) {
-                    if (err) throw err;
-
-                    if (result.length == 0)
-                        res.status(200).json({
-                            status: 200,
-                            data: "true",
-                            message: "success"
-                        });
-                    else
-                        res.status(200).json({
-                            status: 200,
-                            data: "false",
-                            message: "fail"
-                        });
-                });
-            } else
+            if(isPurchase == false){
                 res.status(200).json({
                     status: 200,
                     data: "false",
                     message: "fail"
                 });
-        });
+                return false;
+            }
+
+            const membershipUID = await selectMembershipUID(userUID);
+
+            if(membershipUID == 0){
+                res.status(200).json({
+                    status: 200,
+                    data: "true",
+                    message: "success"
+                });
+            }
+            else{
+                res.status(200).json({
+                    status: 200,
+                    data: "false",
+                    message: "fail"
+                });
+            }
+        } catch (err) {
+            throw err;
+        }
     }
 );
 
@@ -1005,6 +999,22 @@ async function selectPaymentRefund(status, searchType, searchWord, startDate, en
 
     const [result] = await con.query(sql);
     return result;
+}
+
+// 미러를 구매여부 조회
+async function isPurchaseMirror(userUID){
+    var sql = "select a.UID " +
+    "from payment a " +
+    "join payment_product_list b on a.UID = b.paymentUID " +
+    "where a.userUID = ? and a.paymentStatus != 'cancelled' and orderStatus = '결제완료' and a.type = 'product' and b.productUID = 1 " +
+    "order by a.regDate " +
+    "limit 1";
+    const [result] = await con.query(sql, userUID);
+    
+    if(result.length == 0)
+        return false;
+    else    
+        return true;
 }
 
 // 아임포트 - 토큰 조회
