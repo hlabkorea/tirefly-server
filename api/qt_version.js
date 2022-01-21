@@ -24,7 +24,7 @@ api.post('/check',
                     var sql = "select version from qt_version order by regDate desc limit 1";
                     const [result] = await con.query(sql);
                     const qtVer = result[0].vision
-                    if(qt_ver == userQtVer){
+                    if(qtVer == userQtVer){
                         res.status(200).json({
 							status: 200,
 							data: "true",
