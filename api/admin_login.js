@@ -30,7 +30,7 @@ api.post('/',
                     return false;
                 }
 
-                const result = await checkPasswd(email, password);
+                const result = await getAdminLoginResult(email, password);
                 if(result.length == 0){
                     res.status(403).send({
                         status: 403,
@@ -78,7 +78,7 @@ async function isExistEmail(email){
 }
 
 // 비밀번호 확인 & 관리저 정보 반환
-async function checkPasswd(email, password){
+async function getAdminLoginResult(email, password){
     var sql = "select * from admin where email = ? and password = ?";
     const sqlData = [email, password];
     const [result] = await con.query(sql, sqlData);

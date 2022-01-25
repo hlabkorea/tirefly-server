@@ -48,9 +48,10 @@ api.get("/", verifyAdminToken, async function (req, res) {
 // 웹에서 faq 조회와 검색
 api.get("/web", async function(req, res) {
     try{
-        var category = req.query.category ? req.query.category : '';
-        var searchWord = req.query.searchWord ? req.query.searchWord : '';
-        var currentPage = req.query.page ? parseInt(req.query.page) : 1;
+        const category = req.query.category ? req.query.category : '';
+        const searchWord = req.query.searchWord ? req.query.searchWord : '';
+        const currentPage = req.query.page ? parseInt(req.query.page) : 1;
+        const offset = (parseInt(currentPage) - 1) * pageCnt10;
 
         var sql = "select UID, category, question, answer from faq where type='web'";
         
@@ -60,11 +61,10 @@ api.get("/web", async function(req, res) {
         if(searchWord.length != 0)
             sql += ` and (question LIKE '%${searchWord}%' or answer LIKE '${searchWord}')`;
 
-        sql += " order by regDate desc, UID desc";
         var countSql = sql + ";";
-
-        const offset = (parseInt(currentPage) - 1) * pageCnt10;
-        sql += ` limit ${offset}, ${pageCnt10}`;
+        
+        sql += " order by regDate desc, UID desc";
+             + ` limit ${offset}, ${pageCnt10}`;
 
         const [result] = await con.query(countSql+sql);
         var {startPage, endPage, totalPage} = getPageInfo(currentPage, result[0].length, pageCnt10);
@@ -94,7 +94,7 @@ api.get("/app", verifyToken, async function(req, res) {
     }
 });
 
-// cms - faq 상세조회
+// cms - faq 상세정보 조회
 api.get("/:faqUID", verifyAdminToken, async function(req, res) {
     try{
         var faqUID = req.params.faqUID;
@@ -110,7 +110,7 @@ api.get("/:faqUID", verifyAdminToken, async function(req, res) {
     }
 });
 
-// cms - faq 추가
+// cms - faq 등록
 api.post("/", 
         verifyAdminToken, 
         [
@@ -140,7 +140,7 @@ api.post("/",
         }
 );
 
-// cms - faq 수정
+// cms - faq 상세정보 수정
 api.put("/:faqUID", 
         verifyAdminToken, 
         [

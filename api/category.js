@@ -11,7 +11,7 @@ api.get('/', async function (req, res) {
     try{
         const type = req.query.type ? req.query.type : ''; 
         var sql = "select UID, categoryName, categoryImg, status from category ";
-        if (type != "cms") // 카테고리의 활성화 상태에 상관없이 모두 조회할 대는 type을 cms로 보낸다
+        if (type != "cms") // 카테고리의 활성화 상태에 상관없이 모두 조회할 때는 type을 cms로 보낸다
             sql += "where status = 'act'";
         const [result] = await con.query(sql);
         res.status(200).json({
@@ -24,7 +24,7 @@ api.get('/', async function (req, res) {
     }
 });
 
-// cms - 카테고리 상세조회
+// cms - 카테고리 상세정보 조회
 api.get('/:categoryUID', async function (req, res) {
     try{
         const categoryUID = req.params.categoryUID;
@@ -77,7 +77,7 @@ api.post('/',
     }
 );
 
-// cms - 악세사리 이미지 업로드
+// cms - 카테고리 이미지 업로드
 api.put('/image/:categoryUID',
     verifyAdminToken,
     upload.single("img"),
@@ -101,7 +101,7 @@ api.put('/image/:categoryUID',
     }
 );
 
-// cms - 카테고리 활성화 여부 수정
+// cms - 카테고리 활성화 상태 수정
 api.put('/status/:categoryUID',
     verifyAdminToken,
     [
@@ -128,7 +128,7 @@ api.put('/status/:categoryUID',
     }
 );
 
-// cms - 카테고리 수정
+// cms - 카테고리 상세정보 수정
 api.put('/:categoryUID',
     verifyAdminToken,
     [

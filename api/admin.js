@@ -28,8 +28,8 @@ api.get('/:adminUID',
     }
 );
 
-// 관리자 계정 회원가입
-api.post('/',
+// 관리자 회원가입
+/*api.post('/',
     [
         check("email", "email is required").not().isEmpty(),
         check("passwd", "passwd is required").not().isEmpty(),
@@ -46,10 +46,10 @@ api.post('/',
                 const department = req.body.department;
 
                 // 관리자 생성
-                var createSql = "insert into admin(email, password, name, department) " +
+                var sql = "insert into admin(email, password, name, department) " +
                     "values (?)";
-                const createData = [email, passwd, name, department];
-                const [result] = await con.query(createSql, [createData]);
+                const sqlData = [email, passwd, name, department];
+                const [result] = await con.query(sql, [sqlData]);
 
                 const adminUID = result.insertId;
 
@@ -81,7 +81,7 @@ api.post('/',
             }
         }
     }
-);
+);*/
 
 // cms - 비밀번호 변경
 api.put('/password',
@@ -99,11 +99,9 @@ api.put('/password',
                 const newPasswd = sha256(req.body.newPasswd);
 
                 // 현재 비밀번호 조회
-                var existSql = "select password from admin where UID = ?";
-                const [existResult] = await con.query(existSql, adminUID);
-                const adminPasswd = existResult[0].password;
+                const curPasswd = await selectAdminPassword(adminUID);
 
-                if (password != adminPasswd){ // 비밀번호 불일치
+                if (password != curPasswd){ // 비밀번호 불일치
                     res.status(403).json({
                         status: 403,
                         data: "false",
@@ -112,7 +110,7 @@ api.put('/password',
 
                     return false;
                 }
-                else if (newPasswd == adminPasswd){ // 기존 비밀번호와 동일
+                else if (newPasswd == curPasswd){ // 기존 비밀번호와 동일
                     res.status(403).json({
                         status: 403,
                         data: "false",
@@ -122,10 +120,7 @@ api.put('/password',
                     return false;
                 }
 
-                // 비밀번호 변경
-                var updateSql = "update admin set password= ? where UID = ?";
-                const updateData = [newPasswd, adminUID];
-                await con.query(updateSql, updateData);
+                await updateAdminPassword(newPasswd, adminUID);
 
                 res.status(200).json({
                     status: 200,
@@ -162,5 +157,19 @@ api.put('/image/:adminUID',
         }   
     }
 );
+
+// 현재 관리자의 비밀번호 조회
+async function selectAdminPassword(adminUID){
+    var sql = "select password from admin where UID = ?";
+    const [result] = await con.query(sql, adminUID);
+    return result[0].password;
+}
+
+// 관리자 비밀번호 변경
+async function updateAdminPassword(password, adminUID){
+    var sql = "update admin set password= ? where UID = ?";
+    const sqlData = [password, adminUID];
+    await con.query(sql, sqlData);
+}
 
 module.exports = api;

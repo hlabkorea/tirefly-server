@@ -9,11 +9,11 @@ const { getNextDateTime } = require('./config/date.js');
 const { sendPaymentMail, sendMembershipEmail } = require('./config/mail.js');
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
-const imp_key = "7260030924750208"; // REST API 키
-const imp_secret = "abc8d306c8df0b4354dd438c5ab9d5af9bf06094734cc1936780beef5fa4a6ab585b1219b7b09a4b"; // REST API Secret
+const imp_key = "7260030924750208"; // 아임포트 운영 REST API 키
+const imp_secret = "abc8d306c8df0b4354dd438c5ab9d5af9bf06094734cc1936780beef5fa4a6ab585b1219b7b09a4b"; // 아임포트 운영 REST API Secret
 const apple_password = "157cd3c52883418cabfab06e2b206da7";
-//const imp_key = "5425471433410805"; // 테스트 REST API 키
-//const imp_secret = "L76UxuB5wmV0TRtcRR3iBYiGz38AOiTAq0uXu630tY1mPuzHmC0YBiEamNLa6FLwFfu9mxaPwccmGL33"; // 테스트 REST API Secret
+//const imp_key = "5425471433410805"; // 아임포트 테스트 REST API 키
+//const imp_secret = "L76UxuB5wmV0TRtcRR3iBYiGz38AOiTAq0uXu630tY1mPuzHmC0YBiEamNLa6FLwFfu9mxaPwccmGL33"; // 아임포트 테스트 REST API Secret
 const pageCnt15 = 15;
 const pageCnt10 = 10;
 
@@ -1567,6 +1567,7 @@ async function insertAppleInApp(userUID, verifiedReceipt, res){
     await insertApplePaymentMembership(paymentUID, membershipUID, paidTimestamp);
 }
 
+// 일주일 상품 주문 수 조회
 async function selectWeekProduct(){
     var sql = "select date_format(regDate, '%Y-%m-%d') as date, count(UID) as count " +
                 "from payment " +
@@ -1576,6 +1577,7 @@ async function selectWeekProduct(){
     return result;
 }
 
+// 일주일 멤버십 구독 수 조회 (첫 결제, 갱신 모두 포함)
 async function selectWeekMembership(){
     var sql = "select date_format(regDate, '%Y-%m-%d') as date, count(UID) as count " +
                 "from payment " +

@@ -6,6 +6,7 @@
     <title>Document</title>
     <!-- jQuery -->
     <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js" ></script>
+    <!-- tencent cloud cdn -->
 	<script src="https://cdn-go.cn/cdn/vod-js-sdk-v6/latest/vod-js-sdk-v6.js"></script>
 	<!-- axios -->
 	<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
@@ -15,6 +16,10 @@
 	<input type="button" id="submit" onclick="uploadiVideo();" value="업로드" />
     <script>
 	function uploadiVideo(){
+        /* 공식 문서 링크 
+            1. Web에 SDK 업로드 : https://intl.cloud.tencent.com/ko/document/product/266/33924
+            2. 서명 생성 예시: https://intl.cloud.tencent.com/ko/document/product/266/33923#node.js-.E7.AD.BE.E5.90.8D.E7.A4.BA.E4.BE.8B
+        */
 		function getSignature() {
 			const url = "http://43.133.64.160:3001/video/signature";
 			return axios.post(url).then(function (response) {

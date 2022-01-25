@@ -355,8 +355,14 @@ api.get('/:videoUID', verifyToken, async function (req, res) {
     }
 });
 
-// cms - cloud에 비디오 업로드
-// 거의 모든 변수가 var이 아니라 const 인 것 같아서 검토 필요
+// cms - tencent cloud에 비디오 업로드
+// 거의 모든 변수가 var이 아니라 const 인 것 같아서 이 부분 검토 필요
+/* 공식 문서 링크 
+    1. Web에 SDK 업로드 : https://intl.cloud.tencent.com/ko/document/product/266/33924
+    2. 서명 생성 예시: https://intl.cloud.tencent.com/ko/document/product/266/33923#node.js-.E7.AD.BE.E5.90.8D.E7.A4.BA.E4.BE.8B
+*/
+
+// 테스트 링크 : http://43.133.64.160:3001/vod_upload.html
 api.post('/signature', function (req, res) {
     var secret_id = "IKIDTnsrdAQQAdqnTs1tVrxnMfhfcVM8oIXW";
     var secret_key = "mIZaKo2zg6GAoCJAk47uQgfOs52i8HAm";

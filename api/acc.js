@@ -24,7 +24,7 @@ api.get('/', async function (req, res) {
     }
 });
 
-// cms - 악세사리 상세조회
+// cms - 악세사리 상세정보 조회
 api.get('/:accUID', async function (req, res) {
     try{
         const accUID = req.params.accUID;
@@ -97,7 +97,7 @@ api.put('/image/:accUID',
         }
 );
 
-// cms - 악세사리 활성화 여부 수정
+// cms - 악세사리 활성화 상태 수정
 api.put('/status/:accUID', 
         verifyAdminToken, 
         [
@@ -124,7 +124,7 @@ api.put('/status/:accUID',
         }
 );
 
-// cms - 악세사리 수정
+// cms - 악세사리 상세정보 수정
 api.put('/:accUID', 
         verifyAdminToken, 
         [

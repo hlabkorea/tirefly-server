@@ -47,7 +47,6 @@ api.post('/',
                     endDate = membershipGroupRes.endDate;
                 }
 
-                console.log(level);
                 // jwt 토큰 생성
                 const token = makeJWT(userUID, level);
 
