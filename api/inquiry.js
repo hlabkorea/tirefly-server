@@ -12,21 +12,20 @@ const pageCnt10 = 10;
 // cms - 문의 조회
 api.get("/", verifyAdminToken, async function (req, res) {
     try {
-        var sql = "select inquiry.UID as inquiryUID, inquiry.inquiryType, inquiry.inquiryTitle, inquiry.inquiryContents, inquiry.userName, inquiry.userEmail, inquiry.userGroup, " +
-            "inquiry.userCellNumber, inquiry.inquiryComplete, ifnull(completeMsg, '') as completeMsg, ifnull(admin.name, '') as adminName, inquiry.regDate, inquiry.updateDate " +
-            "from inquiry " +
-            "left join admin on inquiry.updateUID = admin.UID ";
+        var sql = "select a.UID as inquiryUID, a.inquiryType, a.inquiryTitle, a.inquiryContents, a.userName, a.userEmail, a.userGroup, " +
+            "a.userCellNumber, a.inquiryComplete, ifnull(a.completeMsg, '') as completeMsg, ifnull(b.name, '') as adminName, a.regDate, a.updateDate " +
+            "from inquiry a " +
+            "left join admin b on a.updateUID = b.UID ";
         const currentPage = req.query.page ? parseInt(req.query.page) : 1;
+        const offset = (parseInt(currentPage) - 1) * pageCnt10;
         const complete = req.query.complete ? req.query.complete : 'all';
 
         if (complete != 'all')
-            sql += " where inquiry.inquiryComplete = " + complete;
+            sql += " where a.inquiryComplete = " + complete;
 
         var countSql = sql + ";";
-        sql += " order by inquiry.regDate desc, inquiry.UID desc";
-
-        const offset = (parseInt(currentPage) - 1) * pageCnt10;
-        sql += ` limit ${offset}, ${pageCnt10}`;
+        sql += " order by a.regDate desc, a.UID desc"
+             + ` limit ${offset}, ${pageCnt10}`;
 
         const [result] = await con.query(countSql + sql);
         const {
@@ -67,7 +66,7 @@ api.get('/incomplete', verifyAdminToken, async function (req, res) {
     }
 });
 
-// cms - 문의 상세조회
+// cms - 문의 상세정보 조회
 api.get("/:inquiryUID", verifyAdminToken, async function (req, res) {
     try {
         const inquiryUID = req.params.inquiryUID;
@@ -85,7 +84,7 @@ api.get("/:inquiryUID", verifyAdminToken, async function (req, res) {
 
 });
 
-// 문의 하기
+// 문의 등록
 api.post("/",
     [
         check("type", "type is required").not().isEmpty(),
@@ -126,7 +125,7 @@ api.post("/",
 );
 
 // 문의할 때 파일 첨부하기
-api.put("/file/:inquiryUID", upload.single("file"), async function (req, res) {
+/*api.put("/file/:inquiryUID", upload.single("file"), async function (req, res) {
     try {
         const inquiryUID = req.params.inquiryUID;
         const filename = req.file.filename;
@@ -142,7 +141,7 @@ api.put("/file/:inquiryUID", upload.single("file"), async function (req, res) {
     } catch (err) {
         throw err;
     }
-});
+});*/
 
 // cms - 문의 완료하기
 api.put("/:inquiryUID",

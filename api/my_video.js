@@ -41,14 +41,15 @@ api.get('/isLike/:videoUID',
     }
 );
 
-// 좋아하는 영상 조회
+// 좋아요 한 영상 조회
 api.get('/:userUID', verifyToken, async function (req, res) {
     try{
         const userUID = req.params.userUID;
-        var sql = "select video.UID as videoUID, video.videoThumbnail " +
-            "from my_video join video on my_video.videoUID = video.UID " +
-            "where my_video.userUID = ? and video.status = 'act' " +
-            "order by my_video.regDate desc";
+        var sql = "select b.UID as videoUID, b.videoThumbnail " +
+            "from my_video a " +
+            "join video b on a.videoUID = b.UID " +
+            "where a.userUID = ? and b.status = 'act' " +
+            "order by a.regDate desc";
         const [result] = await con.query(sql, userUID);
 
         res.status(200).json({

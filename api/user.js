@@ -387,7 +387,9 @@ api.put('/password',
 
                 await updatePasswd(email, password);
                 const pwdToken = await selectToken(email);
-                await deleteToken(pwdToken);
+
+                if(pwdToken.length != 0) // 로그인 한 계정이 있는 경우 해당 토큰 제거
+                    await deleteToken(pwdToken);
 
                 res.status(200).json({
                     status: 200,
@@ -659,15 +661,18 @@ async function updatePasswd(email, password) {
 
 // 비밀번호 token 조회
 async function selectToken(email) {
-    var sql = "select user_log.token " +
-        "from user_log " +
-        "join user on user_log.userUID = user.UID " +
-        "where email = ? " +
-        "order by user_log.regDate desc " +
+    var sql = "select a.token " +
+        "from user_log a " +
+        "join user b on a.userUID = b.UID " +
+        "where b.email = ? " +
+        "order by a.regDate desc " +
         "limit 1";
     const [result] = await con.query(sql, email);
 
-    return result[0].token;
+    if(result.length != 0)
+        return result[0].token;
+    else
+        '';
 }
 
 // 원래 존재하던 비밀번호 token 삭제

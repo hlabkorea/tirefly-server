@@ -17,7 +17,7 @@ api.get('/', verifyToken, async function (req, res) {
     }	
 });
 
-// cms - 메인 슬라이드(배너) 상세조회
+// cms - 메인 슬라이드(배너) 상세정보 조회
 api.get('/:slideUID', verifyAdminToken, async function (req, res) {
     try{
         const slideUID = req.params.slideUID;
@@ -29,7 +29,7 @@ api.get('/:slideUID', verifyAdminToken, async function (req, res) {
     }
 });
 
-// cms - 메인 슬라이드(배너) 생성
+// cms - 메인 슬라이드(배너) 등록
 api.post('/',
     verifyAdminToken,
     [
@@ -84,7 +84,7 @@ api.put('/image/:slideUID',
 		}
 );
 
-// cms - 메인 슬라이드(배너) 수정
+// cms - 메인 슬라이드(배너) 상세정보 수정
 api.put('/:slideUID',
     verifyAdminToken,
     [

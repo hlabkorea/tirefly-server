@@ -12,16 +12,16 @@ api.get('/', async function (req, res) {
     try{
         const category = req.query.category ? req.query.category : '';
         const currentPage = req.query.page ? parseInt(req.query.page) : 1;
+        const offset = (parseInt(currentPage) - 1) * pageCnt10;
 
         var sql = "select UID as noticeUID, title, contents, category from notice";
         if (category.length != 0)
             sql += ` where category = '${category}'`;
 
-        sql += " order by regDate desc, UID desc ";
         var countSql = sql + ";";
-        
-        const offset = (parseInt(currentPage) - 1) * pageCnt10;
-        sql += ` limit ${offset}, ${pageCnt10}`;
+    
+        sql += " order by regDate desc, UID desc "
+             + ` limit ${offset}, ${pageCnt10}`;
 
         const [result] = await con.query(countSql + sql);
         const {
@@ -48,7 +48,7 @@ api.get('/', async function (req, res) {
     
 });
 
-// cms - 공지사항 상세조회
+// cms - 공지사항 상세정보 조회
 api.get("/:noticeUID", verifyAdminToken, async function(req, res) {
     try{
         const noticeUID = req.params.noticeUID;
@@ -61,7 +61,7 @@ api.get("/:noticeUID", verifyAdminToken, async function(req, res) {
     }
 });
 
-// cms - 공지사항 추가
+// cms - 공지사항 등록
 api.post('/',
     verifyAdminToken,
     [
@@ -94,7 +94,7 @@ api.post('/',
     }
 );
 
-// cms - 공지사항 수정
+// cms - 공지사항 상세정보 수정
 api.put('/:noticeUID',
     verifyAdminToken,
     [

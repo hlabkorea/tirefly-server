@@ -11,7 +11,7 @@ api.get('/auth/:userUID', verifyToken, async function (req, res) {
         var sql = "select * from membership where userUID = ? order by regDate desc limit 1";
         const [result] = await con.query(sql, userUID);
         
-        if(result.length != 0){
+        if(result.length != 0){ // 멤버십 소유자인 경우
             const endDate = result[0].endDate;
             const curDate = getCurrentDateTime();
 
@@ -20,7 +20,7 @@ api.get('/auth/:userUID', verifyToken, async function (req, res) {
             else
                 res.status(403).json({status:403,  data: "false", message:"이용 중인 멤버십이 존재합니다. 남은 기간을 소진한 후 다시 이용해주세요."});
         }
-        else
+        else // 멤버십 소유자가 아닌 경우
             res.status(200).json({status:200,  data: "false", message:"fail"}); // status code 403으로 수정
     } catch (err) {
         throw err;

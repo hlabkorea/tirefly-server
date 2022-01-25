@@ -81,7 +81,7 @@ exports.sendPasswdMail = (toEmail, key) => {
 			 + '<span lang="EN-US" style="font-size:9pt;line-height:12.84px;color:black"> </span></p>'
 			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255)text-align:center"><br></div>'
 			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center">'
-			 + `<a href="http://43.133.64.160/user/new_pw.html?auth=${key}" style="background-color: black; color: white; font-size: 20px; text-align: center; text-decoration: none; border-radius: 10px; width: 252px; height: 59px; padding: 15px 45px"> 비밀번호 재설정 </a>`
+			 + `<a href="https://motifme.io/user/new_pw.html?auth=${key}" style="background-color: black; color: white; font-size: 20px; text-align: center; text-decoration: none; border-radius: 10px; width: 252px; height: 59px; padding: 15px 45px"> 비밀번호 재설정 </a>`
 			 + '</div>'
 			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255)text-align:center"><br></div>'
 			 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px"></p>'

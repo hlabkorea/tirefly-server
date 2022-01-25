@@ -13,15 +13,15 @@ api.get("/", verifyAdminToken, async function (req, res) {
         var sql = "select UID, category, question, answer, type from faq";
         const type = req.query.type ? req.query.type : 'all';
         const currentPage = req.query.page ? parseInt(req.query.page) : 1;
+        const offset = (parseInt(currentPage) - 1) * pageCnt10;
 
         if (type != "all")
             sql += ` where type = '${type}'`;
 
-        sql += " order by regDate desc, UID desc";
         var countSql = sql + ";";
-
-        const offset = (parseInt(currentPage) - 1) * pageCnt10;
-        sql += ` limit ${offset}, ${pageCnt10}`;
+        
+        sql += " order by regDate desc, UID desc" +
+               ` limit ${offset}, ${pageCnt10}`;
         const [result] = await con.query(countSql + sql);
         const {
             startPage,
@@ -63,7 +63,7 @@ api.get("/web", async function(req, res) {
 
         var countSql = sql + ";";
         
-        sql += " order by regDate desc, UID desc";
+        sql += " order by regDate desc, UID desc"
              + ` limit ${offset}, ${pageCnt10}`;
 
         const [result] = await con.query(countSql+sql);
@@ -122,16 +122,16 @@ api.post("/",
           const errors = getError(req, res);
           if(errors.isEmpty()){
             try{
-                var adminUID = req.adminUID;
-                var category = req.body.category;
-                var question = req.body.question;
-                var answer = req.body.answer;
-                var type = req.body.type;
+                const adminUID = req.adminUID;
+                const category = req.body.category;
+                const question = req.body.question;
+                const answer = req.body.answer;
+                const type = req.body.type;
 
                 var sql = "insert faq(category, question, answer, type, regUID) values (?)";
-                var data = [category, question, answer, type, adminUID];
+                const sqlData = [category, question, answer, type, adminUID];
 
-                await con.query(sql, [data]);
+                await con.query(sql, [sqlData]);
                 res.status(200).json({status:200, data: "true", message:"success"});
             } catch (err) {
                 throw err;
@@ -152,15 +152,15 @@ api.put("/:faqUID",
           const errors = getError(req, res);
           if(errors.isEmpty()){
             try{
-                var adminUID = req.adminUID;
-                var faqUID = req.params.faqUID;
-                var category = req.body.category;
-                var question = req.body.question;
-                var answer = req.body.answer;
-                var type = req.body.type;
+                const adminUID = req.adminUID;
+                const faqUID = req.params.faqUID;
+                const category = req.body.category;
+                const question = req.body.question;
+                const answer = req.body.answer;
+                const type = req.body.type;
                 var sql = "update faq set category=?, question=?, answer=?, type = ?, updateUID = ? where UID = ?";
-                var data = [category, question, answer, type, adminUID, faqUID];
-                await con.query(sql, data);
+                const sqlData = [category, question, answer, type, adminUID, faqUID];
+                await con.query(sql, sqlData);
                 res.status(200).json({
                     status: 200,
                     data: "true",
@@ -178,7 +178,7 @@ api.delete('/:faqUID',
     verifyAdminToken,
     async function (req, res) {
         try{
-            var faqUID = req.params.faqUID;
+            const faqUID = req.params.faqUID;
             var sql = "delete from faq where UID = ?";
             await con.query(sql, faqUID);
             res.status(200).json({

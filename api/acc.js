@@ -97,7 +97,7 @@ api.put('/image/:accUID',
         }
 );
 
-// cms - 악세사리 활성화 상태 수정
+// cms - 악세사리 활성화 여부 수정
 api.put('/status/:accUID', 
         verifyAdminToken, 
         [
@@ -107,10 +107,11 @@ api.put('/status/:accUID',
             const errors = getError(req, res);
 			if(errors.isEmpty()){
                 try{
+                    const adminUID = req.adminUID;
                     const accUID = req.params.accUID;
                     const status = req.body.status;
-                    var sql = "update acc set status = ? where UID = ?";
-                    const sqlData = [status, accUID];
+                    var sql = "update acc set status = ?, updateUID = ? where UID = ?";
+                    const sqlData = [status, adminUID, accUID];
                     await con.query(sql, sqlData);
                     res.status(200).json({
                         status: 200,

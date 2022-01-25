@@ -22,7 +22,7 @@ api.get('/', verifyAdminToken, async function (req, res) {
     }
 });
 
-// 카테고리에 맞는 bgm 조회
+// 카테고리에 해당하는 bgm 랜덤 조회
 api.get('/:categoryUID', verifyToken, async function (req, res) {
     try{
         const categoryUID = req.params.categoryUID;
@@ -35,7 +35,7 @@ api.get('/:categoryUID', verifyToken, async function (req, res) {
     }
 });
 
-// cms - 카테고리에 맞는 bgm 추가
+// cms - 카테고리에 해당하는 bgm 추가
 api.post('/', 
         verifyAdminToken, 
         [
@@ -66,7 +66,8 @@ api.post('/',
 );
 
 // cms - bgm 파일 업로드
-api.put('/file/:musicUID', 
+// 파일을 tencent cloud에 올리면서 코드 주석 처리
+/*api.put('/file/:musicUID', 
 		verifyAdminToken,
 		upload.single("file"), 
 		async function (req, res) {
@@ -81,14 +82,15 @@ api.put('/file/:musicUID',
                 throw err;
             }
 		}
-);
+);*/
 
 // cms - bgm 삭제
 api.delete('/:musicUID', verifyAdminToken, async function (req, res) {
     try{
         const musicUID = req.params.musicUID;
-        const filename = await selectMusicPath(musicUID);
-        deleteMusicFile(filename);
+        // 파일을 tencent cloud에 올리면서 코드 주석 처리
+        /*const filename = await selectMusicPath(musicUID);
+        deleteMusicFile(filename);*/
         await deleteMusic(musicUID);
 
         res.status(200).json({status:200, data: "true", message:"success"});

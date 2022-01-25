@@ -11,12 +11,13 @@ api.get('/',
         async function (req, res) {
             try{
                 const currentPage = req.query.page ? parseInt(req.query.page) : 1;
+                const offset = parseInt(currentPage - 1) * pageCnt30;
                 var sql = "select admin_log.UID as logUID, admin_log.adminUID, admin.email, admin.name, admin.department, admin_log.regDate "
                         + "from admin_log "
-                        + "join admin on admin_log.adminUID = admin.UID "
-                        + "order by regDate desc ";
+                        + "join admin on admin_log.adminUID = admin.UID ";
                 var countSql = sql + ";";
-                sql += `limit ${parseInt(currentPage - 1) * pageCnt30}, ${pageCnt30}`;
+                sql += "order by regDate desc " +
+                    `limit ${offset}, ${pageCnt30}`;
 
                 const [result] = await con.query(countSql+sql);
                 var {

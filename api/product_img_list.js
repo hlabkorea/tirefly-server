@@ -2,7 +2,7 @@ const express = require('express');
 const { con } = require('./config/database.js');
 const api = express.Router();
 
-// 상품의 소개이미지 조회
+// 상품의 소개 이미지 조회
 api.get('/:productUID',
     async function (req, res, next) {
         try{
