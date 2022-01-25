@@ -387,7 +387,6 @@ api.put('/password',
 
                 await updatePasswd(email, password);
                 const pwdToken = await selectToken(email);
-
                 if(pwdToken.length != 0) // 로그인 한 계정이 있는 경우 해당 토큰 제거
                     await deleteToken(pwdToken);
 
@@ -672,7 +671,7 @@ async function selectToken(email) {
     if(result.length != 0)
         return result[0].token;
     else
-        '';
+        return '';
 }
 
 // 원래 존재하던 비밀번호 token 삭제
