@@ -386,9 +386,11 @@ api.put('/password',
                 const password = sha256(req.body.password);
 
                 await updatePasswd(email, password);
-                await pwToken(email);
-                
-				res.status(200).json({
+                const pwdToken = await selectToken(email);
+                if(pwdToken.length != 0) // 로그인 한 계정이 있는 경우 해당 토큰 제거
+                    await deleteToken(pwdToken);
+
+                res.status(200).json({
                     status: 200,
                     data: "true",
                     message: "비밀번호가 변경되었습니다."
@@ -656,16 +658,20 @@ async function updatePasswd(email, password) {
     await con.query(sql, sqlData);
 }
 
-// 비밀번호 변경 이력 저장
-async function pwToken(email) {
-	var sql = "select UID from user where email = ?";
-	const [userResult] = await con.query(sql, email);
+// 비밀번호 token 조회
+async function selectToken(email) {
+    var sql = "select a.token " +
+        "from user_log a " +
+        "join user b on a.userUID = b.UID " +
+        "where b.email = ? " +
+        "order by a.regDate desc " +
+        "limit 1";
+    const [result] = await con.query(sql, email);
 
-	var userUID = userResult[0].UID;
-
-    sql = "insert into user_log(userUID, token) values (?, ?)";
-	const sqlData = [userUID, "password change"];
-    const [result] = await con.query(sql, sqlData);
+    if(result.length != 0)
+        return result[0].token;
+    else
+        return '';
 }
 
 // 원래 존재하던 비밀번호 token 삭제

@@ -111,10 +111,11 @@ api.put('/status/:categoryUID',
         const errors = getError(req, res);
 		if(errors.isEmpty()){
             try{
+                const adminUID = req.adminUID;
                 const categoryUID = req.params.categoryUID;
                 const status = req.body.status;
-                var sql = "update category set status = ? where UID = ?";
-                const sqlData = [status, categoryUID];
+                var sql = "update category set status = ?, updateUID = ? where UID = ?";
+                const sqlData = [status, adminUID, categoryUID];
                 await con.query(sql, sqlData);
                 res.status(200).send({
                     status: 200,

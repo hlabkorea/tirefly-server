@@ -2,7 +2,7 @@ const express = require('express');
 const { con } = require('./config/database.js');
 const api = express.Router();
 
-// 인증키에 맞는 email 조회
+// 인증키에 해당하는 이메일 조회
 api.post('/email', async function (req, res) {
     const key = req.body.authKey;
     var sql = "select email from pwd_auth " +

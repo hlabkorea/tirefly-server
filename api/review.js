@@ -108,8 +108,7 @@ api.post('/:videoUID',
     [
         check("userUID", "userUID is required").not().isEmpty(),
         check("reviewLevel", "reviewLevel is required").not().isEmpty(),
-        check("reviewPoint", "reviewPoint is required").not().isEmpty(),
-        check("reviewContents", "reviewContents is required").not().isEmpty()
+        check("reviewPoint", "reviewPoint is required").not().isEmpty()
     ],
     async function (req, res) {
         const errors = getError(req, res);

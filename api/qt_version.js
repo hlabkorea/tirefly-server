@@ -78,6 +78,7 @@ api.post('/', verifyAdminToken, onlyUpload.single("qt_file"), async function (re
     }
 });
 
+// 파일 업로드 테스트
 api.post('/test', onlyUpload.single("motif_file"), async function (req, res) {
     try{
         const version = req.body.version;
@@ -90,6 +91,7 @@ api.post('/test', onlyUpload.single("motif_file"), async function (req, res) {
     }
 });
 
+// 테스트 - QT 버전 목록 조회
 api.get('/test', async function (req, res) {
     try{
         var sql = "select UID, version, regDate from qt_version order by regDate desc";
@@ -105,6 +107,7 @@ api.get('/test', async function (req, res) {
     }
 });
 
+// 테스트 - motif.tar.gz 파일 존재 확인
 api.get('/test/exist', async function (req, res) {
     const filePath = '../motif-server/views/files/motif.tar.gz';
 
@@ -118,6 +121,7 @@ api.get('/test/exist', async function (req, res) {
     });
 });
 
+// 테스트 - motif.tar.gz 파일 삭제
 api.delete('/test', function (req, res) {
     const filePath = '../motif-server/views/files/motif.tar.gz';
 
@@ -136,6 +140,7 @@ api.delete('/test', function (req, res) {
     });
 });
 
+// 테스트 - 특정 버전 삭제
 api.delete('/test/:versionUID', async function (req, res) {
     try{
         const versionUID = req.params.versionUID;
