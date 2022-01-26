@@ -76,7 +76,7 @@ api.get('/complete/:programUID',
                 const userUID = req.query.userUID;
                 const weekly = req.query.weekly;
 
-                var sql = "select a.videoUID, b.complete " +
+                var sql = "select a.videoUID, b.complete " + // 완료한 비디오를 조회하는 것이므로 complete 파라미터는 필요하지 않음
                     "from program_list a " +
                     "join program_history b on a.programUID = b.programUID and a.videoUID = b.videoUID " +
                     "where a.programUID = ? and b.userUID = ? and a.weekly = ? and b.complete = 1 " +
@@ -97,7 +97,7 @@ api.get('/complete/:programUID',
     }
 );
 
-// 프로그램 상세 정보 조회
+// 프로그램의 비디오 목록 조회
 api.get('/:programUID',
     verifyAdminToken,
     async function (req, res) {
@@ -117,7 +117,7 @@ api.get('/:programUID',
     }
 );
 
-// cms - 프로그램 리스트 추가
+// cms - 프로그램의 비디오 목록 등록
 api.put('/:programUID',
     verifyAdminToken,
     async function (req, res) {
@@ -127,7 +127,7 @@ api.put('/:programUID',
             const programList = req.body.programList;
 
             const listUIDs = await selectProgramListUIDs(programUID);
-            if(listUIDs.length != 0) // 이미 program에 대한 리스트가 존재하면 삭제
+            if(listUIDs.length != 0) // 이미 program에 대한 비디오 목록이 존재하면 삭제
                 await deleteProgramList(listUIDs)
             
             const sqlListData = makeSqlListData(programUID, adminUID, programList);
@@ -144,7 +144,7 @@ api.put('/:programUID',
     }
 );
 
-// 프로그램 리스트 UID 조회
+// 프로그램의 비디오 목록 UID 조회
 async function selectProgramListUIDs(programUID){
     var sql = "select UID from program_list where programUID = ?";
     const [result] = await con.query(sql, programUID);
@@ -157,13 +157,13 @@ async function selectProgramListUIDs(programUID){
     return UIDs;
 }
 
-// 프로그램 리스트 삭제
+// 프로그램의 비디오 목록 삭제
 async function deleteProgramList(listUIDs){
     var sql = "delete from program_list where UID in (?);";
     await con.query(sql, [listUIDs]);
 }
 
-// 프로그램 리스트 sql data 생성
+// 프로그램의 비디오 목록 sql data 생성
 function makeSqlListData(programUID, adminUID, programList){
     var result = [];
 
@@ -178,7 +178,7 @@ function makeSqlListData(programUID, adminUID, programList){
     return result;
 }
 
-// 프로그램 리스트 등록
+// 프로그램의 비디오 목록 등록
 async function insertProgramList(sqlListData){
     if(sqlListData.length != 0){
         var sql = "insert program_list(programUID, videoUID, weekly, day, isRest, regUID) values ?;";

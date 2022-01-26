@@ -5,6 +5,27 @@ const api = express.Router();
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 
+// cms - 비디오 재생 이력 조회
+api.get('/:userUID', verifyAdminToken, async function (req, res) {
+    try {
+        const userUID = req.params.userUID;
+        var sql = "select a.videoUID, b.videoName, a.playTime, a.complete, a.updateDate " +
+            "from video_history a " +
+            "join video b on a.videoUID = b.UID " +
+            "where a.userUID = ? " +
+            "order by a.updateDate desc";
+        const [result] = await con.query(sql, userUID);
+
+        res.status(200).json({
+            status: 200,
+            data: result,
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
 // 비디오 재생 이력 저장
 api.put('/:videoUID',
     verifyToken,
@@ -75,25 +96,5 @@ async function insertVideoHistory(userUID, videoUID, userPlayTime) {
     const sqlData = [userUID, videoUID, userPlayTime, complete];
     await con.query(sql, [sqlData]);
 }
-
-// cms - 비디오 재생 이력 조회
-api.get('/:userUID', verifyAdminToken, async function (req, res) {
-    try{
-        const userUID = req.params.userUID;
-        var sql = "select a.videoUID, b.videoName, a.playTime, a.complete, a.updateDate " +
-            "from video_history a " +
-            "join video b on a.videoUID = b.UID " +
-            "where a.userUID = ?";
-        const [result] = await con.query(sql, userUID);
-
-        res.status(200).json({
-            status: 200,
-            data: result,
-            message: "success"
-        });
-    } catch (err) {
-        throw err;
-    }
-});
 
 module.exports = api;

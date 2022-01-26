@@ -1,6 +1,6 @@
 const express = require('express');
 const { con } = require('./config/database.js');
-const { verifyToken } = require("./config/authCheck.js");
+const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
 const api = express.Router();
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
@@ -28,15 +28,16 @@ api.get('/proceeding/:userUID', verifyToken, async function (req, res) {
     }
 });
 
-// 프로그램 상세정보 조회
-api.get('/:userUID', verifyToken, async function (req, res) {
+// cms - 프로그램 재생이력 조회
+api.get('/:userUID', verifyAdminToken, async function (req, res) {
     try {
         const userUID = req.params.userUID;
         var sql = "select a.programUID, c.programName, b.videoName, a.playTime, a.complete, a.updateDate " +
             "from program_history a " +
             "join program c on a.programUID = c.UID " +
             "join video b on a.videoUID = b.UID " +
-            "where a.userUID = ?";
+            "where a.userUID = ? " +
+            "order by a.updateDate desc";
         const [result] = await con.query(sql, userUID);
 
         res.status(200).json({
