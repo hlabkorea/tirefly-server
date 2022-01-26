@@ -62,7 +62,7 @@ api.get('/', verifyAdminToken, async function (req, res) {
     }
 });
 
-// 회원 조회
+// 회원 수 조회
 api.get('/count', verifyAdminToken, async function (req, res) {
     try {
         const totalCnt = await selectUserCnt();
@@ -81,7 +81,7 @@ api.get('/count', verifyAdminToken, async function (req, res) {
     }
 });
 
-// 신규 회원 조회
+// 회원 신규 가입과 방문 현황 조회
 api.get('/week', verifyAdminToken, async function (req, res) {
     try {
         const weekNew = await selectWeekNewUserCnt();
@@ -100,7 +100,7 @@ api.get('/week', verifyAdminToken, async function (req, res) {
     }
 });
 
-// 프로필 조회
+// 회원 상세정보 조회 (프로필 조회)
 api.get('/:userUID', verifyToken, async function (req, res) {
     try {
         var responseData = {};
@@ -121,7 +121,7 @@ api.get('/:userUID', verifyToken, async function (req, res) {
     }
 });
 
-// 회원가입
+// 회원 등록 (회원가입)
 api.post('/join',
     [
         check("email", "email is required").not().isEmpty(),
@@ -172,7 +172,7 @@ api.post('/join',
     }
 );
 
-// 이메일 중복 체크
+// 이메일 중복 확인
 api.post('/overlapEmail',
     [
         check("email", "email is required").not().isEmpty()
@@ -236,7 +236,7 @@ api.post('/existEmail',
     }
 );
 
-// 닉네임 중복 체크
+// 닉네임 중복 확인
 api.post('/overlapNick',
     [
         check("nickName", "nickName is required").not().isEmpty()
@@ -303,7 +303,7 @@ api.post('/findId/simple',
     }
 );
 
-// 비밀번호 찾기
+// app - 비밀번호 암호화 생성 (비밀번호 찾기)
 api.post('/findPw',
     [
         check("email", "email is required").not().isEmpty()
@@ -332,7 +332,7 @@ api.post('/findPw',
     }
 );
 
-// 비밀번호 토큰 발급
+// web - 비밀번호 토큰 발급
 api.post('/pwd_token',
     verifyToken,
     [
@@ -402,7 +402,7 @@ api.put('/password',
     }
 );
 
-// 운동목적 추가/변경
+// 운동 목적 추가/변경
 api.put('/purpose/:userUID',
     verifyToken,
     [
@@ -493,7 +493,7 @@ api.put('/basic_image/:userUID',
     }
 );
 
-// 프로필 변경
+// 회원 상세정보 변경 (프로필 변경)
 api.put('/:userUID',
     verifyToken,
     [
@@ -535,7 +535,7 @@ api.put('/:userUID',
     }
 );
 
-// 회원 탈퇴 처리
+// 회원 탈퇴
 api.delete('/:userUID',
     verifyToken,
     [

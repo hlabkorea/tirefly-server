@@ -9,7 +9,7 @@ const pageCnt15 = 15;
 // 강사 목록 조회
 api.get('/', verifyToken, async function (req, res) {
     try{
-        var sql = "select UID as teacherUID, teacherImg, teacherName, teacherNickName, teacherGender, regDate,status from teacher where UID >= 1 ";
+        var sql = "select UID as teacherUID, teacherImg, teacherName, teacherNickName, teacherGender, regDate, status from teacher where UID >= 1 ";
         const searchType = req.query.searchType ? req.query.searchType : '';
         const searchWord = req.query.searchWord ? req.query.searchWord : '';
         const status = req.query.status ? req.query.status : 'act';
@@ -83,7 +83,7 @@ api.get('/count', verifyAdminToken, async function (req, res) {
     }
 });
 
-// 강사 정보 조회
+// 강사 상세정보 조회
 api.get('/:teacherUID', verifyToken, async function (req, res) {
     try{
         const teacherUID = req.params.teacherUID;
@@ -102,7 +102,7 @@ api.get('/:teacherUID', verifyToken, async function (req, res) {
     }
 });
 
-// cms - 강사 추가
+// cms - 강사 등록
 api.post('/', verifyAdminToken, async function (req, res) {
     try{
         const adminUID = req.adminUID;
@@ -130,13 +130,14 @@ api.post('/', verifyAdminToken, async function (req, res) {
     }
 });
 
-// cms - 강사 활성화 여부 수정
+// cms - 강사 활성화 상태 수정
 api.put('/status/:teacherUID', verifyAdminToken, async function (req, res) {
     try{
+        const adminUID = req.adminUID;
         const teacherUID = req.params.teacherUID;
         const status = req.body.status;
-        var sql = "update teacher set status = ? where UID = ?";
-        const sqlData = [status, teacherUID];
+        var sql = "update teacher set status = ?, updateUID = ? where UID = ?";
+        const sqlData = [status, adminUID, teacherUID];
 
         await con.query(sql, sqlData);
 
@@ -174,7 +175,7 @@ api.put('/image/:teacherUID',
     }
 );
 
-// cms - 강사 정보 수정
+// cms - 강사 상세정보 수정
 api.put('/:teacherUID', verifyAdminToken, async function (req, res) {
     try{
         const adminUID = req.adminUID;
