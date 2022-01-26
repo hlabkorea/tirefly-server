@@ -1,0 +1,52 @@
+<html>
+
+<head>
+    <script src="https://code.jquery.com/jquery-3.6.0.js"
+        integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <h3>멤버십 구독자 정보 (종료일 기준 내림차순)</h3>
+    <div id="membershipList">
+    </div>
+</body>
+
+<script>
+    const domain = "http://43.133.64.160:3001";
+
+    $(document).ready(function(){
+        getMembershipList();
+    });
+
+    function getMembershipList() {
+        $.ajax({
+            type: "GET",
+            url: domain + '/membership'
+        }).done(function (result, textStatus, xhr) {
+            var resultHtml = "<table border='1' style='text-align:center;' cellSpacing=0>"
+                           + "<th>사용자UID</th>"
+                           + "<th>이메일</th>"
+                           + "<th>닉네임</th>"
+                           + "<th>멤버십 등급</th>"
+                           + "<th>시작일</th>"
+                           + "<th>종료일</th>";
+            var responseJSON = result.data;
+            for(var i=0; i<responseJSON.length; i++){
+                resultHtml += "<tr>"
+                           + `<td> ${responseJSON[i].userUID} </td>`
+                           + `<td> ${responseJSON[i].email} </td>`
+                           + `<td> ${responseJSON[i].nickName} </td>`
+                           + `<td> ${responseJSON[i].level} </td>`
+                           + `<td> ${responseJSON[i].startDate} </td>`
+                           + `<td> ${responseJSON[i].endDate} </td>`
+                           + "</tr>";
+            }
+
+            resultHtml += "</table>";
+            
+			$('#membershipList').html(resultHtml);
+        });
+    }
+</script>
+
+</html>

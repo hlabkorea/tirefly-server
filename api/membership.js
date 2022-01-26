@@ -4,6 +4,22 @@ const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
 const api = express.Router();
 const { getCurrentDateTime } = require('./config/date.js');
 
+// 멤버십 소유자들 조회
+api.get('/', async function (req, res) {
+    try{
+        var sql = "select a.userUID, b.email, b.nickName, a.`level`, a.startDate, a.endDate " + 
+                  "from membership a " +
+                  "left join user b on a.userUID = b.UID " +
+                  "order by a.endDate desc";
+        const [result] = await con.query(sql);
+        
+        res.status(200).json({status:200,  data: result, message:"success"});
+    } catch (err) {
+        throw err;
+    }
+});
+
+
 // 멤버십 소유자인지 조회
 api.get('/auth/:userUID', verifyToken, async function (req, res) {
     try{
@@ -118,23 +134,7 @@ api.delete('/',
     }
 );
 
-// 테스트 - hurgoon@gmail.com 멤버십 삭제
-api.delete('/hurgoon',
-    async function (req, res) {
-        try{
-            var sql = "update membership set endDate = '0000-01-01' where userUID = 1584";
-            await con.query(sql);
 
-            res.status(200).json({
-                status: 200,
-                data: "true",
-                message: "success"
-            });
-        } catch (err) {
-            throw err;
-        }
-    }
-);
 
 // 멤버십 초대자 수 (멤버십 구매자는 제외)
 async function selectMemGroupCnt(sqlData){

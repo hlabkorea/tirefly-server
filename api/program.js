@@ -8,7 +8,7 @@ const { upload } = require('./config/uploadFile.js');
 const { check } = require('express-validator');
 const pageCnt15 = 15;
 
-// cms - 프로그램 정보 조회
+// cms - 프로그램 상세정보 조회
 api.get('/',
     verifyToken,
     async function (req, res) {
@@ -131,7 +131,7 @@ api.get('/:programUID',
     }
 );
 
-// cms - 프로그램 추가
+// cms - 프로그램 등록
 api.post('/',
     verifyAdminToken,
     [
@@ -198,7 +198,7 @@ api.put('/image/:programUID',
     }
 );
 
-// cms - 프로그램 활성화 여부 수정
+// cms - 프로그램 활성화 상태 수정
 api.put('/status/:programUID', verifyAdminToken, async function (req, res) {
     try{
         const adminUID = req.adminUID;
@@ -218,7 +218,7 @@ api.put('/status/:programUID', verifyAdminToken, async function (req, res) {
     }
 });
 
-// cms - 프로그램 정보 수정
+// cms - 프로그램 상세정보 수정
 api.put('/:programUID', 
         verifyAdminToken, 
         [
