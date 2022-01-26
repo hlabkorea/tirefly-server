@@ -754,7 +754,7 @@ async function selectWeekNewUserCnt(){
 
 // 일주일 방문 회원 수 조회
 async function selectWeekLoginUserCnt(){
-    var sql = "select date_format(regDate, '%Y-%m-%d') as date, count(UID) as count " +
+    var sql = "select date_format(regDate, '%Y-%m-%d') as date, count(distinct userUID) as count " +
     "from user_log " +
     "where regDate between date_format(date_add(now(), interval -6 day), '%Y-%m-%d') and date_format(date_add(now(), interval 1 day), '%Y-%m-%d') " +
     "group by date_format(regDate, '%Y-%m-%d')";
