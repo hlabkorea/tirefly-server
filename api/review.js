@@ -9,7 +9,7 @@ const pageCnt15 = 15;
 
 // 강사 평점을 조회하는 /:teacherUID를 /teacher/:teacherUID 로 수정하고, 리뷰를 조회하는 /detail/:reviewUID를 /:reviewUID 로 수정해야합니다
 
-// 후기 전체 조회
+// cms - 비디오 운동 후기 목록 조회
 api.get('/', verifyAdminToken, async function (req, res) {
     try {
         const searchType = req.query.searchType ? req.query.searchType : '';
@@ -61,7 +61,7 @@ api.get('/', verifyAdminToken, async function (req, res) {
     }
 });
 
-// 후기 상세조회
+// cms - 비디오 운동 후기 내용 조회
 api.get('/detail/:reviewUID', verifyAdminToken, async function (req, res) {
     try{
         const reviewUID = req.params.reviewUID;
@@ -102,7 +102,7 @@ api.get('/:teacherUID', verifyToken, async function (req, res) {
     }
 });
 
-// 운동 평가하기
+// 비디오 운동 후기 등록
 api.post('/:videoUID',
     verifyToken,
     [

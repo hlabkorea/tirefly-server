@@ -9,6 +9,36 @@ const md5File = require('md5-file');
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 
+// QT 버전 목록 조회
+api.get('/', verifyAdminToken, async function (req, res) {
+    try{
+        var sql = "select UID as qtUID, version, memo, regDate from qt_version order by regDate desc";
+        const [result] = await con.query(sql);
+        res.status(200).json({
+            status: 200,
+            data: result,
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
+// QT 버전 등록
+api.post('/', verifyAdminToken, onlyUpload.single("qt_file"), async function (req, res) {
+    try{
+        const version = req.body.version;
+        const memo = req.body.memo;
+        var sql = "insert qt_version(version, memo) values (?)";
+        const sqlData = [version, memo];
+        await con.query(sql, [sqlData]);
+
+        res.status(200).json({status:200, data:"true", message: "success"});
+    } catch (err) {
+        throw err;
+    }
+});
+
 // 버전 체크
 api.post('/check', 
 		verifyToken, 
@@ -49,34 +79,6 @@ api.post('/check',
 			}
 		}
 );
-
-api.get('/', verifyAdminToken, async function (req, res) {
-    try{
-        var sql = "select UID as qtUID, version, memo, regDate from qt_version order by regDate desc";
-        const [result] = await con.query(sql);
-        res.status(200).json({
-            status: 200,
-            data: result,
-            message: "success"
-        });
-    } catch (err) {
-        throw err;
-    }
-});
-
-api.post('/', verifyAdminToken, onlyUpload.single("qt_file"), async function (req, res) {
-    try{
-        const version = req.body.version;
-        const memo = req.body.memo;
-        var sql = "insert qt_version(version, memo) values (?)";
-        const sqlData = [version, memo];
-        await con.query(sql, [sqlData]);
-
-        res.status(200).json({status:200, data:"true", message: "success"});
-    } catch (err) {
-        throw err;
-    }
-});
 
 // 파일 업로드 테스트
 api.post('/test', onlyUpload.single("motif_file"), async function (req, res) {

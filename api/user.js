@@ -562,7 +562,7 @@ api.delete('/:userUID',
     }
 );
 
-// 로그인에서 동일한 함수 사용
+// login.js에서 동일한 함수 사용
 // 사용자 로그인 이력 추가
 function insertUserLog(userUID, token) {
     var sql = "insert into user_log(userUID, token) values(?, ?)";
@@ -570,7 +570,7 @@ function insertUserLog(userUID, token) {
     con.query(sql, sqlData);
 }
 
-// 로그인에서 동일한 함수 사용
+// login.js에서 동일한 함수 사용
 // jwt 생성
 function makeJWT(userUID, auth) {
     var token = jwt.sign({

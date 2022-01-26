@@ -74,7 +74,7 @@ app.use('/inquiry', require('./api/inquiry.js'));
 app.use('/notice', require('./api/notice.js'));
 
 app.use('/preorder', require('./api/preorder.js'));
-app.use('/pwdAuth', require('./api/pwdAuth.js')); //pwd_auth로 수정
+app.use('/pwd_auth', require('./api/pwd_auth.js'));
 
 app.use('/membership', require('./api/membership.js'));
 app.use('/membership_group', require('./api/membership_group.js'));

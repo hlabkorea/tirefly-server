@@ -134,8 +134,6 @@ api.delete('/',
     }
 );
 
-
-
 // 멤버십 초대자 수 (멤버십 구매자는 제외)
 async function selectMemGroupCnt(sqlData){
     var sql = "select count(distinct userUID) as cnt "

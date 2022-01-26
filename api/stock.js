@@ -8,7 +8,7 @@ const xl = require('excel4node');
 const excelToJson = require('convert-excel-to-json');
 const pageCnt15 = 15;
 
-// cms - 재고 전체 조회
+// cms - 재고 목록 조회
 api.get('/', verifyAdminToken, async function (req, res) {
     try{
         const status = req.query.status ? req.query.status : 'all';
@@ -92,7 +92,7 @@ api.get('/excel/sample', function (req, res) {
     wb.write('stock_sample.xlsx', res);
 });
 
-// cms - 재고 엑셀 파일 업로드
+// cms - 재고 엑셀 파일 다운로드
 api.get('/excel', async function (req, res) {
     try {
         var sql = "select a.UID as stockUID, a.serialNo, a.testDate, ifnull(b.shipRcpnt, '-') as shipRcpnt, ifnull(b.buyerTel, '-') as buyerTel, " +
@@ -163,7 +163,7 @@ api.get('/excel', async function (req, res) {
     }
 });
 
-// cms - 재고 엑셀 데이터 다운로드
+// cms - 재고 엑셀 데이터 업로드
 api.post('/excel', verifyAdminToken, memoryUpload.single('excel_file'), async function (req, res) {
     try{
         // 엑셀 데이터 json으로 변환
