@@ -3,7 +3,7 @@ const { con } = require('./config/database.js');
 const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
 const api = express.Router();
 
-// 비디오에 대한 운동 기구 조회
+// 비디오의 운동 기구 조회
 api.get('/:videoUID', verifyToken, async function (req, res) {
     try{
         const videoUID = req.params.videoUID;
@@ -23,19 +23,19 @@ api.get('/:videoUID', verifyToken, async function (req, res) {
     }
 });
 
-// cms - 비디오에 대한 운동 기구 추가
+// cms - 비디오의 운동 기구 추가
 api.put('/:videoUID', verifyAdminToken, async function (req, res) {
     try{
         const adminUID = req.adminUID;
         const videoUID = req.params.videoUID;
         const accList = req.body.acc;
 
-        const listUIDs = await selectVideoListUIDs(videoUID);
+        const listUIDs = await selectVideoAccListUIDs(videoUID);
         if(listUIDs.length != 0) // 이미 video에 대한 운동 기구들이 존재하면 삭제
-            await deleteVideoList(listUIDs);
+            await deleteVideoAccList(listUIDs);
 
         const sqlListData = makeSqlListData(videoUID, adminUID, accList);
-        await insertVideoList(sqlListData);
+        await insertVideoAccList(sqlListData);
 
         res.status(200).send({
             status: 200,
@@ -48,7 +48,7 @@ api.put('/:videoUID', verifyAdminToken, async function (req, res) {
 });
 
 // 비디오 리스트 UID 조회
-async function selectVideoListUIDs(videoUID){
+async function selectVideoAccListUIDs(videoUID){
     var sql = "select UID from video_acclist where videoUID = ?";
     const [result] = await con.query(sql, videoUID);
     var UIDs = [];
@@ -61,7 +61,7 @@ async function selectVideoListUIDs(videoUID){
 }
 
 // 비디오 운동 기구 삭제
-async function deleteVideoList(listUIDs){
+async function deleteVideoAccList(listUIDs){
     var sql = "delete from video_acclist where UID in (?);";
     await con.query(sql, [listUIDs]);
 }
@@ -78,7 +78,7 @@ function makeSqlListData(videoUID, adminUID, accList){
 }
 
 // 비디오 운동 기구 등록
-async function insertVideoList(sqlListData) {
+async function insertVideoAccList(sqlListData) {
     if (sqlListData.length != 0) {
         var sql = "insert into video_acclist(videoUID, accUID, regUID) values ?;";
         await con.query(sql, [sqlListData]);

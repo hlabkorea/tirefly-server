@@ -17,7 +17,7 @@ const apple_password = "157cd3c52883418cabfab06e2b206da7";
 const pageCnt15 = 15;
 const pageCnt10 = 10;
 
-// 주문정보 조회
+// 주문 조회
 api.get('/',
     verifyAdminToken,
     async function (req, res, next) {
@@ -75,7 +75,7 @@ api.get('/',
     }
 );
 
-// 배송정보 조회
+// 배송 조회
 api.get('/ship',
     verifyAdminToken,
     async function (req, res, next) {
@@ -125,7 +125,7 @@ api.get('/ship',
     }
 );
 
-// 오늘 주문 상품 총 가격과 건수 조회
+// 오늘 주문 상품의 총 가격과 건수 조회
 api.get('/today',
     verifyAdminToken,
     async function (req, res, next) {
@@ -145,7 +145,7 @@ api.get('/today',
     }
 );
 
-// 매출 (건수) 조회
+// 일주일 동안의 매출 (건수) 조회
 api.get('/week',
     verifyAdminToken,
     async function (req, res, next) {
@@ -167,7 +167,7 @@ api.get('/week',
     }
 );
 
-// 배송 스케쥴 조회
+// 배송 일정 조회
 api.get('/ship/schedule',
     verifyAdminToken,
     async function (req, res, next) {
@@ -201,13 +201,9 @@ api.get('/check/:userUID',
     async function (req, res, next) {
         try{
             const userUID = req.params.userUID;
-            var sql = "select a.UID " +
-                "from payment a " +
-                "join payment_product_list b on a.UID = b.paymentUID " +
-                "where a.userUID = ? and b.productUID = 1 and a.paymentStatus != 'cancelled'";
-            const [result] = await con.query(sql, userUID);
+            const isPurchase = await isPurchaseMirror(userUID);
             
-            if (result.length > 0){ // 미러를 구매한 사용자일 경우
+            if (isPurchase){ // 미러를 구매한 사용자일 경우
                 res.status(200).json({
                     status: 200,
                     data: "true",
@@ -310,7 +306,7 @@ api.get('/membership/:userUID',
     }
 );
 
-// 결제한 상품의 정보 조회
+// 결제한 상품의 상세정보 조회
 api.get('/product/info/:paymentUID',
     verifyToken,
     async function (req, res, next) {
@@ -338,7 +334,7 @@ api.get('/product/info/:paymentUID',
     }
 );
 
-// 사용자가 구매한 상품들 조회
+// 상품 구매 내역 조회
 api.get('/product/:userUID',
     verifyToken,
     async function (req, res, next) {
@@ -387,7 +383,7 @@ api.get('/product/:userUID',
     }
 );
 
-// 취소정보 조회
+// 취소 조회
 api.get('/refund',
     verifyAdminToken,
     async function (req, res, next) {
@@ -437,7 +433,7 @@ api.get('/refund',
     }
 );
 
-// 미처리 취소요청 조회
+// 미처리 취소요청 수 조회
 api.get('/refund/incomplete',
     verifyAdminToken,
     async function (req, res, next) {
@@ -456,7 +452,7 @@ api.get('/refund/incomplete',
     }
 );
 
-// 결제 상세 정보 조회
+// 결제 상세정보 조회
 api.get('/:paymentUID',
     verifyAdminToken,
     async function (req, res, next) {
@@ -644,7 +640,7 @@ api.put('/ship/schedule/:paymentUID',
     }
 );
 
-// 배송 완료
+// 배송 완료 처리
 api.put('/ship/complete/:paymentUID',
     verifyAdminToken,
     async function (req, res, next) {
@@ -712,6 +708,26 @@ api.put("/refund/complete/:paymentUID", async function (req, res) {
     }
 });
 
+// 취소 요청
+api.put('/refund/:paymentUID', verifyToken, async function (req, res) {
+    try{
+        const paymentUID = req.params.paymentUID;
+        const refundMsg = req.body.refundMsg;
+
+        var sql = "update payment set refundMsg = ?, orderStatus='취소요청', reqDate = now() where UID = ?";
+        const sqlData = [refundMsg, paymentUID];
+        await con.query(sql, sqlData);
+
+        res.status(200).json({
+            status: 200,
+            data: "true",
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
 // 멤버십 예약 취소
 api.put("/membership/unschedule/:paymentUID", async function (req, res) {
     try {
@@ -747,26 +763,7 @@ api.put("/membership/unschedule/:paymentUID", async function (req, res) {
     }
 });
 
-// 취소 요청
-api.put('/refund/:paymentUID', verifyToken, async function (req, res) {
-    try{
-        const paymentUID = req.params.paymentUID;
-        const refundMsg = req.body.refundMsg;
-
-        var sql = "update payment set refundMsg = ?, orderStatus='취소요청', reqDate = now() where UID = ?";
-        const sqlData = [refundMsg, paymentUID];
-        await con.query(sql, sqlData);
-
-        res.status(200).json({
-            status: 200,
-            data: "true",
-            message: "success"
-        });
-    } catch (err) {
-        throw err;
-    }
-});
-
+// 주문 매출 정보 조회 (결제합계, 환불합계, 순매출)
 async function selectPaymentSales(type, searchType, searchWord, startDate, endDate) {
     var sql = "select ifnull(sum(a.amount), 0) as totalPrice, count(a.UID) as totalCount, ifnull(sum(case when a.orderStatus = '취소승인' then a.amount end ), 0) as refundPrice, " +
         "count(case when a.orderStatus = '취소승인' then 1 end ) as refundCount " +
@@ -795,6 +792,7 @@ async function selectPaymentSales(type, searchType, searchWord, startDate, endDa
     return result[0];
 }
 
+// 제품 결제 내역 조회
 async function selectPaymentProduct(type, searchType, searchWord, startDate, endDate, offset) {
     var sql = "select a.UID as paymentUID, a.merchantUid, c.korName, d.optionName, a.buyerEmail, e.cellNumber as buyerTel, a.amount, " +
         "a.payMethod, a.orderStatus, a.regDate " +
@@ -827,6 +825,7 @@ async function selectPaymentProduct(type, searchType, searchWord, startDate, end
     return result;
 }
 
+// 멤버십 결제 내역 조회
 async function selectPaymentMembership(type, searchType, searchWord, startDate, endDate, offset) {
     var sql = "select a.UID as paymentUID, a.merchantUid, if(b.optionUID = 0, '-', '') as optionName, c.level as korName, a.buyerEmail, d.cellNumber as buyerTel, " +
         "a.amount, a.payMethod, a.orderStatus, a.regDate " +
@@ -859,6 +858,7 @@ async function selectPaymentMembership(type, searchType, searchWord, startDate, 
     return result;
 }
 
+// 배송 현황 조회 (전체, 배송전, 배송준비중, 배송완료)
 async function selectPaymentShipStatus(status, searchType, searchWord, startDate, endDate){
     var sql = "select count(a.UID) as totalCnt, count(case when a.shippingStatus = '배송전'  then 1 end ) as befShipCnt,  count(case when a.shippingStatus = '배송준비중'  then 1 end ) as rdyShipCnt, " +
             "count(case when a.shippingStatus = '배송완료'  then 1 end ) as confShipCnt " +
@@ -887,6 +887,7 @@ async function selectPaymentShipStatus(status, searchType, searchWord, startDate
     return result[0];
 }
 
+// 배송 목록 조회
 async function selectPaymentShip(status, searchType, searchWord, startDate, endDate, offset) {
     var sql = "select a.UID as paymentUID, a.merchantUid, c.korName, d.optionName, a.buyerName, a.buyerEmail, a.buyerTel, " +
         "concat(a.addr1, ' ', a.addr2) as addr, a.regDate, a.shippingStatus, if(a.shipResDate = '0000-01-01 00:00:00', '', a.shipResDate) as shippingDate, " +
@@ -922,6 +923,7 @@ async function selectPaymentShip(status, searchType, searchWord, startDate, endD
     return result;
 }
 
+// 취소 현황 조회 (전체, 취소요청, 취소승인, 취소미승인)
 async function selectPaymentRefundStatus(status, searchType, searchWord, startDate, endDate){
     var sql = "select count(a.UID) as totalCnt, count(case when a.orderStatus = '취소요청'  then 1 end ) as refReqCnt,  count(case when a.orderStatus = '취소승인'  then 1 end ) as refOkCnt, " +
     "count(case when a.orderStatus = '취소미승인'  then 1 end ) as refNoCnt " +
@@ -949,6 +951,7 @@ async function selectPaymentRefundStatus(status, searchType, searchWord, startDa
     return result[0];
 }
 
+// 취소 내역 조회
 async function selectPaymentRefund(status, searchType, searchWord, startDate, endDate, offset){
     var sql = "select a.UID as paymentUID, a.merchantUid, d.korName, e.optionName, a.buyerName, a.buyerEmail, a.buyerTel, ifnull(a.refundMsg, '') as refundMsg, " +
     "ifnull(a.refConfMsg, '') as refConfMsg, orderStatus, if(a.reqDate = '0000-01-01 00:00:00', '', a.reqDate) as reqDate, if(a.refConfDate = '0000-01-01 00:00:00', '', a.refConfDate) as refConfDate " +
@@ -1278,7 +1281,7 @@ async function insertMembership(userUID, level, laterNum, paymentUID) {
     insertOrderMembership(paymentUID, membershipUID);
 }
 
-// membership 정보 추가/업데이트
+// 멤버십 구독자인지 확인
 async function selectMembershipUID(userUID) {
     var sql = "select UID, endDate from membership where userUID = ?";
     const [result] = await con.query(sql, userUID);

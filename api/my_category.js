@@ -5,7 +5,7 @@ const api = express.Router();
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 
-//나의 관심 카테고리 등록 (기존데이터 삭제후 새로운 데이터 삽입)
+//나의 관심 운동 종목 등록 (기존데이터 삭제후 새로운 데이터 삽입)
 api.post('/', 
         verifyToken, 
         [
@@ -30,13 +30,13 @@ api.post('/',
         }
 );
 
-// 나의 관심 카테고리 삭제
+// 나의 관심 운동 종목 삭제
 async function deleteMyCategory(userUID){
     var sql = "delete from my_category where userUID = ?";
     await con.query(sql, userUID);
 }
 
-// 나의 관심 카테고리 등록
+// 나의 관심 운동 종목 등록
 async function insertMyCategory(userUID, categoryUIDs){
     var sqlData = [];
 

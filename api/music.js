@@ -22,7 +22,7 @@ api.get('/', verifyAdminToken, async function (req, res) {
     }
 });
 
-// 카테고리에 해당하는 bgm 랜덤 조회
+// 운동 종목에 해당하는 bgm 랜덤 조회
 api.get('/:categoryUID', verifyToken, async function (req, res) {
     try{
         const categoryUID = req.params.categoryUID;
@@ -35,7 +35,7 @@ api.get('/:categoryUID', verifyToken, async function (req, res) {
     }
 });
 
-// cms - 카테고리에 해당하는 bgm 추가
+// cms - 운동 종목에 해당하는 bgm 추가
 api.post('/', 
         verifyAdminToken, 
         [

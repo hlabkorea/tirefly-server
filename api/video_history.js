@@ -26,7 +26,7 @@ api.get('/:userUID', verifyAdminToken, async function (req, res) {
     }
 });
 
-// 비디오 재생 이력 저장
+// 비디오 재생 이력 등록/수정
 api.put('/:videoUID',
     verifyToken,
     [

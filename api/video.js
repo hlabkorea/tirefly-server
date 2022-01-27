@@ -12,29 +12,29 @@ const pageCnt15 = 15;
 
 // cms - vod 전체 조회
 api.get('/', verifyAdminToken, async function (req, res) {
-    try{
+    try {
         const searchType = req.query.searchType ? req.query.searchType : '';
         const searchWord = req.query.searchWord ? req.query.searchWord : '';
         const status = req.query.status ? req.query.status : 'act';
         const currentPage = req.query.page ? parseInt(req.query.page) : '';
 
-        var sql = "select a.UID as videoUID, a.videoThumbnail, a.videoName, c.categoryName, b.teacherName, a.videoLevel, a.regDate, a.status, a.categoryUID " +
+        var sql = "select a.UID as videoUID, a.categoryUID, a.videoThumbnail, a.videoName, c.categoryName, b.teacherName, a.videoLevel, a.regDate, a.status " +
             "from video a " +
             "join teacher b on a.teacherUID = b.UID " +
             "join category c ON a.categoryUID = c.UID " +
             "where a.videoType = 'vod' ";
 
-        if (searchType.length != 0){
-            if (searchType == "videoName") 
+        if (status != "all")
+            sql += `and a.status = '${status}' `;
+
+        if (searchType.length != 0) {
+            if (searchType == "videoName")
                 sql += "and a.videoName ";
             else if (searchType == "teacherName")
                 sql += "and b.teacherName ";
 
             sql += `LIKE '%${searchWord}%' `;
         }
-
-        if (status != "all") 
-            sql += `and a.status = '${status}' `;
 
         sql += "order by a.UID desc ";
 
@@ -78,7 +78,7 @@ api.get('/', verifyAdminToken, async function (req, res) {
 
 // 비디오 수 조회
 api.get('/count', verifyAdminToken, async function (req, res) {
-    try{
+    try {
         var sql = "select count(*) as cnt from video where status = 'act' and videoType='vod'";
         const [result] = await con.query(sql);
         res.status(200).send({
@@ -91,9 +91,9 @@ api.get('/count', verifyAdminToken, async function (req, res) {
     }
 });
 
-// 최신 업로드 영상 조회
+// 최신 업로드 비디오 조회
 api.get('/latest', verifyToken, async function (req, res) {
-    try{
+    try {
         var sql = "select UID as videoUID, videoThumbnail from video where videoType='vod' and status='act' order by regDate desc limit 20";
         const [result] = await con.query(sql);
 
@@ -107,9 +107,9 @@ api.get('/latest', verifyToken, async function (req, res) {
     }
 });
 
-// 요즘 인기있는 영상 조회
+// 요즘 인기있는 비디오 조회
 api.get('/favorite', verifyToken, async function (req, res) {
-    try{
+    try {
         // 시청 수 많은 순으로 조회
         var sql = "select b.UID as videoUID, b.videoThumbnail " +
             "from video_history a " +
@@ -129,9 +129,67 @@ api.get('/favorite', verifyToken, async function (req, res) {
     }
 });
 
+// 추천 영상 조회
+api.get('/recommend/:userUID', verifyToken, async function (req, res) {
+    try{
+        var sql = "select a.UID, a.videoThumbnail " +
+            "from video a " +
+            "join my_category b on a.categoryUID = b.categoryUID " +
+            "where b.userUID = ? and a.status = 'act' and a.videoType = 'vod' " +
+            "order by a.regDate desc " +
+            "limit 20";
+        const sqlData = req.params.userUID;
+        const [result] = await con.query(sql, sqlData);
+
+        res.status(200).json({
+            status: 200,
+            data: result,
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
+// 운동 종목에 해당하는 비디오 목록
+api.get('/category/:categoryUID',
+    verifyToken,
+    [
+        check("videoType", "videoType is required").not().isEmpty()
+    ],
+    async function (req, res) {
+        const errors = getError(req, res);
+        if (errors.isEmpty()) {
+            try{
+                const categoryUID = req.params.categoryUID;
+                const videoType = req.query.videoType;
+
+                var sql = "select a.UID, a.contentsPath, b.teacherImg, a.videoName, b.teacherNickname, c.categoryName, a.videoLevel, a.playTimeValue, e.rectImgPath as imgPath " +
+                    "from video a " +
+                    "join teacher b on a.teacherUID = b.UID " +
+                    "join category c on a.categoryUID = c.UID " +
+                    "left join video_acclist d on a.UID = d.videoUID " +
+                    "left join acc e on d.accUID = e.UID " +
+                    "where a.categoryUID = ? and a.videoType= ? and a.status = 'act' " +
+                    "order by a.regDate desc, a.UID desc";
+                const sqlData = [categoryUID, videoType];
+                const [result] = await con.query(sql, sqlData);
+                
+                res.status(200).send({
+                    status: 200,
+                    data:  groupVideoAccList(result),
+                    message: "success"
+                });
+            } catch (err) {
+                throw err;
+            }
+        }
+    }
+);
+
 // vod 검색
 api.get('/search', verifyToken, async function (req, res) {
-    try{
+    try {
         var sql = "select a.UID, c.teacherImg, a.videoName, c.teacherNickName as teacherName, a.contentsPath, b.categoryName, a.videoLevel, a.playTimeValue, e.rectImgPath as imgPath " +
             "from video a " +
             "join category b on a.categoryUID = b.UID " +
@@ -145,32 +203,37 @@ api.get('/search', verifyToken, async function (req, res) {
         const playTimeValues = req.query.playTimeValues ? req.query.playTimeValues : '';
         const teacherUIDs = req.query.teacherUIDs ? req.query.teacherUIDs : '';
         const videoType = req.query.videoType ? req.query.videoType : '';
+		var sqlData = [];
 
-        if(categoryUIDs.length != 0){
-            sql += `and b.UID in (${categoryUIDs}) `;
+        if (categoryUIDs.length > 0) {
+            sql += "and b.UID in (?) ";
+			sqlData.push(categoryUIDs.split(","));
         }
 
-        if(videoLevels.length != 0){
-            sql += `and a.videoLevel in (${videoLevels}) `;
+        if (videoLevels.length > 0) {
+            sql += "and a.videoLevel in (?) "; // 초급, 중급
+			sqlData.push(videoLevels.split(","));
         }
 
-        if(playTimeValues.length != 0){
-            sql += `and a.playTimeValue in (${playTimeValues}) `;
+        if (playTimeValues.length > 0) {
+            sql += "and a.playTimeValue in (?) ";
+			sqlData.push(playTimeValues.split(","));
         }
 
-        if(teacherUIDs.length != 0){
-            sql += `and c.UID in (${teacherUIDs}) `;
+        if (teacherUIDs.length > 0) {
+            sql += "and c.UID in (?) ";
+			sqlData.push(teacherUIDs.split(","));
         }
 
-        sql += `and a.videoType = '${videoType}' `;
+        sql += "and a.videoType = ? " +
+            "order by a.regDate desc, a.UID desc";
+		sqlData.push(videoType);
 
-        sql += "order by a.regDate desc, a.UID desc";
+        const [result] = await con.query(sql, sqlData);
 
-        const [result] = await con.query(sql);
-        
         res.status(200).send({
             status: 200,
-            data:makevideoList(result),
+            data: groupVideoAccList(result),
             message: "success"
         });
     } catch (err) {
@@ -236,7 +299,7 @@ api.get('/live/top5', verifyAdminToken, async function (req, res) {
             "join teacher d on b.teacherUID = d.UID " +
             "where b.videoType = 'live' " +
             "group by a.videoUID " +
-            "order by count(a.videoUID) desc " +
+            "order by count(a.videoUID) desc, a.updateDate desc " +
             "limit 5";
         const [result] = await con.query(sql);
         res.status(200).send({
@@ -259,7 +322,7 @@ api.get('/top5', verifyAdminToken, async function (req, res) {
             "join teacher d on b.teacherUID = d.UID " +
             "where b.videoType = 'vod' " +
             "group by a.videoUID " +
-            "order by count(a.videoUID) desc " +
+            "order by count(a.videoUID) desc, a.updateDate desc " +
             "limit 5";
         const [result] = await con.query(sql);
         res.status(200).send({
@@ -272,65 +335,7 @@ api.get('/top5', verifyAdminToken, async function (req, res) {
     }
 });
 
-// 추천 영상 조회
-api.get('/recommend/:userUID', verifyToken, async function (req, res) {
-    try{
-        var sql = "select a.UID, a.videoThumbnail " +
-            "from video a " +
-            "join my_category b on a.categoryUID = b.categoryUID " +
-            "where b.userUID = ? and a.status = 'act' and a.videoType = 'vod' " +
-            "order by a.regDate desc " +
-            "limit 20";
-        const sqlData = req.params.userUID;
-        const [result] = await con.query(sql, sqlData);
-
-        res.status(200).json({
-            status: 200,
-            data: result,
-            message: "success"
-        });
-    } catch (err) {
-        throw err;
-    }
-});
-
-// 운동 종목 카테고리 상세 목록
-api.get('/category/:categoryUID',
-    verifyToken,
-    [
-        check("videoType", "videoType is required").not().isEmpty()
-    ],
-    async function (req, res) {
-        const errors = getError(req, res);
-        if (errors.isEmpty()) {
-            try{
-                const categoryUID = req.params.categoryUID;
-                const videoType = req.query.videoType;
-
-                var sql = "select a.UID, a.contentsPath, b.teacherImg, a.videoName, b.teacherNickname, c.categoryName, a.videoLevel, a.playTimeValue, e.rectImgPath as imgPath " +
-                    "from video a " +
-                    "join teacher b on a.teacherUID = b.UID " +
-                    "join category c on a.categoryUID = c.UID " +
-                    "left join video_acclist d on a.UID = d.videoUID " +
-                    "left join acc e on d.accUID = e.UID " +
-                    "where a.categoryUID = ? and a.videoType= ? and a.status = 'act' " +
-                    "order by a.regDate desc, a.UID desc";
-                const sqlData = [categoryUID, videoType];
-                const [result] = await con.query(sql, sqlData);
-                
-                res.status(200).send({
-                    status: 200,
-                    data:  makevideoList(result),
-                    message: "success"
-                });
-            } catch (err) {
-                throw err;
-            }
-        }
-    }
-);
-
-// 상세보기 - 비디오 설명
+// 비디오 상세정보 조회
 api.get('/:videoUID', verifyToken, async function (req, res) {
     try{
         var sql = "select a.UID, a.videoType, a.videoName, a.categoryUID, b.categoryName, a.videoLevel, a.totalPlayTime, a.playTimeValue, a.videoThumbnail, a.contentsPath, " +
@@ -355,49 +360,7 @@ api.get('/:videoUID', verifyToken, async function (req, res) {
     }
 });
 
-// cms - tencent cloud에 비디오 업로드
-// 거의 모든 변수가 var이 아니라 const 인 것 같아서 이 부분 검토 필요
-/* 공식 문서 링크 
-    1. Web에 SDK 업로드 : https://intl.cloud.tencent.com/ko/document/product/266/33924
-    2. 서명 생성 예시: https://intl.cloud.tencent.com/ko/document/product/266/33923#node.js-.E7.AD.BE.E5.90.8D.E7.A4.BA.E4.BE.8B
-*/
-
-// 테스트 링크 : http://43.133.64.160:3001/vod_upload.html
-api.post('/signature', function (req, res) {
-    var secret_id = "IKIDTnsrdAQQAdqnTs1tVrxnMfhfcVM8oIXW";
-    var secret_key = "mIZaKo2zg6GAoCJAk47uQgfOs52i8HAm";
-
-    // Determine the current time and expiration time of the signature
-    var current = parseInt((new Date()).getTime() / 1000)
-    var expired = current + 86400; // Signature validity period: 1 day
-
-    // Enter parameters into the parameter list
-    var arg_list = {
-        secretId: secret_id,
-        currentTimeStamp: current,
-        expireTime: expired,
-        random: Math.round(Math.random() * Math.pow(2, 32))
-    }
-
-    // Calculate the signature
-    var orignal = querystring.stringify(arg_list);
-    var orignal_buffer = new Buffer(orignal, "utf8");
-
-    var hmac = crypto.createHmac("sha1", secret_key);
-    var hmac_buffer = hmac.update(orignal_buffer).digest();
-
-    var signature = Buffer.concat([hmac_buffer, orignal_buffer]).toString("base64");
-
-    res.status(200).json({
-        status: 200,
-        data: {
-            signature: signature
-        },
-        message: "success"
-    });
-});
-
-// cms - 영상 업로드
+// cms - 영상 등록
 api.post('/',
         verifyAdminToken, 
         [
@@ -434,7 +397,7 @@ api.post('/',
                     const liveStartDate = req.body.liveStartDate;
                     const liveEndDate = req.body.liveEndDate;
     
-                    var sql = "insert video(teacherUID, categoryUID, videoName, videoLevel, totalPlayTime, playContents, playTimeValue, status, videoType, videoURL, isPlayBGM, liveStartDate, liveEndDate, regUID) " +
+                    var sql = "insert video(teacherUID, categoryUID, videoName, videoLevel, totalPlayTime, playTimeValue, playContents, status, videoType, videoURL, isPlayBGM, liveStartDate, liveEndDate, regUID) " +
                         "values (?)";
                     const sqlData = [teacherUID, categoryUID, videoName, videoLevel, totalPlayTime, playContents, playTimeValue, status, videoType, videoURL, isPlayBGM, liveStartDate, liveEndDate, adminUID];
                     const [result] = await con.query(sql, [sqlData]);
@@ -453,61 +416,46 @@ api.post('/',
    
 });
 
-// cms - 영상 수정
-api.put('/:videoUID', 
-        verifyAdminToken, 
-        [
-            check("teacherUID", "teacherUID is required").not().isEmpty(),
-            check("categoryUID", "categoryUID is required").not().isEmpty(),
-            check("videoName", "videoName is required").not().isEmpty(),
-            check("videoLevel", "videoLevel is required").not().isEmpty(),
-            check("totalPlayTime", "totalPlayTime is required").not().isEmpty(),
-            check("playContents", "playContents is required").not().isEmpty(),
-            check("playTimeValue", "playTimeValue is required").not().isEmpty(),
-            check("status", "status is required").not().isEmpty(),
-            check("videoType", "videoType is required").not().isEmpty(),
-            check("videoURL", "videoURL is required").not().isEmpty(),
-            check("isPlayBGM", "isPlayBGM is required").not().isEmpty(),
-            check("liveStartDate", "liveStartDate is required").not().isEmpty(),
-            check("liveEndDate", "liveEndDate is required").not().isEmpty()
-        ],
-        async function (req, res) {
-            const errors = getError(req, res);
-            if (errors.isEmpty()) {
-                try{
-                    const adminUID = req.adminUID;
-                    const videoUID = req.params.videoUID;
-                    const teacherUID = req.body.teacherUID;
-                    const categoryUID = req.body.categoryUID;
-                    const videoName = req.body.videoName;
-                    const videoLevel = req.body.videoLevel;
-                    const totalPlayTime = req.body.totalPlayTime;
-                    const playContents = req.body.playContents;
-                    const playTimeValue = req.body.playTimeValue;
-                    const status = req.body.status;
-                    const videoType = req.body.videoType;
-                    const videoURL = req.body.videoURL;
-                    const isPlayBGM = req.body.isPlayBGM;
-                    const liveStartDate = req.body.liveStartDate;
-                    const liveEndDate = req.body.liveEndDate;
-    
-                    var sql = "update video set teacherUID = ?, categoryUID = ?, videoName = ?, videoLevel = ?, totalPlayTime = ?, playContents = ?, playTimeValue = ?, status = ?, videoType = ?, videoURL = ?, " +
-                        "isPlayBGM = ?, liveStartDate = ?, liveEndDate = ?, updateUID = ? " +
-                        "where UID = ?";
-                    const sqlData = [teacherUID, categoryUID, videoName, videoLevel, totalPlayTime, playContents, playTimeValue, status, videoType, videoURL, isPlayBGM, liveStartDate, liveEndDate, adminUID, videoUID];
-                    await con.query(sql, sqlData);
+// cms - tencent cloud VOD 업로드에 대한 서명 발급
+// 거의 모든 변수가 var이 아니라 const 인 것 같아서 이 부분 검토 필요
+/* 공식 문서 링크 
+    1. Web에 SDK 업로드 : https://intl.cloud.tencent.com/ko/document/product/266/33924
+    2. 서명 생성 예시: https://intl.cloud.tencent.com/ko/document/product/266/33923#node.js-.E7.AD.BE.E5.90.8D.E7.A4.BA.E4.BE.8B
+*/
+// 테스트 링크 : http://43.133.64.160:3001/vod_upload.html
+api.post('/signature', function (req, res) {
+    var secret_id = "IKIDTnsrdAQQAdqnTs1tVrxnMfhfcVM8oIXW";
+    var secret_key = "mIZaKo2zg6GAoCJAk47uQgfOs52i8HAm";
 
-                    res.status(200).json({
-                        status: 200,
-                        data: "true",
-                        message: "success"
-                    });
-                } catch (err) {
-                    throw err;
-                }
-            }  
+    // Determine the current time and expiration time of the signature
+    var current = parseInt((new Date()).getTime() / 1000)
+    var expired = current + 86400; // Signature validity period: 1 day
+
+    // Enter parameters into the parameter list
+    var arg_list = {
+        secretId: secret_id,
+        currentTimeStamp: current,
+        expireTime: expired,
+        random: Math.round(Math.random() * Math.pow(2, 32))
+    }
+
+    // Calculate the signature
+    var orignal = querystring.stringify(arg_list);
+    var orignal_buffer = new Buffer(orignal, "utf8");
+
+    var hmac = crypto.createHmac("sha1", secret_key);
+    var hmac_buffer = hmac.update(orignal_buffer).digest();
+
+    var signature = Buffer.concat([hmac_buffer, orignal_buffer]).toString("base64");
+
+    res.status(200).json({
+        status: 200,
+        data: {
+            signature: signature
+        },
+        message: "success"
+    });
 });
-
 
 // cms - 영상 이미지 업로드
 api.put('/image/:videoUID',
@@ -564,7 +512,63 @@ api.put('/status/:videoUID',
         }
 );
 
-function makevideoList(result) {
+// cms - 영상 상세정보 수정
+api.put('/:videoUID', 
+        verifyAdminToken, 
+        [
+            check("teacherUID", "teacherUID is required").not().isEmpty(),
+            check("categoryUID", "categoryUID is required").not().isEmpty(),
+            check("videoName", "videoName is required").not().isEmpty(),
+            check("videoLevel", "videoLevel is required").not().isEmpty(),
+            check("totalPlayTime", "totalPlayTime is required").not().isEmpty(),
+            check("playContents", "playContents is required").not().isEmpty(),
+            check("playTimeValue", "playTimeValue is required").not().isEmpty(),
+            check("status", "status is required").not().isEmpty(),
+            check("videoType", "videoType is required").not().isEmpty(),
+            check("videoURL", "videoURL is required").not().isEmpty(),
+            check("isPlayBGM", "isPlayBGM is required").not().isEmpty(),
+            check("liveStartDate", "liveStartDate is required").not().isEmpty(),
+            check("liveEndDate", "liveEndDate is required").not().isEmpty()
+        ],
+        async function (req, res) {
+            const errors = getError(req, res);
+            if (errors.isEmpty()) {
+                try{
+                    const adminUID = req.adminUID;
+                    const videoUID = req.params.videoUID;
+                    const teacherUID = req.body.teacherUID;
+                    const categoryUID = req.body.categoryUID;
+                    const videoName = req.body.videoName;
+                    const videoLevel = req.body.videoLevel;
+                    const totalPlayTime = req.body.totalPlayTime;
+                    const playContents = req.body.playContents;
+                    const playTimeValue = req.body.playTimeValue;
+                    const status = req.body.status;
+                    const videoType = req.body.videoType;
+                    const videoURL = req.body.videoURL;
+                    const isPlayBGM = req.body.isPlayBGM;
+                    const liveStartDate = req.body.liveStartDate;
+                    const liveEndDate = req.body.liveEndDate;
+    
+                    var sql = "update video set teacherUID = ?, categoryUID = ?, videoName = ?, videoLevel = ?, totalPlayTime = ?, playContents = ?, playTimeValue = ?, status = ?, videoType = ?, videoURL = ?, " +
+                        "isPlayBGM = ?, liveStartDate = ?, liveEndDate = ?, updateUID = ? " +
+                        "where UID = ?";
+                    const sqlData = [teacherUID, categoryUID, videoName, videoLevel, totalPlayTime, playContents, playTimeValue, status, videoType, videoURL, isPlayBGM, liveStartDate, liveEndDate, adminUID, videoUID];
+                    await con.query(sql, sqlData);
+
+                    res.status(200).json({
+                        status: 200,
+                        data: "true",
+                        message: "success"
+                    });
+                } catch (err) {
+                    throw err;
+                }
+            }  
+});
+
+// 비디오마다 운동 기구 목록을 그룹화한다
+function groupVideoAccList(result) {
     var responseData = [];
     var obj = {};
     var rowIdx = -1;

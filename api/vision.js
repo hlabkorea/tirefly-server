@@ -6,6 +6,7 @@ const api = express.Router();
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 
+// 가장 최신의 obj 파일 정보 조회
 api.get('/', async function (req, res) {
     var sql = "select * from vision order by regDate desc limit 1";
     const [result] = await con.query(sql);
@@ -16,6 +17,7 @@ api.get('/', async function (req, res) {
     });
 });
 
+// vision 조회
 api.get('/all', async function (req, res) {
     var sql = "select * from vision order by regDate desc";
     const [result] = await con.query(sql);
