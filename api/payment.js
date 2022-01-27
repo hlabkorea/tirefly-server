@@ -507,8 +507,9 @@ api.post("/billings", async (req, res) => {
             else
                 res.status(403).json(result);
         }
-    } catch (e) {
-        res.status(400).send(e);
+    } catch (err) {
+        res.status(400).send(err);
+        throw err;
     }
 });
 
@@ -528,8 +529,9 @@ api.post("/iamport-webhook", async function (req, res) {
         }
 
         res.status(200).send("success");
-    } catch (e) {
-        res.status(400).send(e);
+    } catch (err) {
+        res.status(400).send(err);
+        throw err;
     }
 });
 
@@ -610,8 +612,9 @@ api.post("/app-store/v1", async (req, res) => {
                 message: "success"
             });
         }
-    } catch (e) {
-        res.status(400).send(e);
+    } catch (err) {
+        res.status(400).send(err);
+        throw err;
     }
 });
 
@@ -703,8 +706,9 @@ api.put("/refund/complete/:paymentUID", async function (req, res) {
             data: "true",
             message: "success"
         });
-    } catch (e) {
-        res.status(400).send(e);
+    } catch (err) {
+        res.status(400).send(err);
+        throw err;
     }
 });
 
@@ -758,8 +762,9 @@ api.put("/membership/unschedule/:paymentUID", async function (req, res) {
             data: "true",
             message: "success"
         });
-    } catch (e) {
-        res.status(400).send(e);
+    } catch (err) {
+        res.status(400).send(err);
+        throw err;
     }
 });
 
