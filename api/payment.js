@@ -30,7 +30,7 @@ api.get('/',
             const currentPage = req.query.page ? parseInt(req.query.page) : 1;
             const offset = parseInt(currentPage - 1) * pageCnt15;
 
-            const countRes = await selectPaymentSales(type, searchType, searchWord, startDate, endDate);
+            const countRes = await selectPaymentSales(type, searchType, searchWord, startDate, endDate); // 주문 매출 정보 조회 (결제합계, 환불합계, 순매출)
             const totalPrice = parseInt(countRes.totalPrice);
             const totalCount = countRes.totalCount;
             const refundPrice = parseInt(countRes.refundPrice);
@@ -40,9 +40,9 @@ api.get('/',
 
             var result;
             if (type == "product")
-                result = await selectPaymentProduct(type, searchType, searchWord, startDate, endDate, offset);
+                result = await selectPaymentProduct(type, searchType, searchWord, startDate, endDate, offset); // 제품의 결제 내역 조회
             else if (type == "membership")
-                result = await selectPaymentMembership(type, searchType, searchWord, startDate, endDate, offset);
+                result = await selectPaymentMembership(type, searchType, searchWord, startDate, endDate, offset); // 멤버십의 결제 내역 조회
 
             const {
                 startPage,
@@ -88,13 +88,13 @@ api.get('/ship',
             const currentPage = req.query.page ? parseInt(req.query.page) : 1;
             const offset = parseInt(currentPage - 1) * pageCnt15;
 
-            const countRes = await selectPaymentShipStatus(status, searchType, searchWord, startDate, endDate);
+            const countRes = await selectPaymentShipStatus(status, searchType, searchWord, startDate, endDate); // 배송 현황 조회 (전체, 배송전, 배송준비중, 배송완료)
             const totalCnt = parseInt(countRes.totalCnt);
             const befShipCnt = parseInt(countRes.befShipCnt);
             const rdyShipCnt = parseInt(countRes.rdyShipCnt);
             const confShipCnt = parseInt(countRes.confShipCnt);
 
-            const result = await selectPaymentShip(status, searchType, searchWord, startDate, endDate, offset);
+            const result = await selectPaymentShip(status, searchType, searchWord, startDate, endDate, offset); // 주문에 대한 배송 목록 조회
 
             const {
                 startPage,
@@ -150,8 +150,8 @@ api.get('/week',
     verifyAdminToken,
     async function (req, res, next) {
         try {
-            const productRes = await selectWeekProduct();
-            const membershipRes = await selectWeekMembership();
+            const productRes = await selectWeekProduct(); // 일주일 동안의 제품 주문량 조회
+            const membershipRes = await selectWeekMembership(); // 일주일 동안의 멤버십 구독량 조회
 
             res.status(200).json({
                 status: 200,
@@ -195,15 +195,15 @@ api.get('/ship/schedule',
     }
 );
 
-// 미러를 구매한 사용자인지 조회
+// 미러 구매자인지 조회
 api.get('/check/:userUID',
     verifyToken,
     async function (req, res, next) {
         try{
             const userUID = req.params.userUID;
-            const isPurchase = await isPurchaseMirror(userUID);
+            const isPurchase = await isPurchaseMirror(userUID); // 미러 구매자인지 조회
             
-            if (isPurchase){ // 미러를 구매한 사용자일 경우
+            if (isPurchase){ // 미러 구매자일 경우
                 res.status(200).json({
                     status: 200,
                     data: "true",
@@ -211,7 +211,7 @@ api.get('/check/:userUID',
                 });
             }
             else{
-                res.status(200).json({ // 미러를 구매하지 않은 사용자일 경우
+                res.status(200).json({ // 미러 구매자가 아닐 경우
                     status: 200,
                     data: "false",
                     message: "fail"
@@ -229,9 +229,9 @@ api.get('/check/free/:userUID',
     async function (req, res, next) {
         try{
             const userUID = req.params.userUID;
-            const isPurchase = await isPurchaseMirror(userUID);
+            const isPurchase = await isPurchaseMirror(userUID); // 미러를 구매한 사용자잉ㄴ지 조회
 
-            if(isPurchase == false){
+            if(isPurchase == false){ // 미러를 구매하지 않은 사용자일 경우
                 res.status(200).json({
                     status: 200,
                     data: "false",
@@ -240,16 +240,16 @@ api.get('/check/free/:userUID',
                 return false;
             }
 
-            const membershipUID = await selectMembershipUID(userUID);
+            const membershipUID = await selectMembershipUID(userUID); // 멤버십 정보 조회
 
-            if(membershipUID == 0){
+            if(membershipUID == 0){ // 멤버십 구독자가 아닐 경우
                 res.status(200).json({
                     status: 200,
                     data: "true",
                     message: "success"
                 });
             }
-            else{
+            else{ // 멤버십 구독자일 경우
                 res.status(200).json({
                     status: 200,
                     data: "false",
@@ -396,13 +396,13 @@ api.get('/refund',
             const currentPage = req.query.page ? parseInt(req.query.page) : 1;
             const offset = parseInt(currentPage - 1) * pageCnt15;
 
-            const countRes = await selectPaymentRefundStatus(status, searchType, searchWord, startDate, endDate);
+            const countRes = await selectPaymentRefundStatus(status, searchType, searchWord, startDate, endDate); // 취소 현황 조회 (전체, 취소요청, 취소승인, 취소미승인)
             const totalCnt = countRes.totalCnt;
             const refReqCnt = countRes.refReqCnt;
             const refOkCnt = countRes.refOkCnt;
             const refNoCnt = countRes.refNoCnt;
 
-            const result = await selectPaymentRefund(status, searchType, searchWord, startDate, endDate, offset);
+            const result = await selectPaymentRefund(status, searchType, searchWord, startDate, endDate, offset); // 취소 내역 조회
             const {
                 startPage,
                 endPage,
@@ -491,21 +491,47 @@ api.post("/billings", async (req, res) => {
         const payType = custom_data.payType;
         const buyerEmail = paymentData.buyer_email ? paymentData.buyer_email : '';
 		const buyerTel = paymentData.buyer_tel ? paymentData.buyer_tel : '';
-
+        var laterNum = 1;
         if (payType == "coupon" && name == "single") {
             // 앱 출시 이후에는 첫 달만 무료이고 그 이후부터는 정기 구독료 납부해야하므로 이 코드 실행
-            //appendFreeMembership(imp_uid, customer_uid, name, amount, custom_data, buyerEmail, buyerTel);
+            /*
+            laterNum = 3;
+            await scheduleMembership(customer_uid, laterNum, amount, name, custom_data, buyerEmail, buyerTel); // 세달 뒤의 구독 결제 예약
             res.status(200).json({
                 status: 200,
                 data: "true",
                 message: "결제 승인 성공"
             });
+            */
         } else {
-            var result = await payForMembership(customer_uid, name, amount, custom_data, buyerEmail, buyerTel);
-            if (result.status == 200)
-                res.status(200).json(result);
-            else
-                res.status(403).json(result);
+            const result = await rePaymentMembership(customer_uid, name, amount, custom_data); // 멤버십 재결제
+            const code = result.data.code;
+            const message = result.data.message; // 카드 승인 실패에 대한 메시지
+
+            if (code === 0) { // 카드사 통신에 성공(실제 승인 성공 여부는 추가 판단이 필요함)
+                if (result.data.response.status == "paid") { //카드 정상 승인
+                    await scheduleMembership(customer_uid, laterNum, amount, name, custom_data, buyerEmail, buyerTel); // 한달 뒤의 구독 결제 예약
+
+                    res.status(200).json({
+                        status: 403,
+                        data: "false",
+                        message: "승인 결제 실패"
+                    });
+
+                } else { //카드 승인 실패 (예: 고객 카드 한도초과, 거래정지카드, 잔액부족 등)
+                    res.status(403).json({
+                        status: 403,
+                        data: "false",
+                        message: "카드사 요청 실패"
+                    }); 
+                }
+            } else { // 카드사 요청에 실패 (result is null)
+                res.status(403).json({
+                    status: 403,
+                    data: "false",
+                    message: "카드사 요청 실패"
+                });
+            }
         }
     } catch (err) {
         res.status(400).send(err);
@@ -518,15 +544,14 @@ api.post("/iamport-webhook", async function (req, res) {
     try {
         const imp_uid = req.body.imp_uid;
         const merchant_uid = req.body.merchant_uid;
-        const paidId = merchant_uid.substr(0, 1);
+        const paidId = merchant_uid.substr(0, 1); // 주문번호의 첫 번째 숫자 조회 (1-일반결제, 2-멤버십 첫 주문, 3-멤버십 정기 결제)
         const paymentData = await getPaymentData(imp_uid);
         const status = paymentData.status;
 
-        if (status == "paid") { // 결제 성공적으로 완료
-            await savePayment(paidId, paymentData);
-        } else if (status == "cancelled") {
-            await refundPayment(amount, merchant_uid);
-        }
+        if (status == "paid") // 결제 성공적으로 완료
+            await savePayment(paidId, paymentData); // 결제를 저장한다
+        else if (status == "cancelled") 
+            await refundPayment(amount, merchant_uid); // 결제를 환불한다
 
         res.status(200).send("success");
     } catch (err) {
@@ -1046,23 +1071,11 @@ async function scheduleMembership(customer_uid, laterNum, amount, name, custom_d
     });
 }
 
-// 멤버십 무료 제공
-async function appendFreeMembership(imp_uid, customer_uid, name, custom_data, email, cellNum) {
-    delete custom_data.payType;
-
-    var amount = 9900;
-    const laterNum = 3; //3달 무료로 멤버십 제공
-
-    await scheduleMembership(customer_uid, laterNum, amount, name, custom_data, email, cellNum);
-}
-
-// 아임포트 - 멤버십 결제
-async function payForMembership(customer_uid, name, amount, custom_data, email, cellNum) {
-    // 인증 토큰 발급 받기
+// 멤버십 결제
+async function rePaymentMembership(customer_uid, name, amount, custom_data){
     const access_token = await getToken();
 
-    // 재결제
-    const paymentResult = await axios({
+    const result = await axios({
         url: 'https://api.iamport.kr/subscribe/payments/again',
         method: "post",
         headers: {
@@ -1077,35 +1090,7 @@ async function payForMembership(customer_uid, name, amount, custom_data, email, 
         }
     });
 
-    const code = paymentResult.data.code;
-    const message = paymentResult.data.message; // 카드 승인 실패에 대한 메시지
-
-    if (code === 0) { // 카드사 통신에 성공(실제 승인 성공 여부는 추가 판단이 필요함)
-        if (paymentResult.data.response.status == "paid") { //카드 정상 승인
-            // 새로운 결제 예약
-            const laterNum = 1; // 한 달 후 다시 결제
-            await scheduleMembership(customer_uid, laterNum, amount, name, custom_data, email, cellNum);
-
-            return {
-                status: 200,
-                data: "true",
-                message: "결제 승인 성공"
-            };
-
-        } else {
-            return {
-                status: 403,
-                data: "false",
-                message: "승인 결제 실패"
-            }; //카드 승인 실패 (예: 고객 카드 한도초과, 거래정지카드, 잔액부족 등)
-        }
-    } else {
-        return {
-            status: 403,
-            data: "false",
-            message: "카드사 요청 실패"
-        }; // 카드사 요청에 실패 (paymentResult is null)
-    }
+    return result;
 }
 
 // 아임포트 - 결제 정보 조회
@@ -1123,14 +1108,14 @@ async function getPaymentData(imp_uid) {
     return paymentData.data.response;
 }
 
-// 관리자 - 결제 환불 처리
+// 관리자 - 주문을 환불 정보로 수정 (아임포트 정보)
 async function refundPayment(amount, merchantUid) {
     var sql = "update payment set refundAmount = ?, paymentStatus = 'cancelled', orderStatus = '취소승인' where merchantUid = ?";
     var sqlData = [amount, merchantUid];
     await con.query(sql, sqlData);
 }
 
-// 관리자 - 결제 환불 완료 처리
+// 관리자 - 주문을 환불 완료 상태로 수정 (에이치랩 정보)
 async function completeRefund(refConfMsg, orderStatus, paymentUID) {
     var sql = "update payment " +
         "set refConfMsg = ?, orderStatus = ?, refConfDate = now() " +
@@ -1367,49 +1352,49 @@ async function savePayment(paidId, paymentData) {
         const receiptUrl = paymentData.receipt_url ? paymentData.receipt_url : '';
         const status = paymentData.status ? paymentData.status : '';
         var payMethod = paymentData.pay_method ? paymentData.pay_method : '';
+
         var laterNum = 1; // 만료날짜 한달 후
 
-        if (payType == "coupon") {
+        if (payType == "coupon") { // 쿠폰으로 구매했을 경우
             payMethod = "[미러구매 혜택] 무료 멤버십";
             //laterNum = 1; // 만료날짜 한달 후가 아니라면 숫자 변경
             delete customData.payType;
         }
 
-        if (payMethod == "card")
+        if (payMethod == "card") // 카드로 구매했을 경우
             payMethod = "신용카드";
         
-        // 결제 정보 저장
         const sqlData = [userUID, amount, addr1, addr2, requireMents, applyNum, bankName, buyerAddr, buyerEmail, buyerName, buyerPostcode, buyerTel,
             cardName, cardNumber, cardQuota, currency, customerUid, impUid, merchantUid, level, paidAt, payMethod, pgTid, pgType, receiptUrl, status, type];
-        const paymentUID = await insertPayment(sqlData);
+        const paymentUID = await insertPayment(sqlData); // 결제 정보 저장
         
         if (paidId == "1") { // product
             // 장바구니에서 삭제
             // deleteMyBasket(customData.myBasketUID);
             const count = 1;
-            await insertPaymentProduct(paymentUID, productUID, optionUID, count, buyerEmail);
+            await insertPaymentProduct(paymentUID, productUID, optionUID, count, buyerEmail); // 결제에 대한 제품 정보 저장
         } 
-        else if (paidId == "2") { // membership - 처음 결제
+        else if (paidId == "2") { // membership - 첫 결제
             if (payMethod != "[미러구매 혜택] 무료 멤버십")
                 sendMembershipEmail(buyerEmail, level, amount, payMethod, cardNumber);
 
             const result = await selectMembershipUID(userUID);
             const membershipUID = result.UID;
 
-            if(membershipUID != 0) // 멤버십 구매한 내역 존재
-                await updateMembership(level, laterNum, membershipUID, paymentUID);
-            else // 멤버십 처음 구매
-                await insertMembership(userUID, level, laterNum, paymentUID);
+            if(membershipUID != 0) // 멤버십 구매 내역이 존재할 경우
+                await updateMembership(level, laterNum, membershipUID, paymentUID); // 멤버십 정보를 수정
+            else // 멤버십 구매 내역이 없을 경우 (첫 구매)
+                await insertMembership(userUID, level, laterNum, paymentUID); // 멤버십 정보 등록
                 
-            await insertPaymentMembership(paymentUID, membershipUID);
+            await insertPaymentMembership(paymentUID, membershipUID); // 결제에 대한 멤버십 정보 저장
         }   
         else if (paidId == "3") { // membership - 정기 결제
             const result = await selectMembership(userUID);
             const membershipUID = result.UID;
             if(membershipUID > 0){  // 구독하고 있는 멤버십이 있을 경우
-                await scheduleMembership(customerUid, laterNum, amount, level, customData, buyerEmail, buyerTel);
-                await updateMembership(level, laterNum, membershipUID, paymentUID);
-                await insertPaymentMembership(paymentUID, membershipUID); 
+                await scheduleMembership(customerUid, laterNum, amount, level, customData, buyerEmail, buyerTel); // 한달 뒤의 구독 결제 예약
+                await updateMembership(level, laterNum, membershipUID, paymentUID); // 멤버십 정보를 수정
+                await insertPaymentMembership(paymentUID, membershipUID); // 결제에 대한 멤버십 정보 저장
             }
         }
     } catch (err) {
