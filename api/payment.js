@@ -513,9 +513,9 @@ api.post("/billings", async (req, res) => {
                     await scheduleMembership(customer_uid, laterNum, amount, name, custom_data, buyerEmail, buyerTel); // 한달 뒤의 구독 결제 예약
 
                     res.status(200).json({
-                        status: 403,
-                        data: "false",
-                        message: "승인 결제 실패"
+                        status: 200,
+                        data: "true",
+                        message: "결제 승인 성공"
                     });
 
                 } else { //카드 승인 실패 (예: 고객 카드 한도초과, 거래정지카드, 잔액부족 등)
@@ -1378,8 +1378,7 @@ async function savePayment(paidId, paymentData) {
             if (payMethod != "[미러구매 혜택] 무료 멤버십") // 쿠폰으로 구매하지 않았을 경우
                 sendMembershipEmail(buyerEmail, level, amount, payMethod, cardNumber); // 멤버십 구독 메일 전송
 
-            const result = await selectMembershipUID(userUID); // 멤버십 구독자인지 조회
-            const membershipUID = result.UID;
+            const membershipUID = await selectMembershipUID(userUID); // 멤버십 구독자인지 조회
 
             if(membershipUID != 0) // 멤버십 구매 내역이 존재할 경우
                 await updateMembership(level, laterNum, membershipUID, paymentUID); // 멤버십 정보를 수정

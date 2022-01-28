@@ -12,26 +12,44 @@ var sCustomize 	= "";			  //없으면 기본 웹페이지 / Mobile : 모바일�
 const domain = "https://api.motifme.io";
 var sErrorUrl = domain + "checkplus_fail";	  	// 실패시 이동될 URL (방식 : 프로토콜을 포함한 절대 주소)
 
+// 웹 response
+// pass 인증으로 회원가입 여부 조회
+api.get("/join", async function(req, res) {
+    try{
+        if(req.query.EncodeData == undefined){ // pass 인증 결과값이 없는 경우 (app에서 pass 인증창 띄울 경우)
+            var successReturnUrl = domain + "/pass/join";	// 성공시 요청 받을 URL (방식 : 프로토콜을 포함한 절대 주소)
+            showPassAuth(res, successReturnUrl); // pass 인증창 출력
+        } else { // pass 인증 결과값이 있는 경우 (웹에서 pass 인증 성공 시)
+            //chrome80 이상 대응
+            var sEncData = req.query.EncodeData;
+            await sendResponse('join', res, sEncData);
+        }
+    } catch (err) {
+        throw err;
+    }
+});
+
 // 앱 response
 api.post("/join", async function(req, res) {
     try{
-        var sEncData = req.body.EncodeData;
+        var sEncData = req.body.EncodeData; // pass 인증 결과값
         await sendResponse('join', res, sEncData);
     } catch (err) {
         throw err;
     }
 });
 
-//웹
-api.get("/join", async function(req, res) {
+// 웹 response
+// pass 인증으로 아이디 조회
+api.get("/findId", async function(req, res) {
     try{
-        if(req.query.EncodeData == undefined){
-            var successReturnUrl = domain + "/pass/join";	// 성공시 이동될 URL (방식 : 프로토콜을 포함한 절대 주소)
-            showPassAuth(res, successReturnUrl);
-        } else {
+        if(req.query.EncodeData == undefined){ // pass 인증 결과값이 없는 경우 (app에서 pass 인증창 띄울 경우)
+            var successReturnUrl = domain + "/pass/findId"; // 성공시 요청 받을 URL (방식 : 프로토콜을 포함한 절대 주소)
+            showPassAuth(res, successReturnUrl); // pass 인증창 출력
+        } else { // pass 인증 결과값이 있는 경우 (웹에서 pass 인증 성공 시)
             //chrome80 이상 대응
-            var sEncData = req.query.EncodeData;
-            await sendResponse('join', res, sEncData);
+            var sEncData = req.query.EncodeData; // pass 인증 결과값
+            await sendResponse('findId', res, sEncData);
         }
     } catch (err) {
         throw err;
@@ -43,22 +61,6 @@ api.post("/findId", async function(req, res) {
     try{
         var sEncData = req.body.EncodeData;
         await sendResponse('findId', res, sEncData);
-    } catch (err) {
-        throw err;
-    }
-});
-
-//웹
-api.get("/findId", async function(req, res) {
-    try{
-        if(req.query.EncodeData == undefined){
-            var successReturnUrl = domain + "/pass/findId"; // 성공시 이동될 URL (방식 : 프로토콜을 포함한 절대 주소)
-            showPassAuth(res, successReturnUrl);
-        } else {
-            //chrome80 이상 대응
-            var sEncData = req.query.EncodeData;
-            await sendResponse('findId', res, sEncData);
-        }
     } catch (err) {
         throw err;
     }
