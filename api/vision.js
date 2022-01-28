@@ -40,11 +40,11 @@ api.post('/',
                 const waist = req.body.waist;
                 const hip = req.body.hip;
                 const thigh = req.body.thigh;
-                const calf = req.body.calf;
+                const chest = req.body.chest;
                 const status = '검사';
 
-                var sql = "insert vision(filePath, shoulder, waist, hip, thigh, calf, status) values (?)";
-                const sqlData = [filename, shoulder, waist, hip, thigh, calf, status];
+                var sql = "insert vision(filePath, shoulder, waist, hip, thigh, chest, status) values (?)";
+                const sqlData = [filename, shoulder, waist, hip, thigh, chest, status];
                 const [result] = await con.query(sql, [sqlData]);
 
                 res.status(200).json({

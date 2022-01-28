@@ -1375,10 +1375,10 @@ async function savePayment(paidId, paymentData) {
             await insertPaymentProduct(paymentUID, productUID, optionUID, count, buyerEmail); // 결제에 대한 제품 정보 저장
         } 
         else if (paidId == "2") { // membership - 첫 결제
-            if (payMethod != "[미러구매 혜택] 무료 멤버십")
-                sendMembershipEmail(buyerEmail, level, amount, payMethod, cardNumber);
+            if (payMethod != "[미러구매 혜택] 무료 멤버십") // 쿠폰으로 구매하지 않았을 경우
+                sendMembershipEmail(buyerEmail, level, amount, payMethod, cardNumber); // 멤버십 구독 메일 전송
 
-            const result = await selectMembershipUID(userUID);
+            const result = await selectMembershipUID(userUID); // 멤버십 정보 조회
             const membershipUID = result.UID;
 
             if(membershipUID != 0) // 멤버십 구매 내역이 존재할 경우
@@ -1389,7 +1389,7 @@ async function savePayment(paidId, paymentData) {
             await insertPaymentMembership(paymentUID, membershipUID); // 결제에 대한 멤버십 정보 저장
         }   
         else if (paidId == "3") { // membership - 정기 결제
-            const result = await selectMembership(userUID);
+            const result = await selectMembership(userUID); // 구독하고 있는 멤버십 조회
             const membershipUID = result.UID;
             if(membershipUID > 0){  // 구독하고 있는 멤버십이 있을 경우
                 await scheduleMembership(customerUid, laterNum, amount, level, customData, buyerEmail, buyerTel); // 한달 뒤의 구독 결제 예약
