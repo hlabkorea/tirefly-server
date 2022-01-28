@@ -190,7 +190,7 @@ api.get('/category/:categoryUID',
 // vod 검색
 api.get('/search', verifyToken, async function (req, res) {
     try {
-        var sql = "select a.UID, c.teacherImg, a.videoName, c.teacherNickName as teacherName, a.contentsPath, b.categoryName, a.videoLevel, a.playTimeValue, e.rectImgPath as imgPath " +
+        var sql = "select a.UID, c.teacherImg, a.videoName, c.teacherNickName, c.teacherName, a.contentsPath, b.categoryName, a.videoLevel, a.playTimeValue, e.rectImgPath as imgPath " +
             "from video a " +
             "join category b on a.categoryUID = b.UID " +
             "join teacher c on a.teacherUID = c.UID " +

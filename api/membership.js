@@ -117,23 +117,6 @@ api.get('/:userUID', verifyToken, async function (req, res) {
     }
 });
 
-// 테스트 - hlab_04@hlabtech.com 멤버십 삭제
-api.delete('/',
-    async function (req, res) {
-        try{
-            var sql = "update membership set endDate = '0000-01-01' where userUID = 1523";
-            await con.query(sql);
-            res.status(200).json({
-                status: 200,
-                data: "true",
-                message: "success"
-            });
-        } catch (err) {
-            throw err;
-        }
-    }
-);
-
 // 멤버십 초대자 수 (멤버십 구매자는 제외)
 async function selectMemGroupCnt(sqlData){
     var sql = "select count(distinct userUID) as cnt "

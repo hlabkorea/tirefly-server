@@ -240,7 +240,7 @@ api.get('/check/free/:userUID',
                 return false;
             }
 
-            const membershipUID = await selectMembershipUID(userUID); // 멤버십 정보 조회
+            const membershipUID = await selectMembershipUID(userUID); // 멤버십 구독자인지 조회
 
             if(membershipUID == 0){ // 멤버십 구독자가 아닐 경우
                 res.status(200).json({
@@ -574,7 +574,7 @@ api.post("/inapp",
                 const userUID = req.body.userUID;
                 const receipt = req.body.receipt;
                 const excludeOldTransactions = true; // 최신 갱신 트랜잭션만 포함
-                const verifiedReceipt = await verifyReceipt(receipt, excludeOldTransactions);
+                const verifiedReceipt = await verifyReceipt(receipt, excludeOldTransactions); // 영수증 유효성 검사
 
                 if(verifiedReceipt.status != 0){ // 유효하지 않은 영수증일 경우
                     res.status(403).json({
@@ -606,8 +606,8 @@ api.post("/app-store/v1", async (req, res) => {
         console.log(notificationType);
         if (notificationType == "DID_RENEW") { // 자동 갱신
             const receiptData = req.body.unified_receipt.latest_receipt;
-            const excludeOldTransactions = true;
-            const verifiedReceipt = await verifyReceipt(receiptData, excludeOldTransactions);
+            const excludeOldTransactions = true; // 최신 갱신 트랜잭션만 포함
+            const verifiedReceipt = await verifyReceipt(receiptData, excludeOldTransactions); // 영수증 유효성 검사
 
             if(verifiedReceipt.status != 0){ // 유효하지 않은 영수증일 경우
                 res.status(403).json({
@@ -619,7 +619,7 @@ api.post("/app-store/v1", async (req, res) => {
             }
 
             const originalTransactionId = verifiedReceipt.latest_receipt_info[0].original_transaction_id;
-            const userUID = await selectAppleUserUID(originalTransactionId);
+            const userUID = await selectAppleUserUID(originalTransactionId); // userUID 조회
             if(userUID == 0){
                 res.status(403).json({
                     status: 403,
@@ -1378,7 +1378,7 @@ async function savePayment(paidId, paymentData) {
             if (payMethod != "[미러구매 혜택] 무료 멤버십") // 쿠폰으로 구매하지 않았을 경우
                 sendMembershipEmail(buyerEmail, level, amount, payMethod, cardNumber); // 멤버십 구독 메일 전송
 
-            const result = await selectMembershipUID(userUID); // 멤버십 정보 조회
+            const result = await selectMembershipUID(userUID); // 멤버십 구독자인지 조회
             const membershipUID = result.UID;
 
             if(membershipUID != 0) // 멤버십 구매 내역이 존재할 경우
@@ -1410,7 +1410,7 @@ async function selectProduct(productUID){
     return result;
 }
 
-// 회원에 대한 멤버십 UID 조회
+// 회원에 대한 멤버십 UID 조회 (멤버십 구독자인지 조회)
 async function selectMembershipUID(userUID){
     var sql = "select UID from membership where userUID = ?";
     const [result] = await con.query(sql, userUID);
@@ -1526,7 +1526,7 @@ async function insertAppleInApp(userUID, verifiedReceipt, res){
     const endTimestamp = latestReceipt.expires_date_ms / 1000;
     const type = 'membership';
 
-    const productRes = await selectProduct(productId);
+    const productRes = await selectProduct(productId); // 제품 정보 조회
     if(productRes.length == 0){
         res.status(403).json({
             status: 403,
@@ -1549,15 +1549,15 @@ async function insertAppleInApp(userUID, verifiedReceipt, res){
     }
 
     const sqlData = [userUID, price, buyerEmail, transactionId, originalTransactionId, level, paidTimestamp, receiptData, type, paidTimestamp];
-    const paymentUID = await insertApplePayment(sqlData);
-    var membershipUID = await selectMembershipUID(userUID);
+    const paymentUID = await insertApplePayment(sqlData); // 결제 정보 저장
+    var membershipUID = await selectMembershipUID(userUID); // 멤버십 구매자인지 조회
 
     if(membershipUID == 0) // 멤버십 첫 구매일 경우
-        membershipUID = await insertAppleMembership(userUID, level, paymentUID, paidTimestamp, endTimestamp);
+        membershipUID = await insertAppleMembership(userUID, level, paymentUID, paidTimestamp, endTimestamp); // 멤버십 정보 등록
     else // 멤버십 구매내역이 있을 경우
-        await updateAppleMembership(level, membershipUID, endTimestamp, paymentUID);
+        await updateAppleMembership(level, membershipUID, endTimestamp, paymentUID); // 멤버십 정보 수정
 
-    await insertApplePaymentMembership(paymentUID, membershipUID, paidTimestamp);
+    await insertApplePaymentMembership(paymentUID, membershipUID, paidTimestamp); // 결제에 대한 멤버십 정보 등록
 }
 
 // 일주일 상품 주문 수 조회
