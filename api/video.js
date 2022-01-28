@@ -585,7 +585,7 @@ function groupVideoAccList(result) {
                 obj.videoUID = result[i].UID;
                 obj.contentsPath = result[i].contentsPath;
                 obj.teacherImg = result[i].contentsPath;
-                obj.teacherName = result[i].teacherNickname;
+                obj.teacherName = result[i].teacherNickName;
                 obj.videoName = result[i].videoName;
                 obj.categoryName = result[i].categoryName;
                 obj.videoLevel = result[i].videoLevel;
