@@ -80,7 +80,7 @@ api.get("/web", async function(req, res) {
 });
 
 // 앱에서 faq 조회
-api.get("/app", verifyToken, async function(req, res) {
+api.get("/app", async function(req, res) {
     try{
         var sql = "select UID, question, answer from faq where type='app' order by regDate desc, UID desc";
         const [result] = await con.query(sql);
