@@ -65,7 +65,7 @@ api.post('/',
     }
 );
 
-// cms - 메인 슬라이드(배너) 이미지 업로드
+// cms - 메인 슬라이드(배너) 이미지 등록/변경
 api.put('/image/:slideUID', 
 		verifyAdminToken,
 		upload.single("img"), 

@@ -134,7 +134,7 @@ api.put('/password',
     }
 );
 
-// cms - 프로필 이미지 변경
+// cms - 프로필 이미지 등록/변경
 api.put('/image/:adminUID',
     verifyAdminToken,
     upload.single("img"),

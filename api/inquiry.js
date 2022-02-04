@@ -157,7 +157,9 @@ api.put("/:inquiryUID",
                 const inquiryUID = req.params.inquiryUID;
                 const completeMsg = req.body.completeMsg;
                 const email = await selectEmailFromInquiry(inquiryUID);
-                sendAnswerMail(email, completeMsg);
+
+                if(completMsg.length > 0)
+                    sendAnswerMail(email, completeMsg);
                 await completeInquiry(completeMsg, adminUID, inquiryUID);
 
                 res.status(200).json({

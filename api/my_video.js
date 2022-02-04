@@ -77,11 +77,11 @@ api.put('/:videoUID',
                 const myVideoUID = await selectMyVideoUID(userUID, videoUID);
                 var message = "";
 
-                if(myVideoUID > 0){
+                if(myVideoUID > 0){ // 좋아요 한 비디오인 경우
                     await deleteMyVideo(myVideoUID);
                     message = "좋아요가 취소되었습니다";
                 }
-                else{
+                else{ // 좋아요 한 비디오가 아닌 경우
                     await insertMyVideo(userUID, videoUID);
                     message = "좋아요가 등록되었습니다";
                 }

@@ -4,7 +4,7 @@ const api = express.Router();
 const { check } = require('express-validator');
 const {getError} = require('./config/requestError.js');
 
-// 뉴스레터 구독 추가
+// 뉴스레터 구독 등록
 api.post('/',
     [
         check("email", "email is required").not().isEmpty()
@@ -14,9 +14,9 @@ api.post('/',
         if (errors.isEmpty()) {
             try {
                 const email = req.body.email;
-                const letterUID = await selectLetterUID(email);
+                const letterUID = await selectLetterUID(email); // 구독자인지 확인하기 위해 구독 UID 조회
 
-                if (letterUID != 0) {
+                if (letterUID != 0) { // 구독자인 경우
                     res.status(403).json({
                         status: 403,
                         data: "false",
@@ -25,7 +25,7 @@ api.post('/',
                     return false;
                 }
 
-                await insertNewsletter(email);
+                await insertNewsletter(email); // 뉴스레터 구독자 등록
 
                 res.status(200).json({
                     status: 200,

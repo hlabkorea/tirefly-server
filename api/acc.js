@@ -71,7 +71,7 @@ api.post('/',
         }
 );
 
-// cms - 악세사리 이미지 업로드
+// cms - 악세사리 이미지 등록/변경
 api.put('/image/:accUID',
         verifyAdminToken,
         upload.single("img"),

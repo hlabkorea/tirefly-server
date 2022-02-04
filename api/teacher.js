@@ -151,7 +151,7 @@ api.put('/status/:teacherUID', verifyAdminToken, async function (req, res) {
     }
 });
 
-// cms - 강사 이미지 업로드
+// cms - 강사 이미지 등록/변경
 api.put('/image/:teacherUID',
     verifyAdminToken,
     upload.single("img"),

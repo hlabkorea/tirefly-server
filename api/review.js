@@ -12,9 +12,11 @@ const pageCnt15 = 15;
 // cms - 비디오 운동 후기 목록 조회
 api.get('/', verifyAdminToken, async function (req, res) {
     try {
-        const searchType = req.query.searchType ? req.query.searchType : '';
+        const searchType = req.query.searchType ? req.query.searchType : ''; // videoName or teacherName
         const searchWord = req.query.searchWord ? req.query.searchWord : '';
         const currentPage = req.query.page ? parseInt(req.query.page) : 1;
+        const offset = (parseInt(currentPage) - 1) * pageCnt15;
+
         var sql = "select a.UID as reviewUID, a.videoUID, c.videoName, d.teacherName, a.userUID, b.nickName, a.reviewLevel, a.reviewPoint, " +
             "a.reviewContents, a.regDate " +
             "from review a " +
@@ -34,7 +36,6 @@ api.get('/', verifyAdminToken, async function (req, res) {
         sql += "order by a.regDate desc ";
 
         var countSql = sql + ";";
-        const offset = (parseInt(currentPage) - 1) * pageCnt15;
         sql += `limit ${offset}, ${pageCnt15}`;
 
         const [result] = await con.query(countSql + sql);

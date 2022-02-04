@@ -21,12 +21,12 @@ api.put('/:programUID',
                 const myProgramUID = await selectMyProgramUID(userUID, programUID);
                 var message = "";
 
-                if (myProgramUID > 0) {
+                if (myProgramUID > 0) { // 신청할 프로그램인 경우
                     await deleteMyProgram(myProgramUID);
                     const historyUIDs = await getHistoryUIDs(userUID, programUID);
                     await deleteHistory(historyUIDs);
                     message = "프로그램이 취소되었습니다.";
-                } else {
+                } else { // 신청한 프로그램이 아닐 경우
                     await inseryMyProgram(userUID, programUID);
                     message = "프로그램이 시작되었습니다.";
                 }

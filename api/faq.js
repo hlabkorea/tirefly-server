@@ -11,7 +11,7 @@ const pageCnt10 = 10;
 api.get("/", verifyAdminToken, async function (req, res) {
     try {
         var sql = "select UID, category, question, answer, type from faq";
-        const type = req.query.type ? req.query.type : 'all';
+        const type = req.query.type ? req.query.type : 'all'; // all or web or app
         const currentPage = req.query.page ? parseInt(req.query.page) : 1;
         const offset = (parseInt(currentPage) - 1) * pageCnt10;
 

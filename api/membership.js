@@ -4,7 +4,7 @@ const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
 const api = express.Router();
 const { getCurrentDateTime } = require('./config/date.js');
 
-// 멤버십 소유자들 조회
+// 멤버십 소유자들 조회 - membership_check.html 에서 사용
 api.get('/', async function (req, res) {
     try{
         var sql = "select a.userUID, b.email, b.nickName, a.`level`, a.startDate, a.endDate " + 
@@ -29,7 +29,7 @@ api.get('/auth/:userUID', verifyToken, async function (req, res) {
         
         if(result.length != 0){ // 멤버십 소유자인 경우
             const endDate = result[0].endDate;
-            const curDate = getCurrentDateTime();
+            const curDate = getCurrentDateTime(); // 현재 Datetime 조회
 
             if(curDate <= endDate)
                 res.status(200).json({status:200,  data: "true", message:"success"});
@@ -46,10 +46,10 @@ api.get('/auth/:userUID', verifyToken, async function (req, res) {
 // 멤버십 구독자 현황 조회
 api.get('/count', verifyAdminToken, async function (req, res) {
     try{
-        const memRes = await selectMembership();
+        const memRes = await selectMembership(); // 멤버십 사용자들 조회
         var totalCnt = memRes.length;
-        totalCnt += await selectMemGroupCnt(memRes);
-        const newCnt = await selectTodayMemCnt();
+        totalCnt += await selectMemGroupCnt(memRes); // 멤버십 소유자가 초대자인 경우를 제외한 초대자 수 조회
+        const newCnt = await selectTodayMemCnt(); // 오늘 가입한 멤버십 구독자 수 조회
 
         res.status(200).send({
             status: 200,
@@ -85,20 +85,20 @@ api.get('/:userUID', verifyToken, async function (req, res) {
         const userUID = req.params.userUID;
 
         // 멤버십 소유자인지 확인
-        const membershipRes = await selectMembership(userUID);
+        const membershipRes = await selectMembership(userUID); // 멤버십 소유자 여부에 대한 결과 조회
         var level = membershipRes.auth;
         var endDate = membershipRes.endDate;
         var startDate = membershipRes.startDate;
         var maxCount = 0;
 
-        if (level == "normal") {
+        if (level == "normal") { // 멤버십 소유 권한이 없을 경우
             // 멤버십 초대자인지 확인
             const membershipGroupRes = await selectMembershipGroup(userUID);
             level = membershipGroupRes.level;
             endDate = membershipGroupRes.endDate;
             startDate = membershipGroupRes.startDate;
         }
-        else{
+        else{ // 멤버십 소유 권한이 있을 경우
             maxCount = getMaxCount(level);
         }
 

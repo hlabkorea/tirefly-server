@@ -69,7 +69,7 @@ api.put('/:programUID',
                 const userPlayTime = req.body.playTime;
                 const complete = req.body.complete;
 
-                const result = await selectProgramHistory(userUID, videoUID, programUID);
+                const result = await selectProgramHistory(userUID, videoUID, programUID); // 프로그램의 비디오 재생 이력 조회
 
                 if (result.length > 0) { // 재생 이력이 있는 경우
                     const historyUID = result[0].UID;

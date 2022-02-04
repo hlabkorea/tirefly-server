@@ -83,7 +83,7 @@ api.get('/count', verifyAdminToken, async function (req, res) {
     }
 });
 
-// 프로그램 top5 조회
+// 재생 수가 많은 프로그램 top5 조회
 api.get('/top5', verifyAdminToken, async function (req, res) {
     try {
         var sql = "select b.programName, count(a.programUID) as count " +
@@ -113,10 +113,10 @@ api.get('/:programUID',
                 const programUID = req.params.programUID;
                 const userUID = req.query.userUID ? req.query.userUID : 0;
 
-                var resData = await selectProgram(programUID);
+                var resData = await selectProgram(programUID); // 프로그램의 상세정보 조회
 
                 if(userUID != 0) { // 앱에서 조회
-                    resData.register = await isRegister(userUID, programUID);
+                    resData.register = await isRegister(userUID, programUID);  // 사용자의 프로그램 신청 여부 조회
                 }
 
                 res.status(200).json({
@@ -171,7 +171,7 @@ api.post('/',
     }
 );
 
-// cms - 프로그램 이미지 업로드
+// cms - 프로그램 이미지 등록/변경
 api.put('/image/:programUID',
     verifyAdminToken,
     upload.single("img"),
@@ -179,7 +179,7 @@ api.put('/image/:programUID',
         try{
             const programUID = req.params.programUID;
             const filename = req.file.filename;
-            const imgType = req.body.imgType;
+            const imgType = req.body.imgType; // programThumbnail or contentsPath
             var sql = `update program set ${imgType} = ? where UID = ?`;
             const sqlData = [filename, programUID];
 

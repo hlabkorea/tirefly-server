@@ -422,7 +422,7 @@ api.put('/purpose/:userUID',
     }
 );
 
-// 프로필 이미지 변경 
+// 프로필 이미지 등록/변경 
 api.put('/image/:userUID',
     verifyToken,
     upload.single("profileImg"),

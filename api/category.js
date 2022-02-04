@@ -77,7 +77,7 @@ api.post('/',
     }
 );
 
-// cms - 운동 종목 이미지 업로드
+// cms - 운동 종목 이미지 등록/변경
 api.put('/image/:categoryUID',
     verifyAdminToken,
     upload.single("img"),

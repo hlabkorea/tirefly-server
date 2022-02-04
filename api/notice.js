@@ -10,7 +10,7 @@ const pageCnt10 = 10;
 // 공지사항 조회
 api.get('/', async function (req, res) {
     try{
-        const category = req.query.category ? req.query.category : '';
+        const category = req.query.category ? req.query.category : ''; // 일반, 행사/이벤트
         const currentPage = req.query.page ? parseInt(req.query.page) : 1;
         const offset = (parseInt(currentPage) - 1) * pageCnt10;
 

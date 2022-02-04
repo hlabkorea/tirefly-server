@@ -52,7 +52,7 @@ api.get('/owners/:userUID',
     }
 );
 
-// 멤버십 그룹에 추가
+// 멤버십 그룹에 등록
 api.post('/',
     verifyToken,
     [
@@ -88,8 +88,8 @@ api.post('/',
                     return false;
                 }
 
-                const memberCnt = await selectGroupCount(ownerUID);
-                if (isFull(level, memberCnt)) {
+                const memberCnt = await selectGroupCount(ownerUID); // 초대한 회원의 수를 조회
+                if (isFull(level, memberCnt)) { // 초대할 수 있는 회원의 수를 초과했는지 확인
                     res.status(403).json({
                         status: 403,
                         data: "false",
@@ -98,7 +98,7 @@ api.post('/',
                     return false;
                 }
 
-                if (await isInvited(ownerUID, email)) {
+                if (await isInvited(ownerUID, email)) { // 사용자가 소유자에게 초대되었는지 확인
                     res.status(403).json({
                         status: 403,
                         data: "false",
@@ -107,8 +107,8 @@ api.post('/',
                     return false;
                 }
 
-                await insertMembershipGroup(ownerUID, userUID, email);
-                const ownerEmail = await selectEmailFromUID(ownerUID);
+                await insertMembershipGroup(ownerUID, userUID, email); // 멤버십 그룹에 사용자를 등록
+                const ownerEmail = await selectEmailFromUID(ownerUID); // 소유자의 UID를 통해 이메일 조회
 
                 if (ownerEmail.length == 0){
                     res.status(403).json({
@@ -119,7 +119,7 @@ api.post('/',
                     return false;
                 }
 
-                sendInviteEmail(ownerEmail, email);
+                sendInviteEmail(ownerEmail, email); // 멤버십 초대 이메일 전송
 
                 res.status(200).json({
                     status: 200,
