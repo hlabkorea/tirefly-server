@@ -164,10 +164,17 @@ exports.sendPaymentMail = (result, email) => {
 			 + '</table>'
 			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center"><br></div>'
 			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center"><br></div>'
-			 + '<b><span style="font-size:9pt;line-height:12.84px;color:black">배송 정보 안내</span></b>'
-			 + '<p><span style="font-size:9pt;line-height:12.84px;color:black">모티프 미러는 프리오더 종료 후 순차 배송되며, 주문자에 한하여 추후 배송 일정 안내 메일을 전송해드릴 예정입니다.</span></p>'
-			 + '<p><span style="font-size:9pt;line-height:12.84px;color:black">모티프 미러 배송은 수도권 한정으로 가능하지만, 프리오더 구매 건에 한하여 전국 무료 배송 서비스를 제공합니다. (단, 제주 및 도서산간 지역 제외)</span></p>'
-			 + '<p><span style="font-size:9pt;line-height:12.84px;color:black">배송과 관련하여 문의사항이 있는 경우에는 고객센터(<a href="mailto:support@motifme.io">support@motifme.io</a>)로 문의 바랍니다.</span></p>'
+             + '<b><span style="font-size:9pt;line-height:12.84px;color:black">'
+             + '배송 정보 안내</span></b>'
+             + '<p><span style="font-size:9pt;line-height:12.84px;color:black">'
+             + '모티프 미러 주문 시 입력하신 연락처로 영업일 기준 3일 이내 배송 일정 안내를 위한 해피콜을 드릴 예정입니다.'
+             + '</span></p>'
+             + '<p><span style="font-size:9pt;line-height:12.84px;color:black">'
+             + '모티프 미러 배송은 수도권 (서울, 경기) 내 무료 배송, 그 외 지역은 5만원의 추가 비용이 청구됩니다. (단, 제주 및 도서산간 지역 제외)'
+             + '</span></p>'
+             + '<p><span style="font-size:9pt;line-height:12.84px;color:black">'
+             + '배송과 관련하여 문의사항이 있는 경우에는 고객센터(<a href="mailto:support@motifme.io">support@motifme.io</a>)로 문의 바랍니다.'
+             + '</span></p>'
 			 + '</div>';
 	var subject = "[모티프] 모티프 미러 주문 완료 안내";
 	this.sendMail(email, subject, html);
