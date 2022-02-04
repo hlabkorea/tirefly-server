@@ -147,7 +147,7 @@ api.post("/",
 api.put("/:inquiryUID",
     verifyAdminToken,
     [
-        check("completeMsg", "completeMsg is required").not().isEmpty()
+        check("completeMsg", "completeMsg is required").exists()
     ],
     async function (req, res) {
         const errors = getError(req, res);
@@ -158,7 +158,7 @@ api.put("/:inquiryUID",
                 const completeMsg = req.body.completeMsg;
                 const email = await selectEmailFromInquiry(inquiryUID);
 
-                if(completMsg.length > 0)
+                if(completeMsg.length > 0)
                     sendAnswerMail(email, completeMsg);
                 await completeInquiry(completeMsg, adminUID, inquiryUID);
 
