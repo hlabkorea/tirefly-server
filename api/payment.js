@@ -1224,7 +1224,9 @@ async function sendPaymentEmail(email, paymentUID) {
         'order by payment.regDate desc, product_img_list.UID';
     const [result] = await con.query(sql, paymentUID);
 
-    sendPaymentMail(result, email);
+    sendPaymentMail(result, email); // 주문자 이메일로 주문 메일 전송
+    const adminEmail = "jinsu.kim@hlabtech.com"; 
+    sendPaymentMail(result, adminEmail); // 김진수님 이메일로 주문 메일 전송
 }
 
 // 주문 정보 추가
