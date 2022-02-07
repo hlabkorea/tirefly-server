@@ -549,9 +549,9 @@ api.post("/iamport-webhook", async function (req, res) {
         const status = paymentData.status;
 
         if (status == "paid") // 결제 성공적으로 완료
-            await savePayment(paidId, paymentData); // 결제를 저장한다
+            await savePayment(paidId, paymentData); // 결제 정보 저장
         else if (status == "cancelled") 
-            await refundPayment(amount, merchant_uid); // 결제를 환불한다
+            await refundPayment(amount, merchant_uid); // 결제 환불 처리
 
         res.status(200).send("success");
     } catch (err) {

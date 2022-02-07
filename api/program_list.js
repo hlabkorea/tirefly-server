@@ -11,7 +11,7 @@ api.get('/all', verifyToken, async function (req, res) {
         var sql = "select a.programUID, b.programName, b.programThumbnail, b.weekNumber, b.programLevel,  count(a.UID) as totalCount " +
             "from program_list a " +
             "join program b on a.programUID = b.UID " +
-            "where b.status = 'act' " +
+            "where b.status = 'act' and a.isRest = 0 " +
             "group by a.programUID " +
             "order by b.regDate desc";
         const [result] = await con.query(sql);
