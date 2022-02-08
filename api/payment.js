@@ -818,7 +818,7 @@ async function selectPaymentSales(type, searchType, searchWord, startDate, endDa
     }
 
     const [result] = await con.query(sql);
-    console.log(result);
+
     return result[0];
 }
 

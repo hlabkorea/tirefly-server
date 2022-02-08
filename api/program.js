@@ -52,7 +52,7 @@ api.get('/',
                         result: result[1]
                     },
                     message: "success"
-                });v
+                });
             } else { // 전체 조회
                 const [result] = await con.query(sql);
 
