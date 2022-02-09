@@ -51,8 +51,8 @@ api.post('/',
             const errors = getError(req, res);
 			if(errors.isEmpty()){
                 try{
-                    const accName = req.body.accName;
                     const adminUID = req.adminUID;
+                    const accName = req.body.accName;
                     const status = req.body.status;
                     var sql = "insert acc(accName, regUID, status) values(?)";
                     const sqlData = [accName, adminUID, status];

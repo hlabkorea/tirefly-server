@@ -99,9 +99,10 @@ function makeAdminJWT(adminUID){
 
 // 관리자 로그 추가
 function insertAdminLog(adminUID, token){
-    var sql = "insert admin_log(adminUID, token) values (?, ?)";
-    var sqlData = [adminUID, token];
-    con.query(sql, sqlData);
+    var sql = "insert admin_log(adminUID, token, action) values (?)";
+    const action = "로그인";
+    var sqlData = [adminUID, token, action];
+    con.query(sql, [sqlData]);
 }
 
 module.exports = api;

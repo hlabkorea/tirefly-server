@@ -3,6 +3,8 @@ const { con } = require('./config/database.js');
 const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
 const api = express.Router();
 const { getCurrentDateTime } = require('./config/date.js');
+const { check } = require('express-validator');
+const { getError } = require('./config/requestError.js');
 
 // 멤버십 소유자들 조회 - membership_check.html 에서 사용
 api.get('/', async function (req, res) {
@@ -18,7 +20,6 @@ api.get('/', async function (req, res) {
         throw err;
     }
 });
-
 
 // 멤버십 소유자인지 조회
 api.get('/auth/:userUID', verifyToken, async function (req, res) {
@@ -117,13 +118,61 @@ api.get('/:userUID', verifyToken, async function (req, res) {
     }
 });
 
+// 특정 회원에게 멤버십 제공
+api.post('/', 
+        verifyAdminToken,
+        [
+            check("userUID", "userUID is required").not().isEmpty(),
+            check("level", "level is required").not().isEmpty(),
+            check("startDate", "startDate is required").not().isEmpty(),
+            check("endDate", "endDate is required").not().isEmpty(),
+            check("memo", "memo is required").exists()
+        ], 
+        async function (req, res) {
+            const errors = getError(req, res);
+			if(errors.isEmpty()){
+                try{
+                    const adminUID = req.adminUID;
+                    const userUID = req.body.userUID;
+                    const level = req.body.level;
+                    const startDate = req.body.startDate;
+                    const endDate = req.body.endDate;
+                    const memo = req.body.memo;
+                    const token = req.headers.token;
+
+                    const membershipUID = await selectMembershipUID(userUID);
+                    if(membershipUID != 0) {
+                        res.status(403).send({
+                            status: 403,
+                            data: "멤버십을 구독하고 있는 회원입니다",
+                            message: "fail"
+                        });
+
+                        return false;
+                    }
+
+                    const sqlData = [userUID, level, startDate, endDate, memo, adminUID];
+                    await insertMembershipAuth(sqlData);
+                    await insertMembershipLog(adminUID, token);
+
+                    res.status(200).json({
+                        status: 200,
+                        data: "true",
+                        message: "success"
+                    });
+                } catch (err) {
+                    throw err;
+                }
+            }
+        }
+);
+
 // 멤버십 초대자 수 (멤버십 구매자는 제외)
 async function selectMemGroupCnt(sqlData){
     var sql = "select count(distinct userUID) as cnt "
             + "from membership_group "
             + "where userUID not in (?)";
     const [result] = await con.query(sql, [sqlData]);
-    console.log(result);
     return result[0].cnt;
 }
 
@@ -134,21 +183,34 @@ async function selectTodayMemCnt(){
     return result[0].cnt;
 }
 
+// 멤버십 구독자인지 확인
+// payment.js 에서도 사용하는 함수
+async function selectMembershipUID(userUID) {
+    var sql = "select UID, endDate from membership where userUID = ?";
+    const [result] = await con.query(sql, userUID);
+
+    if(result.length != 0)
+        return result[0];
+    else    
+        return 0;
+}
+
 // login.js 에서도 사용하는 함수 (login.js에서는 userUID == undefined 처리는 하지 않음)
 // 멤버십 소유자인지 확인
 async function selectMembership(userUID) {
-    if(userUID == undefined){
+    if (userUID == undefined) {
         var sql = "select userUID from membership";
         const [result] = await con.query(sql);
         var userUIDs = [];
-        for(var i in result){
+        for (var i in result) {
             userUIDs.push(result[i].userUID);
         }
         return userUIDs;
-    }
-    else{
+    } else {
         var sql = "select UID, level, startDate, endDate from membership " +
-        "where date_format(membership.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') and userUID = ?";
+            "where date_format(startDate, '%Y-%m-%d') <= date_format(now(), '%Y-%m-%d') " +
+            "and date_format(endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') " +
+            "and userUID = ?";
         const [result] = await con.query(sql, userUID);
 
         if (result.length != 0)
@@ -184,7 +246,9 @@ async function selectMembershipGroup(userUID) {
     var sql = "select b.startDate, b.endDate " +
         "from membership_group a " +
         "join membership b on b.userUID = a.ownerUID " +
-        "where date_format(b.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') and a.userUID = ? " +
+        "where date_format(b.startDate, '%Y-%m-%d') <= date_format(now(), '%Y-%m-%d') " +
+        "and date_format(b.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') " +  
+        "and a.userUID = ? " +
         "order by b.endDate desc " + // 여러 명에게 초대될 수 있으므로, 리스트 중 가장 긴 유효기간이 출력되어야 함
         "limit 1";
     const [result] = await con.query(sql, userUID);
@@ -202,5 +266,18 @@ async function selectMembershipGroup(userUID) {
         };
 }
 
+// 멤버십 제공
+async function insertMembershipAuth(sqlData){
+    var sql = "insert membership(userUID, level, startDate, endDate, memo, regUID) values (?)";
+    await con.query(sql, [sqlData]);
+}
+
+// 멤버십 제공 로그 등록
+async function insertMembershipLog(adminUID, token){
+    var sql = "insert admin_log(adminUID, token, action) values (?)";
+    const action = '멤버십 제공';
+    const sqlData = [adminUID, token, action];
+    await con.query(sql, [sqlData]);
+}
 
 module.exports = api;

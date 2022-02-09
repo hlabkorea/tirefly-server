@@ -93,7 +93,9 @@ function getRedirectPage(result){
 // 멤버십 소유자인지 확인
 async function selectMembership(userUID) {
     var sql = "select UID, level, startDate, endDate from membership " +
-        "where date_format(membership.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') and userUID = ?";
+        "where date_format(startDate, '%Y-%m-%d') <= date_format(now(), '%Y-%m-%d') " +
+        "and date_format(endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') " +
+        "and userUID = ?";
     const [result] = await con.query(sql, userUID);
 
     if (result.length != 0)
@@ -117,8 +119,10 @@ async function selectMembershipGroup(userUID) {
     var sql = "select b.startDate, b.endDate " +
         "from membership_group a " +
         "join membership b on b.userUID = a.ownerUID " +
-        "where date_format(b.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') and a.userUID = ? " +
-        "order by b.endDate desc " +
+        "where date_format(b.startDate, '%Y-%m-%d') <= date_format(now(), '%Y-%m-%d') " +
+        "and date_format(b.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') " +  
+        "and a.userUID = ? " +
+        "order by b.endDate desc " + // 여러 명에게 초대될 수 있으므로, 리스트 중 가장 긴 유효기간이 출력되어야 함
         "limit 1";
     const [result] = await con.query(sql, userUID);
     if (result.length != 0) { //멤버십 초대자일 때
