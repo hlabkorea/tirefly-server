@@ -144,8 +144,8 @@ api.post('/',
                     if(membershipUID != 0) {
                         res.status(403).send({
                             status: 403,
-                            data: "멤버십을 구독하고 있는 회원입니다",
-                            message: "fail"
+                            data: "true",
+                            message: "멤버십을 구독하고 있는 회원입니다."
                         });
 
                         return false;

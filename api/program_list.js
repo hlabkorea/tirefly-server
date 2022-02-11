@@ -128,7 +128,7 @@ api.put('/:programUID',
 
             const listUIDs = await selectProgramListUIDs(programUID); // 비디오 목록 조회
             if(listUIDs.length != 0) // 이미 program에 대한 비디오 목록이 존재하면 삭제
-                await deleteProgramList(listUIDs)
+                await deleteProgramList(listUIDs);
             
             const sqlListData = makeSqlListData(programUID, adminUID, programList); // sql data로 넣기 위해 데이터 가공
             await insertProgramList(sqlListData); // 비디오 목록 등록

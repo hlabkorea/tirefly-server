@@ -680,13 +680,29 @@ api.put('/ship/complete/:paymentUID',
             const shipConfDate = req.body.date;
             const shipConfMsg = req.body.msg;
             const shipRcpnt = req.body.recipient;
+            const serialNo = req.body.serialNo;
+
+            const stockUID = await selectStockUID(serialNo);
+
+            if(stockUID == 0){
+                // status code 의논 필요
+                res.status(403).json({
+                    status: 403,
+                    data: "false",
+                    message: "유효하지 않은 시리얼 번호입니다."
+                });
+
+                return false;
+            }
+
+            await updateStockPaymentUID(stockUID, paymentUID);
 
             var sql = "update payment " +
                 "set shipConfDate = ?, shipConfMsg = ?, shipRcpnt = ?, shippingStatus='배송완료', adminUID = ? " +
                 "where UID = ?";
             const sqlData = [shipConfDate, shipConfMsg, shipRcpnt, adminUID, paymentUID];
             await con.query(sql, sqlData);
-
+            
             res.status(200).json({
                 status: 200,
                 data: "true",
@@ -698,6 +714,24 @@ api.put('/ship/complete/:paymentUID',
     }
 );
 
+async function selectStockUID(serialNo){
+    var sql = "select UID from stock where serialNo = ?";
+    const [result] = await con.query(sql, serialNo);
+
+    if(result.length != 0)
+        return result[0].UID;
+    else
+        return 0;
+}
+
+async function updateStockPaymentUID(stockUID, paymentUID){
+    var sql = "update stock " +
+            "set paymentUID = ? " +
+            "where UID = ?";
+    const sqlData = [paymentUID, stockUID];
+    await con.query(sql, sqlData);
+}
+
 // 이니시스에 환불 요청
 api.put("/refund/complete/:paymentUID", async function (req, res) {
     try {
@@ -708,10 +742,10 @@ api.put("/refund/complete/:paymentUID", async function (req, res) {
         const [result] = await con.query(sql, paymentUID);
         
         if(result.length == 0){
-             // status code 의논 필요
-            res.status(200).json({
-                status: 200,
-                data: "true",
+            // status code 의논 필요
+            res.status(403).json({
+                status: 403,
+                data: "false",
                 message: "db에 존재하지 않는 데이터입니다."
             });
 
