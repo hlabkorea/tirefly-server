@@ -1266,11 +1266,10 @@ async function updateMembership(level, laterNum, membershipUID, paymentUID) {
 
 // 멤버십 정보 추가
 async function insertMembership(userUID, level, laterNum, paymentUID) {
-    var sql = "insert membership(userUID, level, endDate, paymentUID) values (?, ?, date_add(addtime(curdate(), '23:59:59'), interval ? month), ?)";
+    var sql = "insert membership(userUID, level, endDate, paymentUID) values (?, ?, date_add(curdate(), interval ? month), ?)";
     const sqlData = [userUID, level, laterNum, paymentUID];
     const [result] = await con.query(sql, sqlData);
-    const membershipUID = result.insertId;
-    insertOrderMembership(paymentUID, membershipUID);
+    return result.insertId;
 }
 
 // 멤버십 구독자인지 확인
@@ -1385,7 +1384,7 @@ async function savePayment(paidId, paymentData) {
             if(membershipUID != 0) // 멤버십 구매 내역이 존재할 경우
                 await updateMembership(level, laterNum, membershipUID, paymentUID); // 멤버십 정보를 수정
             else // 멤버십 구매 내역이 없을 경우 (첫 구매)
-                await insertMembership(userUID, level, laterNum, paymentUID); // 멤버십 정보 등록
+                membershipUID = await insertMembership(userUID, level, laterNum, paymentUID); // 멤버십 정보 등록
                 
             await insertPaymentMembership(paymentUID, membershipUID); // 결제에 대한 멤버십 정보 저장
         }   

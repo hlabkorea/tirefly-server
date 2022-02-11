@@ -149,6 +149,7 @@ api.post('/join',
                     await updateGroupUserUID(userUID, updateUIDs);
                 }
 
+                //await insertFreeMembership(userUID);
                 const token = makeJWT(userUID, level);
                 insertUserLog(userUID, token);
                 sendJoinMail(email);
@@ -752,5 +753,17 @@ async function selectWeekLoginUserCnt(){
     const [result] = await con.query(sql);
     return result;
 }
+
+// 멤버십 정보 추가
+async function insertFreeMembership(userUID){
+    var sql = "insert membership(userUID, level, endDate, paymentUID) values (?, ?, date_add(curdate(), interval ? day), ?)";
+    const level = "freeTrial";
+    const paymentUID = 0;
+    const day = 14;
+    const sqlData = [userUID, level, day, paymentUID];
+    const [result] = await con.query(sql, sqlData);
+    return result.insertId;
+}
+
 
 module.exports = api;
