@@ -649,13 +649,14 @@ api.put('/ship/schedule/:paymentUID',
     verifyAdminToken,
     async function (req, res, next) {
         try{
+            const adminUID = req.adminUID;
             const paymentUID = req.params.paymentUID;
             const shipResDate = req.body.date;
             const shipResMsg = req.body.msg;
             var sql = "update payment " +
-                "set shipResDate = ?, shipResMsg = ?, shippingStatus='배송준비중' " +
+                "set shipResDate = ?, shipResMsg = ?, shippingStatus='배송준비중', adminUID = ? " +
                 "where UID = ?";
-            const sqlData = [shipResDate, shipResMsg, paymentUID];
+            const sqlData = [shipResDate, shipResMsg, adminUID, paymentUID];
             await con.query(sql, sqlData);
 
             res.status(200).json({
@@ -674,15 +675,16 @@ api.put('/ship/complete/:paymentUID',
     verifyAdminToken,
     async function (req, res, next) {
         try{
+            const adminUID = req.adminUID;
             const paymentUID = req.params.paymentUID;
             const shipConfDate = req.body.date;
             const shipConfMsg = req.body.msg;
             const shipRcpnt = req.body.recipient;
 
             var sql = "update payment " +
-                "set shipConfDate = ?, shipConfMsg = ?, shipRcpnt = ?, shippingStatus='배송완료' " +
+                "set shipConfDate = ?, shipConfMsg = ?, shipRcpnt = ?, shippingStatus='배송완료', adminUID = ? " +
                 "where UID = ?";
-            const sqlData = [shipConfDate, shipConfMsg, shipRcpnt, paymentUID];
+            const sqlData = [shipConfDate, shipConfMsg, shipRcpnt, adminUID, paymentUID];
             await con.query(sql, sqlData);
 
             res.status(200).json({
