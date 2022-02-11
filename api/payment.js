@@ -547,6 +547,7 @@ api.post("/iamport-webhook", async function (req, res) {
         const paidId = merchant_uid.substr(0, 1); // 주문번호의 첫 번째 숫자 조회 (1-일반결제, 2-멤버십 첫 주문, 3-멤버십 정기 결제)
         const paymentData = await getPaymentData(imp_uid);
         const status = paymentData.status;
+        const amount = parseInt(paymentData.amount);
 
         if (status == "paid") // 결제 성공적으로 완료
             await savePayment(paidId, paymentData); // 결제 정보 저장
