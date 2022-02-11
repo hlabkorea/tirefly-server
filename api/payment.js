@@ -696,12 +696,7 @@ api.put('/ship/complete/:paymentUID',
             }
 
             await updateStockPaymentUID(stockUID, paymentUID);
-
-            var sql = "update payment " +
-                "set shipConfDate = ?, shipConfMsg = ?, shipRcpnt = ?, shippingStatus='배송완료', adminUID = ? " +
-                "where UID = ?";
-            const sqlData = [shipConfDate, shipConfMsg, shipRcpnt, adminUID, paymentUID];
-            await con.query(sql, sqlData);
+            await completeShip(shipConfDate, shipConfMsg, shipRcpnt, adminUID, paymentUID)
             
             res.status(200).json({
                 status: 200,
@@ -729,6 +724,14 @@ async function updateStockPaymentUID(stockUID, paymentUID){
             "set paymentUID = ? " +
             "where UID = ?";
     const sqlData = [paymentUID, stockUID];
+    await con.query(sql, sqlData);
+}
+
+async function completeShip(shipConfDate, shipConfMsg, shipRcpnt, adminUID, paymentUID) {
+    var sql = "update payment " +
+        "set shipConfDate = ?, shipConfMsg = ?, shipRcpnt = ?, shippingStatus='배송완료', adminUID = ? " +
+        "where UID = ?";
+    const sqlData = [shipConfDate, shipConfMsg, shipRcpnt, adminUID, paymentUID];
     await con.query(sql, sqlData);
 }
 
