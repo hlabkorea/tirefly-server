@@ -673,67 +673,49 @@ api.put('/ship/schedule/:paymentUID',
 // 배송 완료 처리
 api.put('/ship/complete/:paymentUID',
     verifyAdminToken,
+    [
+        check("date", "date is required").not().isEmpty(),
+        check("msg", "msg is required").exists(),
+        check("recipient", "recipient is required").not().isEmpty(),
+        check("serialNo", "serialNo is required").not().isEmpty()
+    ], 
     async function (req, res, next) {
-        try{
-            const adminUID = req.adminUID;
-            const paymentUID = req.params.paymentUID;
-            const shipConfDate = req.body.date;
-            const shipConfMsg = req.body.msg;
-            const shipRcpnt = req.body.recipient;
-            const serialNo = req.body.serialNo;
+        const errors = getError(req, res);
+        if(errors.isEmpty()){
+            try{
+                const adminUID = req.adminUID;
+                const paymentUID = req.params.paymentUID;
+                const shipConfDate = req.body.date;
+                const shipConfMsg = req.body.msg;
+                const shipRcpnt = req.body.recipient;
+                const serialNo = req.body.serialNo;
 
-            const stockUID = await selectStockUID(serialNo);
+                const stockUID = await selectStockUID(serialNo);
 
-            if(stockUID == 0){
-                // status code 의논 필요
-                res.status(403).json({
-                    status: 403,
-                    data: "false",
-                    message: "유효하지 않은 시리얼 번호입니다."
+                if(stockUID == 0){
+                    res.status(403).json({
+                        status: 403,
+                        data: "false",
+                        message: "유효하지 않은 시리얼 번호입니다."
+                    });
+
+                    return false;
+                }
+
+                await updateStockPaymentUID(stockUID, paymentUID, adminUID);
+                await completeShip(shipConfDate, shipConfMsg, shipRcpnt, adminUID, paymentUID)
+                
+                res.status(200).json({
+                    status: 200,
+                    data: "true",
+                    message: "success"
                 });
-
-                return false;
+            } catch (err) {
+                throw err;
             }
-
-            await updateStockPaymentUID(stockUID, paymentUID);
-            await completeShip(shipConfDate, shipConfMsg, shipRcpnt, adminUID, paymentUID)
-            
-            res.status(200).json({
-                status: 200,
-                data: "true",
-                message: "success"
-            });
-        } catch (err) {
-            throw err;
         }
     }
 );
-
-async function selectStockUID(serialNo){
-    var sql = "select UID from stock where serialNo = ?";
-    const [result] = await con.query(sql, serialNo);
-
-    if(result.length != 0)
-        return result[0].UID;
-    else
-        return 0;
-}
-
-async function updateStockPaymentUID(stockUID, paymentUID){
-    var sql = "update stock " +
-            "set paymentUID = ? " +
-            "where UID = ?";
-    const sqlData = [paymentUID, stockUID];
-    await con.query(sql, sqlData);
-}
-
-async function completeShip(shipConfDate, shipConfMsg, shipRcpnt, adminUID, paymentUID) {
-    var sql = "update payment " +
-        "set shipConfDate = ?, shipConfMsg = ?, shipRcpnt = ?, shippingStatus='배송완료', adminUID = ? " +
-        "where UID = ?";
-    const sqlData = [shipConfDate, shipConfMsg, shipRcpnt, adminUID, paymentUID];
-    await con.query(sql, sqlData);
-}
 
 // 이니시스에 환불 요청
 api.put("/refund/complete/:paymentUID", async function (req, res) {
@@ -1618,6 +1600,35 @@ async function selectWeekMembership(){
                 "group by date_format(regDate, '%Y-%m-%d')";
     const [result] = await con.query(sql);
     return result;
+}
+
+// 시리얼번호에 해당하는 재고의 UID 조회
+async function selectStockUID(serialNo){
+    var sql = "select UID from stock where serialNo = ?";
+    const [result] = await con.query(sql, serialNo);
+
+    if(result.length != 0)
+        return result[0].UID;
+    else
+        return 0;
+}
+
+// 재고의 paymentUID 수정
+async function updateStockPaymentUID(stockUID, paymentUID, adminUID){
+    var sql = "update stock " +
+            "set paymentUID = ?, updateUID = ? " +
+            "where UID = ?";
+    const sqlData = [paymentUID, adminUID, stockUID];
+    await con.query(sql, sqlData);
+}
+
+// 배송 완료 처리
+async function completeShip(shipConfDate, shipConfMsg, shipRcpnt, adminUID, paymentUID) {
+    var sql = "update payment " +
+        "set shipConfDate = ?, shipConfMsg = ?, shipRcpnt = ?, shippingStatus='배송완료', adminUID = ? " +
+        "where UID = ?";
+    const sqlData = [shipConfDate, shipConfMsg, shipRcpnt, adminUID, paymentUID];
+    await con.query(sql, sqlData);
 }
 
 module.exports = api;

@@ -166,6 +166,8 @@ api.get('/excel', async function (req, res) {
 // cms - 재고 엑셀 데이터 업로드
 api.post('/excel', verifyAdminToken, memoryUpload.single('excel_file'), async function (req, res) {
     try{
+        const adminUID = req.adminUID;
+        
         // 엑셀 데이터 json으로 변환
         const result = excelToJson({
             source: req.file.buffer
@@ -177,10 +179,10 @@ api.post('/excel', verifyAdminToken, memoryUpload.single('excel_file'), async fu
         for(var i = 1; i < sample.length; i++){
             var serialNo = sample[i].A;
             var testDate = sample[i].B;
-            sqlData.push([serialNo, testDate]);
+            sqlData.push([serialNo, testDate, adminUID]);
         }
 
-        var sql = "insert stock(serialNo, testDate) values ?;";
+        var sql = "insert stock(serialNo, testDate, regUID) values ?;";
 
         await con.query(sql, [sqlData]);
 
