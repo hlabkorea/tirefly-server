@@ -6,6 +6,7 @@ const axios = require('axios');
 const { generateRandomNumber } = require('./config/generateRandomNumber.js');
 const { getPageInfo } = require('./config/paging.js'); 
 const { getNextDateTime } = require('./config/date.js');
+const { sendSlackMsg } = require('./config/slack.js');
 const { sendPaymentMail, sendMembershipEmail } = require('./config/mail.js');
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
@@ -1245,6 +1246,12 @@ async function sendPaymentEmail(email, paymentUID) {
         'group by payment.UID ' +
         'order by payment.regDate desc, product_img_list.UID';
     const [result] = await con.query(sql, paymentUID);
+
+    const name = result[0].korName;
+    const merchantUid = result[0].merchantUid;
+    const slackId = 'U031M48A41Y'; // 진수님 slack id
+    const msg = `주문이 들어왔습니다. - 주문번호 : ${merchantUid} (name)`;
+    await sendSlackMsg(chat, slackId, msg); // 진수님께 슬랙 DM으로 주문 알림 전송
 
     sendPaymentMail(result, email); // 주문자 이메일로 주문 메일 전송
     const adminEmail = "jinsu.kim@hlabtech.com"; 
