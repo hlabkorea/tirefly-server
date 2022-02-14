@@ -12,7 +12,8 @@ async function sendSlackMsg(dest,message){
         channel: dest, 
         text: message,
     };
-    slackPost(messageArgs);
+    const sendResult = slackPost(messageArgs);
+    return sendResult;
 };
 
 async function getUserList(){
@@ -47,10 +48,7 @@ async function getUserList(){
 const slackPost = async(args) => { 
     const result = await axios.post(`${apiUrl}/chat.postMessage`, qs.stringify(args));
     try {
-        if(result.data.ok == false)
-            await sendSlackMsg('#server-error', "● slack-채팅봇 에러: " + result.data.error);
-        
-        console.log(result.data);
+        return result.data.ok;
     } catch(e) {
         console.log(e);
     }

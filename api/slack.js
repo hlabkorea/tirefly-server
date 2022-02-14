@@ -48,13 +48,20 @@ api.post('/',
 
                 const from = await selectAdminName(adminUID);
                 message = `● ${from} \n: ${message}`;           
-                await sendSlackMsg(dest, message);
+                const sendResult = await sendSlackMsg(dest, message);
 
-                res.status(200).json({
-                    status: 200,
-                    data: "true",
-                    message: "success"
-                });
+                if(sendResult == false)
+                    res.status(403).json({
+                        status: 403,
+                        data: "false",
+                        message: "슬랙 채널명이 존재하지 않습니다."
+                    });
+                else
+                    res.status(200).json({
+                        status: 200,
+                        data: "true",
+                        message: "success"
+                    });
             } catch (err) {
                 throw err;
             }
