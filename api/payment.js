@@ -1235,7 +1235,7 @@ function generateMerchantUid(startNo, level) {
 }
 
 // 결제 완료 메일 전송
-async function sendPaymentEmail(email, paymentUID) {
+async function sendPaymentMsg(email, paymentUID) {
     var sql = 'select product_img_list.imgPath, product.korName, product.originPrice, product.discountPrice, payment.merchantUid, payment.amount, product.originShippingFee, product.dcShippingFee ' +
         'from payment ' +
         'join payment_product_list on payment.UID = payment_product_list.paymentUID ' +
@@ -1249,8 +1249,8 @@ async function sendPaymentEmail(email, paymentUID) {
 
     const name = result[0].korName;
     const merchantUid = result[0].merchantUid;
-    const slackId = '@U031FLBTL31'; // 진수님 slack id
-    const msg = `주문이 들어왔습니다. - 주문번호 : ${merchantUid} (${name})`;
+    const slackId = '@U02RL01HQET'; // 진수님 slack id
+    const msg = `주문이 들어왔습니다.\n ● 주문번호 : ${merchantUid} (${name})`;
     await sendSlackMsg(slackId, msg); // 진수님께 슬랙 DM으로 주문 알림 전송
 
     sendPaymentMail(result, email); // 주문자 이메일로 주문 메일 전송
@@ -1275,7 +1275,7 @@ async function insertPaymentProduct(paymentUID, productUID, optionUID, count, bu
     const sqlData = [paymentUID, productUID, optionUID, count];
     await con.query(sql, [sqlData]);
 
-    sendPaymentEmail(buyerEmail, paymentUID);
+    sendPaymentMsg(buyerEmail, paymentUID);
 }
 
 // 주문에 대한 멤버십 정보 추가
