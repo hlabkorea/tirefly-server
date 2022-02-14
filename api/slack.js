@@ -47,7 +47,7 @@ api.post('/',
                     dest = '@' + dest;
 
                 const from = await selectAdminName(adminUID);
-                message = `${from}: ${message}`;           
+                message = `● ${from} \n: ${message}`;           
                 await sendSlackMsg(dest, message);
 
                 res.status(200).json({

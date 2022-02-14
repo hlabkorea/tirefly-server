@@ -1250,7 +1250,7 @@ async function sendPaymentMsg(email, paymentUID) {
     const name = result[0].korName;
     const merchantUid = result[0].merchantUid;
     const slackId = '@U02RL01HQET'; // 진수님 slack id
-    const msg = `주문이 들어왔습니다.\n ● 주문번호 : ${merchantUid} (${name})`;
+    const msg = `● 주문이 들어왔습니다.\n- 주문번호 : ${merchantUid} (${name})`;
     await sendSlackMsg(slackId, msg); // 진수님께 슬랙 DM으로 주문 알림 전송
 
     sendPaymentMail(result, email); // 주문자 이메일로 주문 메일 전송
