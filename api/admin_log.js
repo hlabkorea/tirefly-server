@@ -18,7 +18,7 @@ api.get('/',
                         + "left join membership c on b.UID = c.regUID "
                         + "left join user d on c.userUID = d.UID ";
                 var countSql = sql + ";";
-                sql += "order by regDate desc " +
+                sql += "order by a.regDate desc " +
                     `limit ${offset}, ${pageCnt30}`;
 
                 const [result] = await con.query(countSql+sql);

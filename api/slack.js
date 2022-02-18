@@ -6,7 +6,7 @@ const api = express.Router();
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 
-// cms - 프로그램의 비디오 목록 등록
+// 직원들의 slack 정보 조회
 api.get('/members',
     verifyAdminToken,
     async function (req, res) {
@@ -24,7 +24,7 @@ api.get('/members',
     }
 );
 
-// cms - 프로그램의 비디오 목록 등록
+// slack 메시지 전송
 api.post('/',
     verifyAdminToken,
     [
