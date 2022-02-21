@@ -187,7 +187,7 @@ api.post('/join',
                 const password = sha256(req.body.password);
                 const cellNumber = req.body.cellNumber;
                 
-                const userUID = await insertUser(email, password, cellNumber);
+                /*const userUID = await insertUser(email, password, cellNumber);
                 const memUIDs = await selectGroupUIDs(email);
 
                 var level = "normal";
@@ -200,8 +200,8 @@ api.post('/join',
                 }
 
                 const token = makeJWT(userUID, level);
-                insertUserLog(userUID, token);
-                sendJoinMail(email);
+                //insertUserLog(userUID, token);
+                //sendJoinMail(email);
 
                 res.status(200).json({
                     status: 200,
@@ -213,7 +213,9 @@ api.post('/join',
                         auth: level,
                     },
                     message: "success"
-                });
+                });*/
+
+                res.status(200).json({status: 200, data: "true", message: "success"});
             } catch (err) {
                 console.log(err);
                 throw err;
