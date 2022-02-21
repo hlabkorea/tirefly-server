@@ -179,16 +179,16 @@ api.post('/free_trial',
                 try{
                     const userUID = req.body.userUID;
 
-                    /*const membershipUID = await selectMembershipUID(userUID);
+                    const membershipUID = await selectFreeTrialMembership(userUID);
                     if(membershipUID != 0) {
                         res.status(403).send({
                             status: 403,
                             data: "false",
-                            message: "멤버십을 이용한 이력이 존재합니다."
+                            message: "Free Trial을 이용한 이력이 존재합니다."
                         });
 
                         return false;
-                    }*/
+                    }
 
                     const cellNum = await selectUserCellNum(userUID);
                     if(await isExistFreeTrialHistory(cellNum)){ // 2주차 멤버십 부여된 이력 존재하는 경우
@@ -234,8 +234,8 @@ async function selectTodayMemCnt(){
 
 // 멤버십 구독자인지 확인
 // payment.js 에서도 사용하는 함수
-async function selectMembershipUID(userUID) {
-    var sql = "select UID, endDate from membership where userUID = ?";
+async function selectFreeTrialMembership(userUID) {
+    var sql = "select UID, endDate from membership where userUID = ? and level = 'free_trial'";
     const [result] = await con.query(sql, userUID);
 
     if(result.length != 0)
@@ -350,7 +350,7 @@ async function isExistFreeTrialHistory(cellNumber){
 // 2주 무료 이용권 제공
 async function insertFreeMembership(userUID){
     var sql = "insert membership(userUID, level, endDate, paymentUID) values (?, ?, date_add(curdate(), interval ? day), ?)";
-    const level = "free Trial";
+    const level = "free_trial";
     const paymentUID = 0;
     const day = 14;
     const sqlData = [userUID, level, day, paymentUID];
