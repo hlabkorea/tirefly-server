@@ -179,7 +179,7 @@ api.post('/free_trial',
                 try{
                     const userUID = req.body.userUID;
 
-                    const membershipUID = await selectMembershipUID(userUID);
+                    /*const membershipUID = await selectMembershipUID(userUID);
                     if(membershipUID != 0) {
                         res.status(403).send({
                             status: 403,
@@ -188,7 +188,7 @@ api.post('/free_trial',
                         });
 
                         return false;
-                    }
+                    }*/
 
                     const cellNum = await selectUserCellNum(userUID);
                     if(await isExistFreeTrialHistory(cellNum)){ // 2주차 멤버십 부여된 이력 존재하는 경우

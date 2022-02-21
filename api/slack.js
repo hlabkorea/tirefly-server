@@ -26,7 +26,6 @@ api.get('/members',
 
 // slack 메시지 전송
 api.post('/',
-    verifyAdminToken,
     [
         check("type", "type is required").not().isEmpty(),
         check("dest", "dest is required").not().isEmpty(),

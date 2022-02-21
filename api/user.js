@@ -126,19 +126,20 @@ api.get('/dashboardUser', verifyAdminToken, async function (req, res) {
             status : 200,
             data : {
                 "day1AgoNew" : day1AgoNew, 
-                "day1AgoVisit" : day1AgoVisit, 
                 "day2AgoNew" : day2AgoNew, 
-                "day2AgoVisit" : day2AgoVisit, 
                 "day3AgoNew" : day3AgoNew, 
-                "day3AgoVisit" : day3AgoVisit, 
                 "day4AgoNew" : day4AgoNew, 
-                "day4AgoVisit" : day4AgoVisit, 
                 "day5AgoNew" : day5AgoNew, 
-                "day5AgoVisit" : day5AgoVisit, 
                 "day6AgoNew" : day6AgoNew, 
-                "day6AgoVisit" : day6AgoVisit, 
                 "day7AgoNew" : day7AgoNew, 
-                "day7AgoVisit" : day7AgoVisit, 
+                "day1AgoVisit" : day1AgoVisit,
+                "day2AgoVisit" : day2AgoVisit, 
+                "day3AgoVisit" : day3AgoVisit, 
+                "day4AgoVisit" : day4AgoVisit, 
+                "day5AgoVisit" : day5AgoVisit, 
+                "day6AgoVisit" : day6AgoVisit, 
+                "day7AgoVisit" : day7AgoVisit,
+
             },
             message: "success"
         });
@@ -185,7 +186,7 @@ api.post('/join',
                 const password = sha256(req.body.password);
                 const cellNumber = req.body.cellNumber;
                 
-                const userUID = await insertUser(email, password, cellNumber);
+                /*const userUID = await insertUser(email, password, cellNumber);
                 const memUIDs = await selectGroupUIDs(email);
 
                 var level = "normal";
@@ -198,8 +199,8 @@ api.post('/join',
                 }
 
                 const token = makeJWT(userUID, level);
-                insertUserLog(userUID, token);
-                sendJoinMail(email);
+                //insertUserLog(userUID, token);
+                //sendJoinMail(email);
 
                 res.status(200).json({
                     status: 200,
@@ -211,7 +212,9 @@ api.post('/join',
                         auth: level,
                     },
                     message: "success"
-                });
+                });*/
+
+                res.status(200).json({status: 200, data: "true", message: "success"});
             } catch (err) {
                 console.log(err);
                 throw err;
@@ -810,10 +813,8 @@ async function selectWeekLoginUserCnt(){
 
 // 날짜별 방문 회원 수 조회 //상원
 async function selectDayLoginUserCnt(day){
-    var sql = "select count(distinct userUID) as count " +
-    "from user_log " +
-    `where date_format(regDate, '%Y-%m-%d') = date_format(now() - interval ${day} day , '%Y-%m-%d')`
-    const [result] = await con.query(sql);
+    var sql = `select count(distinct userUID) as cnt from user_log where date_format(regDate, '%Y-%m-%d') = date_format(now() - interval ${day} day , '%Y-%m-%d')`
+    const [result] = await devcon.query(sql);
     return result[0].cnt;
 }
 
