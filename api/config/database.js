@@ -36,3 +36,17 @@ var con = mysql2.createPool({
 });
 
 module.exports.con = con;
+
+var devcon = mysql2.createPool({
+	connectionLimit : 10,
+	host : 'kr-cdb-cxm16ku6.sql.tencentcdb.com',
+	port : '63934',
+	user : 'hlab_dev',
+	password : 'hlab0901',
+    database : 'motif',
+	multipleStatements: true, // 다중 쿼리 가능
+	dateStrings: true // Date 형식 변형 X (ex) 2020-08-09T08:11:31.OOOZ -> 2020-08-09 08:11:31)
+});
+
+module.exports.devcon = con;
+

@@ -144,6 +144,31 @@ api.put('/:programUID',
     }
 );
 
+// 프로그램의 비디오 목록 삭제
+api.delete('/:programUID',
+    verifyAdminToken,
+    async function (req, res) {
+        const errors = getError(req, res);
+        if (errors.isEmpty()) {
+            try{
+                const programUID = req.params.programUID;
+                
+                const listUIDs = await selectProgramListUIDs(programUID); // 비디오 목록 조회
+                if(listUIDs.length != 0) // 이미 program에 대한 비디오 목록이 존재하면 삭제
+                    await deleteProgramList(listUIDs);
+
+                res.status(200).json({
+                    status: 200,
+                    data: "true",
+                    message: "success"
+                });
+            } catch (err) {
+                throw err;
+            }
+        }
+    }
+);
+
 // 프로그램의 비디오 목록 UID 조회
 async function selectProgramListUIDs(programUID){
     var sql = "select UID from program_list where programUID = ?";
