@@ -122,6 +122,7 @@ api.get('/dashboardUser', verifyAdminToken, async function (req, res) {
 
         const day7AgoNew = await selectDayNewUserCnt(7);
         const day7AgoVisit = await selectDayLoginUserCnt(7)
+
         res.status(200).json({
             status : 200,
             data : {

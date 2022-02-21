@@ -35,7 +35,7 @@ api.post('/',
         const errors = getError(req, res);
         if(errors.isEmpty()){
             try{
-                const adminUID = req.adminUID;
+                //const adminUID = req.adminUID;
                 const type = req.body.type;
                 var dest = req.body.dest;
                 var message = req.body.message;
@@ -45,8 +45,8 @@ api.post('/',
                 else if(type == 'chat')
                     dest = '@' + dest;
 
-                const from = await selectAdminName(adminUID);
-                message = `● ${from} \n: ${message}`;           
+                //const from = await selectAdminName(adminUID);
+                //message = `● ${from} \n: ${message}`;           
                 const sendResult = await sendSlackMsg(dest, message);
 
                 if(sendResult == false)
