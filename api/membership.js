@@ -169,7 +169,7 @@ api.post('/',
 
 // 2주 무료 이용권 (free trial) 추가
 api.post('/free_trial', 
-        verifyAdminToken,
+        verifyToken,
         [
             check("userUID", "userUID is required").not().isEmpty()
         ], 
@@ -184,7 +184,7 @@ api.post('/free_trial',
                         res.status(403).send({
                             status: 403,
                             data: "false",
-                            message: "이용하고 있는 멤버십이 존재합니다."
+                            message: "멤버십을 이용한 이력이 존재합니다."
                         });
 
                         return false;
@@ -195,7 +195,7 @@ api.post('/free_trial',
                         res.status(403).send({
                             status: 403,
                             data: "false",
-                            message: "Free Trial을 이용했던 이력이 존재합니다."
+                            message: "Free Trial을 이용한 이력이 존재합니다."
                         });
 
                         return false;
