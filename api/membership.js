@@ -216,6 +216,32 @@ api.post('/free_trial',
         }
 );
 
+// 진성님 멤버십 변경 테스트
+api.put('/jinsung', async function (req, res) {
+    try{
+        const level = req.body.level;
+        if(!(level == 'single' || level == 'mobile' || level == 'IOS_mobile' || level == 'friends' || level == 'family' || level == 'free_trial')){
+            res.status(403).send({
+                status: 403,
+                data: 'false',
+                message: "멤버십 이름이 잘못되었습니다. (single, mobile, IOS_mobile, firends, family, free_trial만 가능합니다)"
+            });
+
+            return false;
+        }
+
+        var sql = "update membership set level = ? where userUID = 1607";
+        await con.query(sql, level);
+        res.status(200).send({
+            status: 200,
+            data: "true",
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
 // 멤버십 초대자 수 (멤버십 구매자는 제외)
 async function selectMemGroupCnt(sqlData){
     var sql = "select count(distinct userUID) as cnt "
