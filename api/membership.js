@@ -242,6 +242,21 @@ api.put('/jinsung', async function (req, res) {
     }
 });
 
+// 진성님 멤버십 삭제 테스트
+api.delete('/jinsung', async function (req, res) {
+    try{
+        var sql = "delete from membership where userUID = 1607";
+        await con.query(sql);
+        res.status(200).send({
+            status: 200,
+            data: "true",
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
 // 멤버십 초대자 수 (멤버십 구매자는 제외)
 async function selectMemGroupCnt(sqlData){
     var sql = "select count(distinct userUID) as cnt "
