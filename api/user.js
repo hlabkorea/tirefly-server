@@ -170,7 +170,6 @@ api.get('/:userUID', verifyToken, async function (req, res) {
     }
 });
 
-
 // 회원 등록 (회원가입)
 api.post('/join',
     [
