@@ -1,5 +1,6 @@
 const express = require('express');
 const { con } = require('./config/database.js');
+const db = require('./config/database.js');
 const { verifyToken, verifyAdminToken } = require("./config/authCheck.js");
 const api = express.Router();
 const { getCurrentDateTime } = require('./config/date.js');
@@ -171,38 +172,49 @@ api.post('/',
 api.post('/free_trial', 
         verifyToken,
         [
-            check("userUID", "userUID is required").not().isEmpty()
+            check("userUID", "userUID is required").not().isEmpty(),
+            check("type", "type is required").not().isEmpty()
         ], 
         async function (req, res) {
             const errors = getError(req, res);
 			if(errors.isEmpty()){
                 try{
                     const userUID = req.body.userUID;
-
-                    const membershipUID = await selectFreeTrialMembership(userUID);
-                    if(membershipUID != 0) {
-                        res.status(403).send({
-                            status: 403,
-                            data: "false",
-                            message: "Free Trial을 이용한 이력이 존재합니다."
-                        });
-
-                        return false;
-                    }
+                    const type = req.body.type; // web or app
 
                     const cellNum = await selectUserCellNum(userUID);
-                    if(await isExistFreeTrialHistory(cellNum)){ // 2주차 멤버십 부여된 이력 존재하는 경우
-                        res.status(403).send({
-                            status: 403,
-                            data: "false",
-                            message: "Free Trial을 이용한 이력이 존재합니다."
-                        });
+                    const isExist = await isExistFreeTrialHistory(cellNum); // 해당 번호로 free_trial을 이용한 이력 있는지 조회
 
-                        return false;
+                    if(type == 'web'){
+                        if(isExist){
+                            res.status(403).send({
+                                status: 403,
+                                data: "false",
+                                message: "Free Trial을 이용한 이력이 존재합니다."
+                            });
+
+                            return false;
+                        }
                     }
-
-                    await insertFreeMembership(userUID);
-                    await updateUserFreeTrial(userUID);
+                    else if(type == 'app'){
+                        if(isExist){ // 2주차 멤버십 부여된 이력 존재하는 경우
+                            res.status(403).send({
+                                status: 403,
+                                data: "false",
+                                message: "Free Trial을 이용한 이력이 존재합니다."
+                            });
+    
+                            return false;
+                        }
+    
+                        const membershipUID = await selectMembershipUID(userUID);
+                        if(membershipUID != 0) // 구독한 멤버십이 존재하는 경우
+                            await updateFreeMembership(membershipUID.UID);
+                        else
+                            await insertFreeMembership(userUID);
+                            
+                        await updateUserFreeTrial(userUID);                        
+                    }
 
                     res.status(200).json({
                         status: 200,
@@ -275,8 +287,8 @@ async function selectTodayMemCnt(){
 
 // 멤버십 구독자인지 확인
 // payment.js 에서도 사용하는 함수
-async function selectFreeTrialMembership(userUID) {
-    var sql = "select UID, endDate from membership where userUID = ? and level = 'free_trial'";
+async function selectMembershipUID(userUID) {
+    var sql = "select UID, endDate from membership where userUID = ?";
     const [result] = await con.query(sql, userUID);
 
     if(result.length != 0)
@@ -380,8 +392,10 @@ async function selectUserCellNum(userUID){
 // 해당 번호로 freeTrial 부여 받은 이력 있는지 조회
 async function isExistFreeTrialHistory(cellNumber){
     var sql = "select freeTrial " +
-            "from user where substring_index(email, '/', -1) = ? and freeTrial = 1";
-    const [result] = await con.query(sql, cellNumber);
+            "from user " + 
+            "where (cellNumber = ? OR substring_index(email, '/', -1) = ?) and freeTrial = 1";
+    const sqlData = [cellNumber, cellNumber];
+    const [result] = await con.query(sql, sqlData);
     if(result.length > 0)
         return true;
     else
@@ -397,6 +411,14 @@ async function insertFreeMembership(userUID){
     const sqlData = [userUID, level, day, paymentUID];
     const [result] = await con.query(sql, sqlData);
     return result.insertId;
+}
+
+// 2주 무료 이용권으로 멤버십 업데이트
+async function updateFreeMembership(membershipUID){
+    var sql = "update membership set level='free_trial', endDate = date_add(curdate(), interval ? day) where UID = ?";
+    const day = 14;
+    const sqlData = [day, membershipUID];
+    await con.query(sql, sqlData);
 }
 
 // 2무 무료 이용권 제공 이력 추가
