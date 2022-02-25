@@ -236,7 +236,15 @@ exports.sendMembershipEmail = async (email, level, amount, payMethod, cardNumber
 			 + '<span style="font-size:9pt;line-height:12.84px;color:black">결제하신 멤버십에 대한 자세한 내용은 홈페이지 내 마이페이지에서 확인 가능합니다.</span></p>'
 			 + '</div>';
 	var subject = "[모티프] 모티프 멤버십 구독 완료 안내";
-	this.sendMail(email, subject, html);
+    this.sendMail(email, subject, html);
+    
+    /*const ejsData = {
+		email: email,
+		level: level,
+		amount: amount
+    }
+	const data = await ejs.renderFile(path.join('..', 'motif-server', 'views', 'membership_mail.ejs'), ejsData);
+	this.sendMail(email, subject, data);*/
 }
 
 // 멤버십 초대 메일
