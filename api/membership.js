@@ -334,7 +334,7 @@ async function selectMembership(userUID) {
 
 // 멤버십 등급에 따라 maxCount 조회
 function getMaxCount(level) {
-    if(level == "single" || level == "IOS_mobile" || level == "mobile" || level == "free_trial")
+    if(level == "single" || level == "IOS_mobile" || level == "mobile" || level == "free_trial" || level == "admin")
         return 1;
     else if(level == "friends")
         return 3;
