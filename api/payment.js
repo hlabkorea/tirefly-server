@@ -701,7 +701,7 @@ api.post("/rental",
         const errors = getError(req, res);
         if (errors.isEmpty()) {
             try{
-                const userUID = req.body.userUID;
+                const userUID = req.body.userUID; //userUID
                 const amount = 0;
                 const name = "모티프 미러(렌탈)";
                 const productUID = req.body.productUID;
