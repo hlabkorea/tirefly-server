@@ -1,6 +1,7 @@
 const nodemailer = require('nodemailer');
 const {authUser} = require('./account.js');
 const {authPass} = require('./account.js');
+const ejs = require('ejs');
 const path = require('path');
 
 exports.sendMail = (toEmail, subject, html) => {
@@ -45,7 +46,8 @@ exports.sendMail = (toEmail, subject, html) => {
 }
 
 // 회원가입 메일
-exports.sendJoinMail = (toEmail) => {
+exports.sendJoinMail = async (toEmail) => {
+	const subject = "[모티프] 회원가입 완료 안내";
 	var html = '<div style="color:#111;font-size:10pt;line-height:1.5;text-align:center"><p><br></p><p><br></p>'
 			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center">'
 			 + '<img src="https://api.motifme.io/files/motif_logo.png"><br></div>'
@@ -64,12 +66,14 @@ exports.sendJoinMail = (toEmail) => {
 			 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px"></p>'
 			 + '<span style="font-size:9pt;line-height:12.84px;color:black">회원님의 정보는 철저한 보안 아래 안전하게 유지됩니다.</span></p>'
 			 + '</div>';
-	var subject = "[모티프] 회원가입 완료 안내";
 	this.sendMail(toEmail, subject, html);	
+    /*const data = await ejs.renderFile(path.join('..', 'motif-server', 'views', 'join_mail.ejs'));
+	this.sendMail(toEmail, subject, data); */
 }
 
 // 비밀번호 변경 메일
-exports.sendPasswdMail = (toEmail, key) => {
+exports.sendPasswdMail = async (toEmail, key) => {
+	const subject = "[모티프] 비밀번호 재설정 안내";
 	var html = '<div style="color:#111;font-size:10pt;line-height:1.5"><p><br></p><p><br></p>'
 			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center">'
 			 + '<img src="https://api.motifme.io/files/motif_logo.png"><br></div>'
@@ -90,29 +94,40 @@ exports.sendPasswdMail = (toEmail, key) => {
 			 + '<span style="font-size:9pt;line-height:12.84px;color:black">해당 링크는<span> </span><span lang="EN-US">24</span>시간 동안 유효합니다<span lang="EN-US">.</span></span></p>'
 			 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px">'
 			 + '<span style="font-size:9pt;line-height:12.84px;color:black">새로운 비밀번호 설정을 원하지 않는 경우에는 해당 메일은 무시하시면 됩니다</span></p></div>';
-
-	var subject = "[모티프] 비밀번호 재설정 안내";
+			 
 	this.sendMail(toEmail, subject, html);
+    /*const data = await ejs.renderFile(path.join('..', 'motif-server', 'views', 'change_passwd_mail.ejs'), {key: key});
+	this.sendMail(toEmail, subject, data);*/
 }
 
 // 미러 구매 메일
-exports.sendPaymentMail = (result, email) => {
-	var productImg = "https://api.motifme.io/files/" + result[0].imgPath;
-	var productName = result[0].korName;
+exports.sendPaymentMail = async (result, email) => {
+	const subject = "[모티프] 모티프 미러 주문 완료 안내";
+	/*const productName = result[0].korName;
+	const merchantUid = result[0].merchantUid;
+	const discountPrice = result[0].discountPrice;
+	const paymentPrice = comma(result[0].amount);
+	const dcShippingFee = result[0].dcShippingFee;
+	var shippingFee = "";
+	if(dcShippingFee == 0)
+		shippingFee = "FREE";*/
+
+	const productImg = "https://api.motifme.io/files/" + result[0].imgPath;
+	const productName = result[0].korName;
 	var productPrice = result[0].originPrice;
-	var discountPrice = result[0].discountPrice;
+	const discountPrice = result[0].discountPrice;
 	var difference = comma(productPrice - discountPrice);
 	productPrice = comma(productPrice);
-	var merchantUid = result[0].merchantUid;
-	var paymentPrice = comma(result[0].amount);
-	var originShippingFee = comma(result[0].originShippingFee);
-	var dcShippingFee = result[0].dcShippingFee;
-	var isFree = "";
+	const merchantUid = result[0].merchantUid;
+	const paymentPrice = comma(result[0].amount);
+	const originShippingFee = comma(result[0].originShippingFee);
+	const dcShippingFee = result[0].dcShippingFee;
+	var shippingFee = "";
 	if(dcShippingFee == 0)
-		isFree = "FREE";
-	var leftCol = '25%';
-	var centerCol = '50%';
-	var rightCol = '25%';
+	shippingFee = "FREE";
+	const leftCol = '25%';
+	const centerCol = '50%';
+	const rightCol = '25%';
 
 	var html = '<div style="color:#111;font-size:10pt;line-height:1.5;text-align:center"><p><br></p><p><br></p>'
 			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center">'
@@ -150,7 +165,7 @@ exports.sendPaymentMail = (result, email) => {
 			 + '</tr>'
 			 + '<tr>'
 			 + '<td style="height: 35px">배송비</td>'
-			 + `<td style="text-align: right; height: 35px;">${isFree}</td>`
+			 + `<td style="text-align: right; height: 35px;">${shippingFee}</td>`
 			 + `<td style="text-align: right; text-decoration:line-through; height: 35px">${originShippingFee}원</td>`
 			 + '</tr>'
 			 + '<tr>'
@@ -176,8 +191,20 @@ exports.sendPaymentMail = (result, email) => {
              + '배송과 관련하여 문의사항이 있는 경우에는 고객센터(<a href="mailto:support@motifme.io">support@motifme.io</a>)로 문의 바랍니다.'
              + '</span></p>'
 			 + '</div>';
-	var subject = "[모티프] 모티프 미러 주문 완료 안내";
+
 	this.sendMail(email, subject, html);
+
+	/*
+	const ejsData = {
+		merchantUid: merchantUid,
+		productName: productName,
+		discountPrice: discountPrice,
+		paymentPrice: paymentPrice,
+		shippingFee: shippingFee,
+		paymentPrice: paymentPrice
+	}
+	const data = await ejs.renderFile(path.join('..', 'motif-server', 'views', 'payment_mail.ejs'), ejsData);
+	this.sendMail(email, subject, data);*/
 }
 
 function comma(str) {
@@ -186,7 +213,7 @@ function comma(str) {
 }
 
 // 맴버십 구매 메일
-exports.sendMembershipEmail = (email, level, amount, payMethod, cardNumber) => {	
+exports.sendMembershipEmail = async (email, level, amount, payMethod, cardNumber) => {	
 	amount = comma(amount);
 	cardNumber = cardNumber.replace(/([0-9]{4})([0-9*]{4})([0-9*]{4})([0-9*]{4})/,"$1-$2-$3-$3");
 	var html = '<div style="color:#111;font-size:10pt;line-height:1.5;text-align:center"><p><br></p><p><br></p>'
@@ -209,11 +236,20 @@ exports.sendMembershipEmail = (email, level, amount, payMethod, cardNumber) => {
 			 + '<span style="font-size:9pt;line-height:12.84px;color:black">결제하신 멤버십에 대한 자세한 내용은 홈페이지 내 마이페이지에서 확인 가능합니다.</span></p>'
 			 + '</div>';
 	var subject = "[모티프] 모티프 멤버십 구독 완료 안내";
-	this.sendMail(email, subject, html);
+    this.sendMail(email, subject, html);
+    
+    /*const ejsData = {
+		email: email,
+		level: level,
+		amount: amount
+    }
+	const data = await ejs.renderFile(path.join('..', 'motif-server', 'views', 'membership_mail.ejs'), ejsData);
+	this.sendMail(email, subject, data);*/
 }
 
 // 멤버십 초대 메일
-exports.sendInviteEmail = (ownerEmail, userEmail) => {	
+exports.sendInviteEmail = async (ownerEmail, userEmail) => {	
+	const subject = "[모티프] 모티프 멤버십 초대 안내";
 	var html = '<div style="color:#111;font-size:10pt;line-height:1.5;text-align:center"><p><br></p><p><br></p>'
 			 + '<div style="color:rgb(34,34,34);font-size:small;font-weight:400;background-color:rgb(255,255,255);text-align:center">'
 			 + '<img src="https://api.motifme.io/files/motif_logo.png"><br></div>'
@@ -236,8 +272,9 @@ exports.sendInviteEmail = (ownerEmail, userEmail) => {
 			 + '<p align="center" style="margin:0cm 0cm 8pt;color:rgb(34,34,34);font-weight:400;background-color:rgb(255,255,255);font-size:10pt;text-align:center;line-height:14.2667px">'
 			 + '<span style="font-size:9pt;line-height:12.84px;color:black">회원가입 시, 본 메일을 수신하신 이메일 계정을 사용해주세요.</span></p>'
 			 + '</div>';
-	var subject = "[모티프] 모티프 멤버십 초대 안내";
 	this.sendMail(userEmail, subject, html);
+    /*const data = await ejs.renderFile(path.join('..', 'motif-server', 'views', 'invite_mail.ejs'), {ownerEmail: ownerEmail});
+	this.sendMail(userEmail, subject, data);*/
 }
 
 // 관리자에게 문의 메일 전달
@@ -269,7 +306,7 @@ exports.sendInquiryMail = (type, title, name, email, group, cellNumber, contents
 	this.sendMail(hlabEmail, subject, html);
 }
 
-// 멤버십 초대 메일
+// 문의 답변 메일
 exports.sendAnswerMail = (email, completeMsg) => {	
 	var html = '<div style="color: black;">'
 			 + '<pre>'

@@ -6,6 +6,7 @@ const axios = require('axios');
 const { generateRandomNumber } = require('./config/generateRandomNumber.js');
 const { getPageInfo } = require('./config/paging.js'); 
 const { getNextDateTime } = require('./config/date.js');
+const { sendSlackMsg } = require('./config/slack.js');
 const { sendPaymentMail, sendMembershipEmail } = require('./config/mail.js');
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
@@ -572,6 +573,7 @@ api.post("/iamport-webhook", async function (req, res) {
         const paidId = merchant_uid.substr(0, 1); // 주문번호의 첫 번째 숫자 조회 (1-일반결제, 2-멤버십 첫 주문, 3-멤버십 정기 결제)
         const paymentData = await getPaymentData(imp_uid);
         const status = paymentData.status;
+        const amount = parseInt(paymentData.amount);
 
         if (status == "paid") // 결제 성공적으로 완료
             await savePayment(paidId, paymentData); // 결제 정보 저장
@@ -673,13 +675,14 @@ api.put('/ship/schedule/:paymentUID',
     verifyAdminToken,
     async function (req, res, next) {
         try{
+            const adminUID = req.adminUID;
             const paymentUID = req.params.paymentUID;
             const shipResDate = req.body.date;
             const shipResMsg = req.body.msg;
             var sql = "update payment " +
-                "set shipResDate = ?, shipResMsg = ?, shippingStatus='배송준비중' " +
+                "set shipResDate = ?, shipResMsg = ?, shippingStatus='배송준비중', adminUID = ? " +
                 "where UID = ?";
-            const sqlData = [shipResDate, shipResMsg, paymentUID];
+            const sqlData = [shipResDate, shipResMsg, adminUID, paymentUID];
             await con.query(sql, sqlData);
 
             res.status(200).json({
@@ -696,26 +699,46 @@ api.put('/ship/schedule/:paymentUID',
 // 배송 완료 처리
 api.put('/ship/complete/:paymentUID',
     verifyAdminToken,
+    [
+        check("date", "date is required").not().isEmpty(),
+        check("msg", "msg is required").exists(),
+        check("recipient", "recipient is required").not().isEmpty(),
+        check("serialNo", "serialNo is required").not().isEmpty()
+    ], 
     async function (req, res, next) {
-        try{
-            const paymentUID = req.params.paymentUID;
-            const shipConfDate = req.body.date;
-            const shipConfMsg = req.body.msg;
-            const shipRcpnt = req.body.recipient;
+        const errors = getError(req, res);
+        if(errors.isEmpty()){
+            try{
+                const adminUID = req.adminUID;
+                const paymentUID = req.params.paymentUID;
+                const shipConfDate = req.body.date;
+                const shipConfMsg = req.body.msg;
+                const shipRcpnt = req.body.recipient;
+                const serialNo = req.body.serialNo;
 
-            var sql = "update payment " +
-                "set shipConfDate = ?, shipConfMsg = ?, shipRcpnt = ?, shippingStatus='배송완료' " +
-                "where UID = ?";
-            const sqlData = [shipConfDate, shipConfMsg, shipRcpnt, paymentUID];
-            await con.query(sql, sqlData);
+                const stockUID = await selectStockUID(serialNo);
 
-            res.status(200).json({
-                status: 200,
-                data: "true",
-                message: "success"
-            });
-        } catch (err) {
-            throw err;
+                if(stockUID == 0){
+                    res.status(403).json({
+                        status: 403,
+                        data: "false",
+                        message: "유효하지 않은 시리얼 번호입니다."
+                    });
+
+                    return false;
+                }
+
+                await updateStockPaymentUID(stockUID, paymentUID, adminUID);
+                await completeShip(shipConfDate, shipConfMsg, shipRcpnt, adminUID, paymentUID)
+                
+                res.status(200).json({
+                    status: 200,
+                    data: "true",
+                    message: "success"
+                });
+            } catch (err) {
+                throw err;
+            }
         }
     }
 );
@@ -730,10 +753,10 @@ api.put("/refund/complete/:paymentUID", async function (req, res) {
         const [result] = await con.query(sql, paymentUID);
         
         if(result.length == 0){
-             // status code 의논 필요
-            res.status(200).json({
-                status: 200,
-                data: "true",
+            // status code 의논 필요
+            res.status(403).json({
+                status: 403,
+                data: "false",
                 message: "db에 존재하지 않는 데이터입니다."
             });
 
@@ -1237,7 +1260,7 @@ function generateMerchantUid(startNo, level) {
 }
 
 // 결제 완료 메일 전송
-async function sendPaymentEmail(email, paymentUID) {
+async function sendPaymentMsg(email, paymentUID) {
     var sql = 'select product_img_list.imgPath, product.korName, product.originPrice, product.discountPrice, payment.merchantUid, payment.amount, product.originShippingFee, product.dcShippingFee ' +
         'from payment ' +
         'join payment_product_list on payment.UID = payment_product_list.paymentUID ' +
@@ -1248,6 +1271,12 @@ async function sendPaymentEmail(email, paymentUID) {
         'group by payment.UID ' +
         'order by payment.regDate desc, product_img_list.UID';
     const [result] = await con.query(sql, paymentUID);
+
+    const name = result[0].korName;
+    const merchantUid = result[0].merchantUid;
+    /*const slackId = '@U02RL01HQET'; // 진수님 slack id
+    const msg = `● 주문이 들어왔습니다.\n- 주문번호 : ${merchantUid} (${name})`;
+    await sendSlackMsg(slackId, msg); // 진수님께 슬랙 DM으로 주문 알림 전송*/
 
     sendPaymentMail(result, email); // 주문자 이메일로 주문 메일 전송
     const adminEmail = "jinsu.kim@hlabtech.com"; 
@@ -1271,7 +1300,7 @@ async function insertPaymentProduct(paymentUID, productUID, optionUID, count, bu
     const sqlData = [paymentUID, productUID, optionUID, count];
     await con.query(sql, [sqlData]);
 
-    sendPaymentEmail(buyerEmail, paymentUID);
+    sendPaymentMsg(buyerEmail, paymentUID);
 }
 
 // 주문에 대한 멤버십 정보 추가
@@ -1291,11 +1320,10 @@ async function updateMembership(level, laterNum, membershipUID, paymentUID) {
 
 // 멤버십 정보 추가
 async function insertMembership(userUID, level, laterNum, paymentUID) {
-    var sql = "insert membership(userUID, level, endDate, paymentUID) values (?, ?, date_add(addtime(curdate(), '23:59:59'), interval ? month), ?)";
+    var sql = "insert membership(userUID, level, endDate, paymentUID) values (?, ?, date_add(curdate(), interval ? month), ?)";
     const sqlData = [userUID, level, laterNum, paymentUID];
     const [result] = await con.query(sql, sqlData);
-    const membershipUID = result.insertId;
-    insertOrderMembership(paymentUID, membershipUID);
+    return result.insertId;
 }
 
 // 멤버십 구독자인지 확인
@@ -1410,7 +1438,7 @@ async function savePayment(paidId, paymentData) {
             if(membershipUID != 0) // 멤버십 구매 내역이 존재할 경우
                 await updateMembership(level, laterNum, membershipUID, paymentUID); // 멤버십 정보를 수정
             else // 멤버십 구매 내역이 없을 경우 (첫 구매)
-                await insertMembership(userUID, level, laterNum, paymentUID); // 멤버십 정보 등록
+                membershipUID = await insertMembership(userUID, level, laterNum, paymentUID); // 멤버십 정보 등록
                 
             await insertPaymentMembership(paymentUID, membershipUID); // 결제에 대한 멤버십 정보 저장
         }   
@@ -1606,11 +1634,33 @@ async function selectWeekMembership(){
     return result;
 }
 
-// 월별 매출 건 수 조회
-async function selectMonthPayment(type, month){
-    var sql = `select count(UID) as cnt from payment where type='${type}' and date_format(regDate, '%Y-%m-%d') = date_format(now() - interval -${month} month , '%Y-%m-%d')`
-    const [result] = await con.query(sql);
-    return result[0].cnt;
+// 시리얼번호에 해당하는 재고의 UID 조회
+async function selectStockUID(serialNo){
+    var sql = "select UID from stock where serialNo = ?";
+    const [result] = await con.query(sql, serialNo);
+
+    if(result.length != 0)
+        return result[0].UID;
+    else
+        return 0;
+}
+
+// 재고의 paymentUID 수정
+async function updateStockPaymentUID(stockUID, paymentUID, adminUID){
+    var sql = "update stock " +
+            "set paymentUID = ?, updateUID = ? " +
+            "where UID = ?";
+    const sqlData = [paymentUID, adminUID, stockUID];
+    await con.query(sql, sqlData);
+}
+
+// 배송 완료 처리
+async function completeShip(shipConfDate, shipConfMsg, shipRcpnt, adminUID, paymentUID) {
+    var sql = "update payment " +
+        "set shipConfDate = ?, shipConfMsg = ?, shipRcpnt = ?, shippingStatus='배송완료', adminUID = ? " +
+        "where UID = ?";
+    const sqlData = [shipConfDate, shipConfMsg, shipRcpnt, adminUID, paymentUID];
+    await con.query(sql, sqlData);
 }
 
 module.exports = api;

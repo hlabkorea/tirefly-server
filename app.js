@@ -9,6 +9,8 @@ const server = app.listen(3001, () => {
 	console.log('Start server');
 });
 
+//require('dotenv').config();
+
 app.use(morgan('combined', {
     skip: function (req, res) {
         if (req.url == '/') {
@@ -95,3 +97,5 @@ app.use('/admin_log', require('./api/admin_log.js'));
 app.use('/stock', require('./api/stock.js'));
 app.use('/qt_version', require('./api/qt_version.js'));
 app.use('/vision', require('./api/vision.js'));
+
+app.use('/slack', require('./api/slack.js'));
