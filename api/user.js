@@ -100,6 +100,23 @@ api.get('/week', verifyAdminToken, async function (req, res) {
     }
 });
 
+//날짜별 신규 회원 수 조회
+api.get('/dashboardUser', verifyAdminToken, async function (req, res) {
+    try {
+        const day3Ago = await selectDayNewUserCnt(3);
+
+        res.status(200).json({
+            status : 200,
+            data : {
+                "day3Ago" : day3Ago
+            },
+            message: "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+})
+
 // 회원 상세정보 조회 (프로필 조회)
 api.get('/:userUID', verifyToken, async function (req, res) {
     try {
@@ -730,6 +747,13 @@ async function selectUserCnt(){
 async function selectTodayNewUserCnt(){
     var sql = "select count(UID) as cnt from user where date_format(regDate, '%Y-%m-%d') = date_format(now(), '%Y-%m-%d')";
     const [result] = await con.query(sql);
+    return result[0].cnt;
+}
+
+//날짜별 신규 회원 수 조회
+async function selectDayNewUserCnt(day){
+    var sql = `select count(UID) as cnt from user where date_format(regDate, '%Y-%m-%d') = date_format(now() - interval -${day} day , '%Y-%m-%d')`
+    const [result] = await devcon.query(sql);
     return result[0].cnt;
 }
 

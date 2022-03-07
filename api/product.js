@@ -25,6 +25,8 @@ api.get('/',
 
             const [result] = await con.query(sql);
 
+            console.log(result);
+
             res.status(200).json({
                 status: 200,
                 data: result,

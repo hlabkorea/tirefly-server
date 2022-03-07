@@ -3,6 +3,7 @@ const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
+require('dotenv').config(); //process.NODE_ENV
 
 const server = app.listen(3001, () => {
 	console.log('Start server');

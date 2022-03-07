@@ -6,6 +6,9 @@ const api = express.Router();
 const sha256 = require('sha256');
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
+const { slackMessage } = require('./slack.js');
+const slacker = require('slacker');
+const slack = slacker(process.env.SLACK_API_KEY);
 
 // 로그인
 api.post('/',
@@ -29,6 +32,7 @@ api.post('/',
                         message: "비밀번호가 맞지 않아요!"
                     });
 
+                    await slackMessage("@","yoon","Test Message");
                     return false;
                 }
 
