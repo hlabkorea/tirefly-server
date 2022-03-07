@@ -670,6 +670,82 @@ api.post("/app-store/v1", async (req, res) => {
     }
 });
 
+// 인앱결제 첫 결제 정보 저장
+api.post("/rental",
+    verifyToken,
+    [
+        check("userUID", "userUID is required").not().isEmpty(),
+        check("productUID", "productUID is required").not().isEmpty(),
+        check("optionUID", "optionUID is required").not().isEmpty(),
+        check("merchantUid", "merchantUid is required").not().isEmpty(),
+        check("rtMonth", "rtMonth is required").not().isEmpty(),
+        check("rtType", "rtType is required").not().isEmpty(),
+        check("rtMemo", "rtMemo is required").not().isEmpty(),
+        check("rtName", "rtName is required").not().isEmpty(),
+        check("rtAddr1", "rtAddr1 is required").not().isEmpty(),
+        check("rtAddr2", "rtAddr2 is required").not().isEmpty(),
+        check("rtUserPhoneNum", "rtUserPhoneNum is required").not().isEmpty(),
+        check("rtUserCellNum", "rtUserCellNum is required").not().isEmpty(),
+        check("buyerEmail", "buyerEmail is required").not().isEmpty(),
+        check("buyerName", "buyerName is required").not().isEmpty(),
+        check("addr1", "addr1 is required").not().isEmpty(),
+        check("addr2", "addr2 is required").not().isEmpty(),
+        check("rtRcpntPhoneNum", "rtRcpntPhoneNum is required").not().isEmpty(),
+        check("buyerTel", "buyerTel is required").not().isEmpty(),
+        check("requireMents", "requireMents is required").not().isEmpty(),
+        check("payMethod", "payMethod is required").not().isEmpty(),
+        check("rtUserSMSOpt", "rtUserSMSOpt is required").not().isEmpty(),
+        check("rtRcpntSMSOpt", "rtRcpntSMSOpt is required").not().isEmpty()
+    ],
+    async (req, res) => {
+        const errors = getError(req, res);
+        if (errors.isEmpty()) {
+            try{
+                const userUID = req.body.userUID;
+                const amount = 0;
+                const name = "모티프 미러(렌탈)";
+                const productUID = req.body.productUID;
+                const optionUID = req.body.optionUID;
+                const rtMonth = req.body.rtMonth;
+                const rtType = req.body.rtType;
+                const rtMemo = req.body.rtMemo;
+                const rtName = req.body.rtName;
+                const rtAddr1 = req.body.rtAddr1;
+                const rtAddr2 = req.body.rtAddr2;
+                const rtUserPhoneNum = req.body.rtUserPhoneNum;
+                const rtUserCellNum = req.body.rtUserCellNum;
+                const buyerEmail = req.body.buyerEmail;
+                const buyerName = req.body.buyerName;
+                const addr1 = req.body.addr1;
+                const addr2 = req.body.addr2;
+                const rtRcpntPhoneNum = req.body.rtRcpntPhoneNum;
+                const buyerTel = req.body.buyerTel;
+                const requireMents = req.body.requireMents;
+                const payMethod = req.body.payMethod;
+                const rtUserSMSOpt = req.body.rtUserSMSOpt;
+                const rtRcpntSMSOpt = req.body.rtRcpntSMSOpt;
+                const type = "product";
+                const orderStatus = "대기중";
+                const count = 1;
+
+                const sqlData = [userUID, amount, name, merchantUid, rtMonth, rtType, rtMemo, rtName, rtAddr1, rtAddr2, rtUserPhoneNum, rtUserCellNum, buyerEmail, buyerName, addr1, addr2, rtRcpntPhoneNum,
+                                buyerTel, requireMents, payMethod, rtUserSMSOpt, rtRcpntSMSOpt, type, orderStatus];
+                                
+                const paymentUID = await insertPaymentRental(sqlData);
+                await insertPaymentProduct(paymentUID, productUID, optionUID, count, '');
+                
+                res.status(200).json({
+                    status: 200,
+                    data: "true",
+                    message: "success"
+                });
+            } catch (err) {
+                throw err;
+            }
+        }
+    }
+);
+
 // 배송 예약 등록
 api.put('/ship/schedule/:paymentUID',
     verifyAdminToken,
@@ -1294,13 +1370,24 @@ async function insertPayment(sqlData) {
     return result.insertId;
 }
 
+// 렌탈 주문 정보 추가
+async function insertPaymentRental(sqlData) {
+    var sql = "insert payment(userUID, amount, name, merchantUid, rtMonth, rtType, rtMemo, rtName, rtAddr1, rtAddr2, rtUserPhoneNum, rtUserCellNum, buyerEmail, buyerName, addr1, addr2, " +
+        "rtRcpntPhoneNum, buyerTel, requireMents, payMethod, rtUserSMSOpt, rtRcpntSMSOpt, type, orderStatus)" +
+        "values (?)";
+    const [result] = await con.query(sql, [sqlData]);
+
+    return result.insertId;
+}
+
 // 주문에 대한 상품 정보 추가
 async function insertPaymentProduct(paymentUID, productUID, optionUID, count, buyerEmail) {
     var sql = "insert payment_product_list(paymentUID, productUID, optionUID, count) values (?)";
     const sqlData = [paymentUID, productUID, optionUID, count];
     await con.query(sql, [sqlData]);
 
-    sendPaymentMsg(buyerEmail, paymentUID);
+    if(buyerEmail.length > 0)
+        sendPaymentMsg(buyerEmail, paymentUID);
 }
 
 // 주문에 대한 멤버십 정보 추가

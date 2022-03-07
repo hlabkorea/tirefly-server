@@ -100,54 +100,6 @@ api.get('/week', verifyAdminToken, async function (req, res) {
     }
 });
 
-api.get('/dashboardUser', verifyAdminToken, async function (req, res) {
-    try {
-        const day1AgoNew = await selectDayNewUserCnt(1);
-        const day1AgoVisit = await selectDayLoginUserCnt(1)
-
-        const day2AgoNew = await selectDayNewUserCnt(2);
-        const day2AgoVisit = await selectDayLoginUserCnt(2)
-
-        const day3AgoNew = await selectDayNewUserCnt(3);
-        const day3AgoVisit = await selectDayLoginUserCnt(3)
-
-        const day4AgoNew = await selectDayNewUserCnt(4);
-        const day4AgoVisit = await selectDayLoginUserCnt(4)
-
-        const day5AgoNew = await selectDayNewUserCnt(5);
-        const day5AgoVisit = await selectDayLoginUserCnt(5)
-
-        const day6AgoNew = await selectDayNewUserCnt(6);
-        const day6AgoVisit = await selectDayLoginUserCnt(6)
-
-        const day7AgoNew = await selectDayNewUserCnt(7);
-        const day7AgoVisit = await selectDayLoginUserCnt(7)
-
-        res.status(200).json({
-            status : 200,
-            data : {
-                "day1AgoNew" : day1AgoNew, 
-                "day2AgoNew" : day2AgoNew, 
-                "day3AgoNew" : day3AgoNew, 
-                "day4AgoNew" : day4AgoNew, 
-                "day5AgoNew" : day5AgoNew, 
-                "day6AgoNew" : day6AgoNew, 
-                "day7AgoNew" : day7AgoNew, 
-                "day1AgoVisit" : day1AgoVisit,
-                "day2AgoVisit" : day2AgoVisit, 
-                "day3AgoVisit" : day3AgoVisit, 
-                "day4AgoVisit" : day4AgoVisit, 
-                "day5AgoVisit" : day5AgoVisit, 
-                "day6AgoVisit" : day6AgoVisit, 
-                "day7AgoVisit" : day7AgoVisit,
-
-            },
-            message: "success"
-        });
-    } catch (err) {
-        throw err;
-    }
-})
 
 // 회원 상세정보 조회 (프로필 조회)
 api.get('/:userUID', verifyToken, async function (req, res) {
@@ -799,12 +751,6 @@ async function selectWeekNewUserCnt(){
     return result;
 }
 
-//날짜별 신규 회원 수 조회 //상원
-async function selectDayNewUserCnt(day){
-    var sql = `select count(UID) as cnt from user where date_format(regDate, '%Y-%m-%d') = date_format(now() - interval ${day} day , '%Y-%m-%d')`
-    const [result] = await devcon.query(sql);
-    return result[0].cnt;
-}
 
 // 일주일 방문 회원 수 조회
 async function selectWeekLoginUserCnt(){
@@ -816,11 +762,6 @@ async function selectWeekLoginUserCnt(){
     return result;
 }
 
-// 날짜별 방문 회원 수 조회 //상원
-async function selectDayLoginUserCnt(day){
-    var sql = `select count(distinct userUID) as cnt from user_log where date_format(regDate, '%Y-%m-%d') = date_format(now() - interval ${day} day , '%Y-%m-%d')`
-    const [result] = await devcon.query(sql);
-    return result[0].cnt;
-}
+
 
 module.exports = api;
