@@ -99,7 +99,7 @@ api.get('/week', verifyAdminToken, async function (req, res) {
         throw err;
     }
 });
-
+//수정 필요 datepart() 사용해서 count 해오는 query 사용 예정
 api.get('/dashboardUser', verifyAdminToken, async function (req, res) {
     try {
         const day1AgoNew = await selectDayNewUserCnt(1);
@@ -795,12 +795,6 @@ async function selectWeekNewUserCnt(){
     return result;
 }
 
-//날짜별 신규 회원 수 조회 //상원
-async function selectDayNewUserCnt(day){
-    var sql = `select count(UID) as cnt from user where date_format(regDate, '%Y-%m-%d') = date_format(now() - interval ${day} day , '%Y-%m-%d')`
-    const [result] = await devcon.query(sql);
-    return result[0].cnt;
-}
 
 // 일주일 방문 회원 수 조회
 async function selectWeekLoginUserCnt(){
@@ -812,6 +806,12 @@ async function selectWeekLoginUserCnt(){
     return result;
 }
 
+//날짜별 신규 회원 수 조회 //상원
+async function selectDayNewUserCnt(day){
+    var sql = `select count(UID) as cnt from user where date_format(regDate, '%Y-%m-%d') = date_format(now() - interval ${day} day , '%Y-%m-%d')`
+    const [result] = await devcon.query(sql);
+    return result[0].cnt;
+}
 // 날짜별 방문 회원 수 조회 //상원
 async function selectDayLoginUserCnt(day){
     var sql = `select count(distinct userUID) as cnt from user_log where date_format(regDate, '%Y-%m-%d') = date_format(now() - interval ${day} day , '%Y-%m-%d')`

@@ -36,6 +36,26 @@ api.get('/',
     }
 );
 
+api.get('/membership',
+    async function (req, res, next) {
+        try{
+            var sql = "select UID as productUID, engName as name, originPrice as price, composition " +
+                "from product " +
+                "where category = 'membership' and UID != 1590794060";
+
+            const [result] = await con.query(sql);
+
+            res.status(200).json({
+                status: 200,
+                data: result,
+                message: "success"
+            });
+        } catch (err) {
+            throw err;
+        }
+    }
+);
+
 // 상품 상세정보 조회
 api.get('/:productUID',
     async function (req, res, next) {
