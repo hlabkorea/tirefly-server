@@ -7,7 +7,7 @@ api.get('/',
     async function (req, res, next) {
         try{
             const category = req.query.category ? req.query.category : '';
-            var sql = "select a.UID, ifnull(b.imgPath, '') imgPath, a.korName, a.engName, a.originPrice, a.discountRate, a.discountPrice, a.dcShippingFee as shippingFee " +
+            var sql = "select a.UID, ifnull(b.imgPath, '') imgPath, a.buyType, a.korName, a.engName, a.originPrice, a.discountRate, a.discountPrice, a.dcShippingFee as shippingFee " +
                 "from product a " +
                 "left join product_img_list b on a.UID = b.productUID " + 
                 "where a.status='act' ";
