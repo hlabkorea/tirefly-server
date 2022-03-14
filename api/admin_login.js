@@ -57,6 +57,7 @@ api.post('/',
                     }
                 });
 
+
                 insertAdminLog(adminUID, token);
             } catch (err) {
                 throw err;

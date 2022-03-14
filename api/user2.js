@@ -99,6 +99,7 @@ api.get('/week', verifyAdminToken, async function (req, res) {
         throw err;
     }
 });
+
 //수정 필요 datepart() 사용해서 count 해오는 query 사용 예정
 api.get('/dashboardUser', verifyAdminToken, async function (req, res) {
     try {

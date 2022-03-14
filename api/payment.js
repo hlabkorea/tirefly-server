@@ -12,9 +12,9 @@ const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 const imp_key = "7260030924750208"; // 아임포트 운영 REST API 키
 const imp_secret = "abc8d306c8df0b4354dd438c5ab9d5af9bf06094734cc1936780beef5fa4a6ab585b1219b7b09a4b"; // 아임포트 운영 REST API Secret
-const apple_password = "157cd3c52883418cabfab06e2b206da7";
 //const imp_key = "5425471433410805"; // 아임포트 테스트 REST API 키
 //const imp_secret = "L76UxuB5wmV0TRtcRR3iBYiGz38AOiTAq0uXu630tY1mPuzHmC0YBiEamNLa6FLwFfu9mxaPwccmGL33"; // 아임포트 테스트 REST API Secret
+const apple_password = "157cd3c52883418cabfab06e2b206da7";
 const pageCnt15 = 15;
 const pageCnt10 = 10;
 
@@ -44,6 +44,8 @@ api.get('/',
                 result = await selectPaymentProduct(type, searchType, searchWord, startDate, endDate, offset); // 제품의 결제 내역 조회
             else if (type == "membership")
                 result = await selectPaymentMembership(type, searchType, searchWord, startDate, endDate, offset); // 멤버십의 결제 내역 조회
+            else if (type == "rental")
+                result = await selectPaymentRental(type, searchType, searchWord, startDate, endDate, offset); // 렌탈의 결제 내역 조회
 
             const {
                 startPage,
@@ -168,6 +170,31 @@ api.get('/week',
     }
 );
 
+// 월평 매출 건 수 조회
+api.post('/monthPayment',
+    verifyAdminToken,
+    async function (req , res, next) {
+        try {
+            var responseData = {};
+
+            responseData.nowMonthProduct = await selectMonthPayment('product', 0);
+            responseData.lastMonthProduct = await selectMonthPayment('product', 1)
+            responseData.last2MonthProduct = await selectMonthPayment('product', 2)
+            responseData.nowMonthMembership = await selectMonthPayment('membership', 0)
+            responseData.lastMonthMembership = await selectMonthPayment('membership', 1)
+            responseData.last2MonthMembership = await selectMonthPayment('membership', 2)
+
+
+            res.status(200).json({
+                status : 200,
+                data : responseData,
+                message : "success",
+            })
+        } catch (err) {
+            throw err;
+        }
+})
+
 // 배송 일정 조회
 api.get('/ship/schedule',
     verifyAdminToken,
@@ -180,7 +207,7 @@ api.get('/ship/schedule',
                 "from payment a " +
                 "join payment_product_list b on a.UID = b.paymentUID " +
                 "join product c on b.productUID = c.UID " +
-                "join product_option_list d on b.optionUID = d.UID " +
+                "left join product_option_list d on b.optionUID = d.UID " +
                 "where a.shippingStatus != '배송전' and (date_format(a.shipResDate, '%Y-%m-%d') between ? and ?) and a.type='product'";
             const sqlData = [startDate, endDate];
             const [result] = await con.query(sql, sqlData);
@@ -460,11 +487,13 @@ api.get('/:paymentUID',
         try{
             const paymentUID = req.params.paymentUID;
             var sql = "select a.requireMents, if(a.reqDate = '0000-01-01 00:00:00', '', a.reqDate) as reqDate, ifnull(a.refundMsg, '') as refundMsg, a.buyerName, a.buyerTel, " +
-                "if(a.shipResDate = '0000-01-01 00:00:00', '', a.shipResDate) as shipResDate, a.shipResMsg, c.korName as productName, d.optionName " +
+                "if(a.shipResDate = '0000-01-01 00:00:00', '', a.shipResDate) as shipResDate, a.shipResMsg, c.korName as productName, ifnull(d.optionName, '') as optionName, " +
+                "a.merchantUid, a.orderStatus, a.rtType, a.rtMonth, a.rtName, a.rtAddr1, a.rtAddr2, a.rtUserPhoneNum, a.rtUserCellNum, a.buyerEmail, a.rtMemo, a.rtUserSMSOpt, " +
+                "a.buyerName, a.addr1, a.addr2, a.rtRcpntPhoneNum, a.buyerTel, a.requireMents, a.rtRcpntSMSOpt, a.payMethod " +
                 "from payment a " +
                 "join payment_product_list b on a.UID = b.paymentUID " +
                 "join product c on b.productUID = c.UID " +
-                "join product_option_list d on b.optionUID = d.UID " +
+                "left join product_option_list d on b.optionUID = d.UID " +
                 "where a.UID = ?";
             const [result] = await con.query(sql, paymentUID);
 
@@ -645,29 +674,28 @@ api.post("/app-store/v1", async (req, res) => {
     }
 });
 
-// 인앱결제 첫 결제 정보 저장
+// 렌탈 정보 등록
 api.post("/rental",
     verifyToken,
     [
         check("userUID", "userUID is required").not().isEmpty(),
         check("productUID", "productUID is required").not().isEmpty(),
-        check("optionUID", "optionUID is required").not().isEmpty(),
         check("merchantUid", "merchantUid is required").not().isEmpty(),
         check("rtMonth", "rtMonth is required").not().isEmpty(),
         check("rtType", "rtType is required").not().isEmpty(),
-        check("rtMemo", "rtMemo is required").not().isEmpty(),
+        check("rtMemo", "rtMemo is required").exists(),
         check("rtName", "rtName is required").not().isEmpty(),
         check("rtAddr1", "rtAddr1 is required").not().isEmpty(),
         check("rtAddr2", "rtAddr2 is required").not().isEmpty(),
-        check("rtUserPhoneNum", "rtUserPhoneNum is required").not().isEmpty(),
-        check("rtUserCellNum", "rtUserCellNum is required").not().isEmpty(),
+        check("rtUserPhoneNum", "rtUserPhoneNum is required").exists(),
+        check("rtUserCellNum", "rtUserCellNum is required").exists(),
         check("buyerEmail", "buyerEmail is required").not().isEmpty(),
         check("buyerName", "buyerName is required").not().isEmpty(),
         check("addr1", "addr1 is required").not().isEmpty(),
         check("addr2", "addr2 is required").not().isEmpty(),
-        check("rtRcpntPhoneNum", "rtRcpntPhoneNum is required").not().isEmpty(),
-        check("buyerTel", "buyerTel is required").not().isEmpty(),
-        check("requireMents", "requireMents is required").not().isEmpty(),
+        check("rtRcpntPhoneNum", "rtRcpntPhoneNum is required").exists(),
+        check("buyerTel", "buyerTel is required").exists(),
+        check("requireMents", "requireMents is required").exists(),
         check("payMethod", "payMethod is required").not().isEmpty(),
         check("rtUserSMSOpt", "rtUserSMSOpt is required").not().isEmpty(),
         check("rtRcpntSMSOpt", "rtRcpntSMSOpt is required").not().isEmpty()
@@ -680,7 +708,7 @@ api.post("/rental",
                 const amount = 0;
                 const name = "모티프 미러(렌탈)";
                 const productUID = req.body.productUID;
-                const optionUID = req.body.optionUID;
+                const merchantUid = req.body.merchantUid;
                 const rtMonth = req.body.rtMonth;
                 const rtType = req.body.rtType;
                 const rtMemo = req.body.rtMemo;
@@ -701,11 +729,11 @@ api.post("/rental",
                 const rtRcpntSMSOpt = req.body.rtRcpntSMSOpt;
                 const type = "product";
                 const orderStatus = "대기중";
+                const optionUID = 0;
                 const count = 1;
 
                 const sqlData = [userUID, amount, name, merchantUid, rtMonth, rtType, rtMemo, rtName, rtAddr1, rtAddr2, rtUserPhoneNum, rtUserCellNum, buyerEmail, buyerName, addr1, addr2, rtRcpntPhoneNum,
                                 buyerTel, requireMents, payMethod, rtUserSMSOpt, rtRcpntSMSOpt, type, orderStatus];
-                                
                 const paymentUID = await insertPaymentRental(sqlData);
                 await insertPaymentProduct(paymentUID, productUID, optionUID, count, '');
                 
@@ -892,23 +920,95 @@ api.put("/membership/unschedule/:paymentUID", async function (req, res) {
     }
 });
 
+// 렌탈 정보 수정
+api.put('/rental/:paymentUID',
+    verifyAdminToken,
+    [
+        check("rtMonth", "rtMonth is required").not().isEmpty(),
+        check("rtType", "rtType is required").not().isEmpty(),
+        check("rtMemo", "rtMemo is required").exists(),
+        check("rtName", "rtName is required").not().isEmpty(),
+        check("rtAddr1", "rtAddr1 is required").not().isEmpty(),
+        check("rtAddr2", "rtAddr2 is required").not().isEmpty(),
+        check("rtUserPhoneNum", "rtUserPhoneNum is required").exists(),
+        check("rtUserCellNum", "rtUserCellNum is required").exists(),
+        check("buyerEmail", "buyerEmail is required").not().isEmpty(),
+        check("buyerName", "buyerName is required").not().isEmpty(),
+        check("addr1", "addr1 is required").not().isEmpty(),
+        check("addr2", "addr2 is required").not().isEmpty(),
+        check("rtRcpntPhoneNum", "rtRcpntPhoneNum is required").exists(),
+        check("buyerTel", "buyerTel is required").exists(),
+        check("requireMents", "requireMents is required").exists(),
+        check("payMethod", "payMethod is required").not().isEmpty(),
+        check("rtUserSMSOpt", "rtUserSMSOpt is required").not().isEmpty(),
+        check("rtRcpntSMSOpt", "rtRcpntSMSOpt is required").not().isEmpty(),
+        check("orderStatus", "orderStatus is required").not().isEmpty()
+    ], 
+    async function (req, res, next) {
+        const errors = getError(req, res);
+        if(errors.isEmpty()){
+            try{
+                const adminUID = req.adminUID;
+                const paymentUID = req.params.paymentUID;
+                const rtMonth = req.body.rtMonth;
+                const rtType = req.body.rtType;
+                const rtMemo = req.body.rtMemo;
+                const rtName = req.body.rtName;
+                const rtAddr1 = req.body.rtAddr1;
+                const rtAddr2 = req.body.rtAddr2;
+                const rtUserPhoneNum = req.body.rtUserPhoneNum;
+                const rtUserCellNum = req.body.rtUserCellNum;
+                const buyerEmail = req.body.buyerEmail;
+                const buyerName = req.body.buyerName;
+                const addr1 = req.body.addr1;
+                const addr2 = req.body.addr2;
+                const rtRcpntPhoneNum = req.body.rtRcpntPhoneNum;
+                const buyerTel = req.body.buyerTel;
+                const requireMents = req.body.requireMents;
+                const payMethod = req.body.payMethod;
+                const rtUserSMSOpt = req.body.rtUserSMSOpt;
+                const rtRcpntSMSOpt = req.body.rtRcpntSMSOpt;
+                const orderStatus = req.body.orderStatus;
+
+                const sqlData = [rtMonth, rtType, rtMemo, rtName, rtAddr1, rtAddr2, rtUserPhoneNum, rtUserCellNum, buyerEmail, buyerName, addr1, addr2, rtRcpntPhoneNum,
+                                buyerTel, requireMents, payMethod, rtUserSMSOpt, rtRcpntSMSOpt, orderStatus, adminUID, paymentUID];
+                
+                await updatePaymentRental(sqlData);
+
+                res.status(200).json({
+                    status: 200,
+                    data: "true",
+                    message: "success"
+                });
+            } catch (err) {
+                throw err;
+            }
+        }
+    }
+);
+
 // 주문 매출 정보 조회 (결제합계, 환불합계, 순매출)
 async function selectPaymentSales(type, searchType, searchWord, startDate, endDate) {
     var sql = "select ifnull(sum(a.amount), 0) as totalPrice, count(a.UID) as totalCount, ifnull(sum(case when a.orderStatus = '취소승인' then a.amount end ), 0) as refundPrice, " +
         "count(case when a.orderStatus = '취소승인' then 1 end ) as refundCount " +
         ", ifnull(sum(case when a.orderStatus != '취소승인' then a.amount end ), 0) as profitPrice, count(case when a.orderStatus != '취소승인' then 1 end ) as profitCount " +
         "from payment a " +
-        "join user b on a.userUID = b.UID " +
+        "join payment_product_list b on a.UID = b.paymentUID " +
+        "join product c on b.productUID = c.UID " +
+        "join user d on a.userUID = d.UID " +
         `where (date_format(a.regDate, '%Y-%m-%d') between '${startDate}' and '${endDate}') `;
 
-    sql += `and a.type = '${type}' `;
+    if(type == 'rental')
+        sql += `and c.buyType = '${type}' `;
+    else
+        sql += `and a.type = '${type}' and c.buyType = 'buy' `;
 
     // 검색
     if (searchType.length != 0) {
         if (searchType == "buyerEmail") {
-            sql += "and b.email ";
+            sql += "and d.email ";
         } else if (searchType == "buyerTel") {
-            sql += "and b.cellNumber ";
+            sql += "and d.cellNumber ";
         } else if (searchType == "merchantUid") {
             sql += "and a.merchantUid ";
         }
@@ -987,17 +1087,49 @@ async function selectPaymentMembership(type, searchType, searchWord, startDate, 
     return result;
 }
 
+// 렌탈 결제 내역 조회
+async function selectPaymentRental(type, searchType, searchWord, startDate, endDate, offset) {
+    var sql = "select a.UID as paymentUID, a.merchantUid, c.korName, ifnull(d.optionName, '') as optionName, a.buyerEmail, e.cellNumber as buyerTel, a.amount, " +
+        "a.payMethod, a.orderStatus, a.regDate " +
+        "from payment a " +
+        "join payment_product_list b on a.UID = b.paymentUID " +
+        "join product c on b.productUID = c.UID " +
+        "left join product_option_list d on b.optionUID = d.UID " +
+        "join user e on a.userUID = e.UID " +
+        `where (date_format(a.regDate, '%Y-%m-%d') between '${startDate}' and '${endDate}') `;
+
+    sql += `and c.buyType = '${type}' `;
+
+    // 검색
+    if (searchType.length != 0) {
+        if (searchType == "buyerEmail") {
+            sql += "and e.email ";
+        } else if (searchType == "buyerTel") {
+            sql += "and e.cellNumber ";
+        } else if (searchType == "merchantUid") {
+            sql += "and a.merchantUid ";
+        }
+
+        sql += `LIKE '%${searchWord}%' `;
+    }
+
+    sql += "group by a.UID " +
+        "order by a.regDate desc " +
+        `limit ${offset}, ${pageCnt15}`;
+    const [result] = await con.query(sql);
+    return result;
+}
+
 // 배송 현황 조회 (전체, 배송전, 배송준비중, 배송완료)
 async function selectPaymentShipStatus(status, searchType, searchWord, startDate, endDate){
     var sql = "select count(a.UID) as totalCnt, count(case when a.shippingStatus = '배송전'  then 1 end ) as befShipCnt,  count(case when a.shippingStatus = '배송준비중'  then 1 end ) as rdyShipCnt, " +
             "count(case when a.shippingStatus = '배송완료'  then 1 end ) as confShipCnt " +
             "from payment a " +
             "join user b on a.userUID = b.UID " +
-            `where (date_format(a.regDate, '%Y-%m-%d') between '${startDate}' and '${endDate}') and a.type = 'product' and a.orderStatus != '취소요청' and a.orderStatus != '취소승인' `;
+            `where (date_format(a.regDate, '%Y-%m-%d') between '${startDate}' and '${endDate}') and a.type = 'product' and a.orderStatus in ('결제완료', '취소미승인', '계약체결완료')`;
 
     if (status != "all") 
         sql += `and a.shippingStatus = '${status}' `;
-    
     // 검색
     if (searchType.length != 0) {
         if (searchType == "buyerEmail") {
@@ -1018,15 +1150,15 @@ async function selectPaymentShipStatus(status, searchType, searchWord, startDate
 
 // 배송 목록 조회
 async function selectPaymentShip(status, searchType, searchWord, startDate, endDate, offset) {
-    var sql = "select a.UID as paymentUID, a.merchantUid, c.korName, d.optionName, a.buyerName, a.buyerEmail, a.buyerTel, " +
+    var sql = "select a.UID as paymentUID, a.merchantUid, c.korName, ifnull(d.optionName, '') as optionName, a.buyerName, a.buyerEmail, a.buyerTel, " +
         "concat(a.addr1, ' ', a.addr2) as addr, a.regDate, a.shippingStatus, if(a.shipResDate = '0000-01-01 00:00:00', '', a.shipResDate) as shippingDate, " +
         "if(shipConfDate = '0000-01-01 00:00:00', '', shipConfDate) as shipConfDate " +
         "from payment a " +
         "join payment_product_list b on a.UID = b.paymentUID " +
         "join product c on b.productUID = c.UID " +
-        "join product_option_list d on b.optionUID = d.UID " +
+        "left join product_option_list d on b.optionUID = d.UID " +
         "join user e on a.userUID = e.UID " +
-        `where (date_format(a.regDate, '%Y-%m-%d') between '${startDate}' and '${endDate}') and a.type = 'product' and a.orderStatus != '취소요청' and a.orderStatus != '취소승인' `;
+        `where (date_format(a.regDate, '%Y-%m-%d') between '${startDate}' and '${endDate}') and a.type = 'product' and a.orderStatus in ('결제완료', '취소미승인', '계약체결완료') `;
 
     if (status != "all")
         sql += `and a.shippingStatus = '${status}' `;
@@ -1348,11 +1480,21 @@ async function insertPayment(sqlData) {
 // 렌탈 주문 정보 추가
 async function insertPaymentRental(sqlData) {
     var sql = "insert payment(userUID, amount, name, merchantUid, rtMonth, rtType, rtMemo, rtName, rtAddr1, rtAddr2, rtUserPhoneNum, rtUserCellNum, buyerEmail, buyerName, addr1, addr2, " +
-        "rtRcpntPhoneNum, buyerTel, requireMents, payMethod, rtUserSMSOpt, rtRcpntSMSOpt, type, orderStatus)" +
+        "rtRcpntPhoneNum, buyerTel, requireMents, payMethod, rtUserSMSOpt, rtRcpntSMSOpt, type, orderStatus) " +
         "values (?)";
+
     const [result] = await con.query(sql, [sqlData]);
 
     return result.insertId;
+}
+
+// 렌탈 주문 정보 수정
+async function updatePaymentRental(sqlData) {
+    var sql = "update payment set rtMonth = ?, rtType = ?, rtMemo = ?, rtName = ?, rtAddr1 = ?, rtAddr2 = ?, rtUserPhoneNum = ?, rtUserCellNum = ?, buyerEmail = ?, buyerName = ?, " +
+            "addr1 = ?, addr2 = ?, rtRcpntPhoneNum = ?, buyerTel = ?, requireMents = ?, payMethod = ?, rtUserSMSOpt = ?, rtRcpntSMSOpt = ?, orderStatus = ?, adminUID = ? "  +
+            "where UID = ?";
+
+    await con.query(sql, sqlData);
 }
 
 // 주문에 대한 상품 정보 추가

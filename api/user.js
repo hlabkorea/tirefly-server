@@ -734,6 +734,13 @@ async function selectTodayNewUserCnt(){
     return result[0].cnt;
 }
 
+//날짜별 신규 회원 수 조회
+async function selectDayNewUserCnt(day){
+    var sql = `select count(UID) as cnt from user where date_format(regDate, '%Y-%m-%d') = date_format(now() - interval -${day} day , '%Y-%m-%d')`
+    const [result] = await devcon.query(sql);
+    return result[0].cnt;
+}
+
 // 일주일 신규 회원 수 조회
 async function selectWeekNewUserCnt(){
     var sql = "select date_format(regDate, '%Y-%m-%d') as date, count(UID) as count " +
