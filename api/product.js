@@ -7,7 +7,7 @@ api.get('/',
     async function (req, res, next) {
         try{
             const category = req.query.category ? req.query.category : '';
-            var sql = "select a.UID, ifnull(b.imgPath, '') imgPath, a.korName, a.engName, a.originPrice, a.discountRate, a.discountPrice, a.dcShippingFee as shippingFee " +
+            var sql = "select a.UID, ifnull(b.imgPath, '') imgPath, a.buyType, a.rtMonth, a.korName, a.engName, a.originPrice, a.discountRate, a.discountPrice, a.dcShippingFee as shippingFee " +
                 "from product a " +
                 "left join product_img_list b on a.UID = b.productUID " + 
                 "where a.status='act' ";
@@ -21,11 +21,7 @@ api.get('/',
             sql += "group by a.UID " +
                 "order by b.UID ";
 
-            console.log(sql);
-
             const [result] = await con.query(sql);
-
-            console.log(result);
 
             res.status(200).json({
                 status: 200,
@@ -63,7 +59,7 @@ api.get('/:productUID',
     async function (req, res, next) {
         try{
             const productUID = req.params.productUID;
-            var sql = "select UID, korName, engName, originPrice, discountRate, discountPrice, originShippingFee, dcShippingFee, " +
+            var sql = "select UID, korName, engName, rtMonth, originPrice, discountRate, discountPrice, originShippingFee, dcShippingFee, " +
                 "ifnull(composition, '') as composition, ifnull(benefitInfo, '') as benefitInfo, ifnull(shippingInfo, '') as shippingInfo, detailImgPath, detailMobileImgPath " +
                 "from product " +
                 "where UID = ?";
