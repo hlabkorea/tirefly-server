@@ -97,10 +97,4 @@ async function insertVideoHistory(userUID, videoUID, userPlayTime) {
     await con.query(sql, [sqlData]);
 }
 
-// 비디오 재생 수 Top 5
-async function videoTop5(){
-    var sql = "select as count from where limit orderby"
-    const [result] = await con.query(sql)
-    return result;
-}
 module.exports = api;
