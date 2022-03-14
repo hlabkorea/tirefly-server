@@ -36,6 +36,7 @@
     "qs": "^6.10.3",
     "querystring": "^0.2.1",
     "sha256": "^0.2.0",
+    "sharp": "^0.23.2",
     "slack-node": "^0.1.8",
     "slacker": "^1.2.0",
     "swagger-jsdoc": "^6.1.0",
