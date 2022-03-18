@@ -10,6 +10,7 @@ exports.verifyToken = (req, res, next) => {
 
         if (decoded) {
             console.log('user token success');
+            console.log(decoded.auth);
 			if(decoded.auth == "admin") // 관리자 계정일 때에는 중복로그인 체크 X
 				next();
 			else{
