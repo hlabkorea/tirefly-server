@@ -1504,7 +1504,7 @@ async function updatePaymentRental(sqlData) {
 // 렌탈 주문 옵션 정보 수정
 async function updatePaymentOption(optionUID, paymentUID) {
     var sql = "update payment_product_list set optionUID = ? " +
-            "where UID = ?";
+            "where paymentUID = ?";
     const sqlData = [optionUID, paymentUID];
 
     await con.query(sql, sqlData);
