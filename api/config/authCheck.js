@@ -23,7 +23,8 @@ exports.verifyToken = (req, res, next) => {
 					if (err) throw err;
                     
                     if(result.length != 0){
-                        if(clientToken != result[0].token)
+                        var getToken = clientToken;
+					    if(getToken != result[0].token)
                             res.status(403).json({"status":403, "data":"Unauthorized", message:"다른 기기에서 로그인하여 이 기기에서는 자동으로 로그아웃 되었습니다."});
                     }
 					else {
