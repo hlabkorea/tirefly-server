@@ -5,6 +5,22 @@ const api = express.Router();
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 
+// 프로그램 조회 이력 top5
+api.get('/top5', verifyAdminToken, async function (req, res) {
+    try{
+        var sql = "select programUID, count(*) as cnt, program.programName from program_history inner join program on programUID = program.UID where year(program_history.regDate) = year(now()) and month(program_history.regDate) = month(now()) group by programUID order by count(*) desc limit 5"
+        const [result] = await con.query(sql);
+
+        res.status(200).send({
+            status : 200,
+            data : result,
+            message : "success"
+        });
+    } catch (err) {
+        throw err;
+    }
+});
+
 // 진행 중인 프로그램 조회
 api.get('/proceeding/:userUID', verifyToken, async function (req, res) {
     try {

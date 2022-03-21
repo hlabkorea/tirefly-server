@@ -59,7 +59,7 @@ api.get('/:productUID',
     async function (req, res, next) {
         try{
             const productUID = req.params.productUID;
-            var sql = "select UID, korName, engName, rtMonth, originPrice, discountRate, discountPrice, originShippingFee, dcShippingFee, " +
+            var sql = "select UID, buyType, korName, engName, rtMonth, rtPopImgPath, originPrice, discountRate, discountPrice, originShippingFee, dcShippingFee, " +
                 "ifnull(composition, '') as composition, ifnull(benefitInfo, '') as benefitInfo, ifnull(shippingInfo, '') as shippingInfo, detailImgPath, detailMobileImgPath " +
                 "from product " +
                 "where UID = ?";

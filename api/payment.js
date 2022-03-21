@@ -295,7 +295,7 @@ api.get('/membership/:userUID',
     verifyToken,
     async function (req, res, next) {
         try{
-            const userUID = req.params.userUID;
+            const userUID = req.userUID;
             const currentPage = req.query.page ? parseInt(req.query.page) : 1;
             var sql = "select a.UID as paymentUID, a.name, a.amount, a.payMethod, a.regDate, date_add(date_format(a.regDate, '%Y-%m-%d 23:59:59'), interval 1 month) as membershipEndDate " +
                 "from payment a " +
@@ -367,7 +367,7 @@ api.get('/product/:userUID',
     verifyToken,
     async function (req, res, next) {
         try{
-            const userUID = req.params.userUID;
+            const userUID = req.userUID;
             const currentPage = req.query.page ? parseInt(req.query.page) : 1;
             var sql = "select a.UID as paymentUID, e.imgPath, c.korName, c.engName, c.originPrice, c.discountRate, c.discountPrice, d.optionName, a.regDate, a.merchantUid, a.amount, b.count, a.orderStatus, a.shippingStatus " +
                 "from payment a " +
@@ -680,6 +680,7 @@ api.post("/rental",
     [
         check("userUID", "userUID is required").not().isEmpty(),
         check("productUID", "productUID is required").not().isEmpty(),
+        check("optionUID", "optionUID is required").not().isEmpty(),
         check("merchantUid", "merchantUid is required").not().isEmpty(),
         check("rtMonth", "rtMonth is required").not().isEmpty(),
         check("rtType", "rtType is required").not().isEmpty(),
@@ -729,7 +730,7 @@ api.post("/rental",
                 const rtRcpntSMSOpt = req.body.rtRcpntSMSOpt;
                 const type = "product";
                 const orderStatus = "대기중";
-                const optionUID = 0;
+                const optionUID = req.body.optionUID;
                 const count = 1;
 
                 const sqlData = [userUID, amount, name, merchantUid, rtMonth, rtType, rtMemo, rtName, rtAddr1, rtAddr2, rtUserPhoneNum, rtUserCellNum, buyerEmail, buyerName, addr1, addr2, rtRcpntPhoneNum,
@@ -924,6 +925,7 @@ api.put("/membership/unschedule/:paymentUID", async function (req, res) {
 api.put('/rental/:paymentUID',
     verifyAdminToken,
     [
+        check("optionUID", "optionUID is required").not().isEmpty(),
         check("rtMonth", "rtMonth is required").not().isEmpty(),
         check("rtType", "rtType is required").not().isEmpty(),
         check("rtMemo", "rtMemo is required").exists(),
@@ -969,11 +971,13 @@ api.put('/rental/:paymentUID',
                 const rtUserSMSOpt = req.body.rtUserSMSOpt;
                 const rtRcpntSMSOpt = req.body.rtRcpntSMSOpt;
                 const orderStatus = req.body.orderStatus;
+                const optionUID = req.body.optionUID;
 
                 const sqlData = [rtMonth, rtType, rtMemo, rtName, rtAddr1, rtAddr2, rtUserPhoneNum, rtUserCellNum, buyerEmail, buyerName, addr1, addr2, rtRcpntPhoneNum,
                                 buyerTel, requireMents, payMethod, rtUserSMSOpt, rtRcpntSMSOpt, orderStatus, adminUID, paymentUID];
                 
                 await updatePaymentRental(sqlData);
+                await updatePaymentOption(optionUID, paymentUID);
 
                 res.status(200).json({
                     status: 200,
@@ -1493,6 +1497,15 @@ async function updatePaymentRental(sqlData) {
     var sql = "update payment set rtMonth = ?, rtType = ?, rtMemo = ?, rtName = ?, rtAddr1 = ?, rtAddr2 = ?, rtUserPhoneNum = ?, rtUserCellNum = ?, buyerEmail = ?, buyerName = ?, " +
             "addr1 = ?, addr2 = ?, rtRcpntPhoneNum = ?, buyerTel = ?, requireMents = ?, payMethod = ?, rtUserSMSOpt = ?, rtRcpntSMSOpt = ?, orderStatus = ?, adminUID = ? "  +
             "where UID = ?";
+
+    await con.query(sql, sqlData);
+}
+
+// 렌탈 주문 옵션 정보 수정
+async function updatePaymentOption(optionUID, paymentUID) {
+    var sql = "update payment_product_list set optionUID = ? " +
+            "where paymentUID = ?";
+    const sqlData = [optionUID, paymentUID];
 
     await con.query(sql, sqlData);
 }

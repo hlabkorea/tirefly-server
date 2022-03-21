@@ -5,6 +5,23 @@ const api = express.Router();
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
 
+// 비디오 재생이력 top 5
+api.get('/top5', verifyAdminToken , async function(req, res) {
+    try {
+
+        var sql = "select videoUID, count(*), video.videoName from video_history inner join video on videoUID = video.UID where year(video_history.regDate) = year(now()) and month(video_history.regDate) = month(now()) group by videoUID order by count(*) desc limit 5"
+        const [result] = await con.query(sql);
+        res.status(200).json({
+                status : 200,
+                data : result,
+                message : "success" //hello
+            })
+        } catch (err) {
+            throw err;
+        }
+    }
+);
+
 // cms - 비디오 재생 이력 조회
 api.get('/:userUID', verifyAdminToken, async function (req, res) {
     try {

@@ -154,7 +154,7 @@ function insertUserLog(userUID, token) {
 function makeJWT(userUID, level) {
     var token = jwt.sign({
             userUID: userUID,
-            auth: level
+            level: level
         },
         secretObj.secret, // 비밀 키
         {

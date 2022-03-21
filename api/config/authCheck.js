@@ -10,6 +10,7 @@ exports.verifyToken = (req, res, next) => {
 
         if (decoded) {
             console.log('user token success');
+            console.log(decoded.auth);
 			if(decoded.auth == "admin") // 관리자 계정일 때에는 중복로그인 체크 X
 				next();
 			else{
@@ -20,11 +21,13 @@ exports.verifyToken = (req, res, next) => {
 
 				db.query(token_check_sql, decoded.userUID, function (err, result, fields) {
 					if (err) throw err;
-
-					var getToken = clientToken;
-					if(getToken != result[0].token){
-						res.status(403).json({"status":403, "data":"Unauthorized", message:"다른 기기에서 로그인하여 이 기기에서는 자동으로 로그아웃 되었습니다."});
-					} else {
+                    
+                    if(result.length != 0){
+                        if(clientToken != result[0].token)
+                            res.status(403).json({"status":403, "data":"Unauthorized", message:"다른 기기에서 로그인하여 이 기기에서는 자동으로 로그아웃 되었습니다."});
+                    }
+					else {
+                        req.userUID = decoded.userUID;
 						next();
 					}
 				});
