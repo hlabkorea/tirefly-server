@@ -1032,7 +1032,7 @@ async function selectPaymentProduct(type, searchType, searchWord, startDate, end
         "join user e on a.userUID = e.UID " +
         `where (date_format(a.regDate, '%Y-%m-%d') between '${startDate}' and '${endDate}') `;
 
-    sql += `and a.type = '${type}' `;
+    sql += `and a.type = '${type}' and c.buyType = 'buy' `;
 
     // 검색
     if (searchType.length != 0) {
