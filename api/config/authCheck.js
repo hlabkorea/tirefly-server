@@ -5,6 +5,7 @@ const db = require('./database.js');
 // 유저 토큰 유효성 체크
 exports.verifyToken = (req, res, next) => {
     try {
+		console.log("verifyToken");
         const clientToken = req.headers.token;
         const decoded = jwt.verify(clientToken, secretObj.secret);
 
@@ -19,15 +20,17 @@ exports.verifyToken = (req, res, next) => {
 									+ "order by regDate desc "
 									+ "limit 1";
 
-                console.log(decoded.userUID);
 				db.query(token_check_sql, decoded.userUID, function (err, result, fields) {
 					if (err) throw err;
                     
-                    console.log(result.length);
                     if(result.length != 0){
                         var getToken = clientToken;
                         if(getToken != result[0].token)
-                            res.status(403).json({"status":403, "data":"Unauthorized", message:"다른 기기에서 로그인하여 이 기기에서는 자동으로 로그아웃 되었습니다."});
+							res.status(403).json({"status":403, "data":"Unauthorized", message:"다른 기기에서 로그인하여 이 기기에서는 자동으로 로그아웃 되었습니다."});
+						else{
+							req.userUID = decoded.userUID;
+							next();
+						}
                     }
 					else {
                         req.userUID = decoded.userUID;
