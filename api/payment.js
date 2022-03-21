@@ -295,7 +295,8 @@ api.get('/membership/:userUID',
     verifyToken,
     async function (req, res, next) {
         try{
-            const userUID = req.userUID;
+            //const userUID = req.userUID;
+            const userUID = req.params.userUID;
             const currentPage = req.query.page ? parseInt(req.query.page) : 1;
             var sql = "select a.UID as paymentUID, a.name, a.amount, a.payMethod, a.regDate, date_add(date_format(a.regDate, '%Y-%m-%d 23:59:59'), interval 1 month) as membershipEndDate " +
                 "from payment a " +
@@ -367,7 +368,8 @@ api.get('/product/:userUID',
     verifyToken,
     async function (req, res, next) {
         try{
-            const userUID = req.userUID;
+            //const userUID = req.userUID;
+            const userUID = req.params.userUID;
             const currentPage = req.query.page ? parseInt(req.query.page) : 1;
             var sql = "select a.UID as paymentUID, e.imgPath, c.korName, c.engName, c.originPrice, c.discountRate, c.discountPrice, d.optionName, a.regDate, a.merchantUid, a.amount, b.count, a.orderStatus, a.shippingStatus " +
                 "from payment a " +
