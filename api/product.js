@@ -7,6 +7,7 @@ api.get('/',
     async function (req, res, next) {
         try{
             const category = req.query.category ? req.query.category : '';
+            const buyType = req.query.buyType ? req.query.buyType : 'all';
             var sql = "select a.UID, ifnull(b.imgPath, '') imgPath, a.buyType, a.rtMonth, a.korName, a.engName, a.originPrice, a.discountRate, a.discountPrice, a.dcShippingFee as shippingFee " +
                 "from product a " +
                 "left join product_img_list b on a.UID = b.productUID " + 
@@ -17,6 +18,9 @@ api.get('/',
 
             if (category.length != 0) 
                 sql += `and a.category = '${category}' `;
+
+            if(buyType != 'all')
+                sql += `and a.buyType = '${buyType}'`
 
             sql += "group by a.UID " +
                 "order by b.UID ";
