@@ -489,7 +489,7 @@ api.get('/:paymentUID',
             var sql = "select a.requireMents, if(a.reqDate = '0000-01-01 00:00:00', '', a.reqDate) as reqDate, ifnull(a.refundMsg, '') as refundMsg, a.buyerName, a.buyerTel, " +
                 "if(a.shipResDate = '0000-01-01 00:00:00', '', a.shipResDate) as shipResDate, a.shipResMsg, c.korName as productName, ifnull(d.optionName, '') as optionName, " +
                 "a.merchantUid, a.orderStatus, a.rtType, a.rtMonth, a.rtName, a.rtAddr1, a.rtAddr2, a.rtUserPhoneNum, a.rtUserCellNum, a.buyerEmail, a.rtMemo, a.rtUserSMSOpt, " +
-                "a.buyerName, a.addr1, a.addr2, a.rtRcpntPhoneNum, a.buyerTel, a.requireMents, a.rtRcpntSMSOpt, a.payMethod " +
+                "a.buyerName, a.addr1, a.addr2, a.rtRcpntPhoneNum, a.buyerTel, a.requireMents, a.rtRcpntSMSOpt, a.payMethod, c.buyType " +
                 "from payment a " +
                 "join payment_product_list b on a.UID = b.paymentUID " +
                 "join product c on b.productUID = c.UID " +
