@@ -486,9 +486,9 @@ api.get('/:paymentUID',
     async function (req, res, next) {
         try{
             const paymentUID = req.params.paymentUID;
-            var sql = "select a.requireMents, if(a.reqDate = '0000-01-01 00:00:00', '', a.reqDate) as reqDate, ifnull(a.refundMsg, '') as refundMsg, a.buyerName, a.buyerTel, " +
+            var sql = "select b.productUID, b.optionUID, a.requireMents, if(a.reqDate = '0000-01-01 00:00:00', '', a.reqDate) as reqDate, ifnull(a.refundMsg, '') as refundMsg, a.buyerName, a.buyerTel, " +
                 "if(a.shipResDate = '0000-01-01 00:00:00', '', a.shipResDate) as shipResDate, a.shipResMsg, c.korName as productName, ifnull(d.optionName, '') as optionName, " +
-                "a.merchantUid, a.orderStatus, a.rtType, a.rtMonth, a.rtName, a.rtAddr1, a.rtAddr2, a.rtUserPhoneNum, a.rtUserCellNum, a.buyerEmail, a.rtMemo, a.rtUserSMSOpt, " +
+                "a.merchantUid, a.orderStatus, a.rtType, c.rtMonth, a.rtName, a.rtAddr1, a.rtAddr2, a.rtUserPhoneNum, a.rtUserCellNum, a.buyerEmail, a.rtMemo, a.rtUserSMSOpt, " +
                 "a.buyerName, a.addr1, a.addr2, a.rtRcpntPhoneNum, a.buyerTel, a.requireMents, a.rtRcpntSMSOpt, a.payMethod, c.buyType " +
                 "from payment a " +
                 "join payment_product_list b on a.UID = b.paymentUID " +
@@ -682,7 +682,6 @@ api.post("/rental",
         check("productUID", "productUID is required").not().isEmpty(),
         check("optionUID", "optionUID is required").not().isEmpty(),
         check("merchantUid", "merchantUid is required").not().isEmpty(),
-        check("rtMonth", "rtMonth is required").not().isEmpty(),
         check("rtType", "rtType is required").not().isEmpty(),
         check("rtMemo", "rtMemo is required").exists(),
         check("rtName", "rtName is required").not().isEmpty(),
@@ -710,7 +709,6 @@ api.post("/rental",
                 const name = "모티프 미러(렌탈)";
                 const productUID = req.body.productUID;
                 const merchantUid = req.body.merchantUid;
-                const rtMonth = req.body.rtMonth;
                 const rtType = req.body.rtType;
                 const rtMemo = req.body.rtMemo;
                 const rtName = req.body.rtName;
@@ -733,7 +731,7 @@ api.post("/rental",
                 const optionUID = req.body.optionUID;
                 const count = 1;
 
-                const sqlData = [userUID, amount, name, merchantUid, rtMonth, rtType, rtMemo, rtName, rtAddr1, rtAddr2, rtUserPhoneNum, rtUserCellNum, buyerEmail, buyerName, addr1, addr2, rtRcpntPhoneNum,
+                const sqlData = [userUID, amount, name, merchantUid, rtType, rtMemo, rtName, rtAddr1, rtAddr2, rtUserPhoneNum, rtUserCellNum, buyerEmail, buyerName, addr1, addr2, rtRcpntPhoneNum,
                                 buyerTel, requireMents, payMethod, rtUserSMSOpt, rtRcpntSMSOpt, type, orderStatus];
                 const paymentUID = await insertPaymentRental(sqlData);
                 await insertPaymentProduct(paymentUID, productUID, optionUID, count, '');
@@ -922,11 +920,11 @@ api.put("/membership/unschedule/:paymentUID", async function (req, res) {
 });
 
 // 렌탈 정보 수정
-api.put('/rental/:paymentUID',
+api.put('/:paymentUID',
     verifyAdminToken,
     [
+        check("productUID", "productUID is required").not().isEmpty(),
         check("optionUID", "optionUID is required").not().isEmpty(),
-        check("rtMonth", "rtMonth is required").not().isEmpty(),
         check("rtType", "rtType is required").not().isEmpty(),
         check("rtMemo", "rtMemo is required").exists(),
         check("rtName", "rtName is required").not().isEmpty(),
@@ -952,7 +950,8 @@ api.put('/rental/:paymentUID',
             try{
                 const adminUID = req.adminUID;
                 const paymentUID = req.params.paymentUID;
-                const rtMonth = req.body.rtMonth;
+                const productUID = req.body.productUID;
+                const optionUID = req.body.optionUID;
                 const rtType = req.body.rtType;
                 const rtMemo = req.body.rtMemo;
                 const rtName = req.body.rtName;
@@ -971,13 +970,12 @@ api.put('/rental/:paymentUID',
                 const rtUserSMSOpt = req.body.rtUserSMSOpt;
                 const rtRcpntSMSOpt = req.body.rtRcpntSMSOpt;
                 const orderStatus = req.body.orderStatus;
-                const optionUID = req.body.optionUID;
-
-                const sqlData = [rtMonth, rtType, rtMemo, rtName, rtAddr1, rtAddr2, rtUserPhoneNum, rtUserCellNum, buyerEmail, buyerName, addr1, addr2, rtRcpntPhoneNum,
+                
+                const sqlData = [rtType, rtMemo, rtName, rtAddr1, rtAddr2, rtUserPhoneNum, rtUserCellNum, buyerEmail, buyerName, addr1, addr2, rtRcpntPhoneNum,
                                 buyerTel, requireMents, payMethod, rtUserSMSOpt, rtRcpntSMSOpt, orderStatus, adminUID, paymentUID];
                 
                 await updatePaymentRental(sqlData);
-                await updatePaymentOption(optionUID, paymentUID);
+                await updatePaymentOption(productUID, optionUID, paymentUID);
 
                 res.status(200).json({
                     status: 200,
@@ -994,17 +992,23 @@ api.put('/rental/:paymentUID',
 // 주문 매출 정보 조회 (결제합계, 환불합계, 순매출)
 async function selectPaymentSales(type, searchType, searchWord, startDate, endDate) {
     var sql = "select ifnull(sum(a.amount), 0) as totalPrice, count(a.UID) as totalCount, ifnull(sum(case when a.orderStatus = '취소승인' then a.amount end ), 0) as refundPrice, " +
-        "count(case when a.orderStatus = '취소승인' then 1 end ) as refundCount " +
-        ", ifnull(sum(case when a.orderStatus != '취소승인' then a.amount end ), 0) as profitPrice, count(case when a.orderStatus != '취소승인' then 1 end ) as profitCount " +
-        "from payment a " +
-        "join payment_product_list b on a.UID = b.paymentUID " +
-        "join product c on b.productUID = c.UID " +
-        "join user d on a.userUID = d.UID " +
+    "count(case when a.orderStatus = '취소승인' then 1 end ) as refundCount " +
+    ", ifnull(sum(case when a.orderStatus != '취소승인' then a.amount end ), 0) as profitPrice, count(case when a.orderStatus != '취소승인' then 1 end ) as profitCount " +
+    "from payment a " +
+    "join payment_product_list b on a.UID = b.paymentUID ";
+
+
+    if (type != 'membership')
+        sql += "left join product c on b.productUID = c.UID ";
+    else
+        sql += "join membership c on b.membershipUID = c.UID ";
+    
+    sql += "join user d on a.userUID = d.UID " +
         `where (date_format(a.regDate, '%Y-%m-%d') between '${startDate}' and '${endDate}') `;
 
-    if(type == 'rental')
+    if (type == 'rental')
         sql += `and c.buyType = '${type}' `;
-    else
+    else if(type == 'product')
         sql += `and a.type = '${type}' and c.buyType = 'buy' `;
 
     // 검색
@@ -1483,7 +1487,7 @@ async function insertPayment(sqlData) {
 
 // 렌탈 주문 정보 추가
 async function insertPaymentRental(sqlData) {
-    var sql = "insert payment(userUID, amount, name, merchantUid, rtMonth, rtType, rtMemo, rtName, rtAddr1, rtAddr2, rtUserPhoneNum, rtUserCellNum, buyerEmail, buyerName, addr1, addr2, " +
+    var sql = "insert payment(userUID, amount, name, merchantUid, rtType, rtMemo, rtName, rtAddr1, rtAddr2, rtUserPhoneNum, rtUserCellNum, buyerEmail, buyerName, addr1, addr2, " +
         "rtRcpntPhoneNum, buyerTel, requireMents, payMethod, rtUserSMSOpt, rtRcpntSMSOpt, type, orderStatus) " +
         "values (?)";
 
@@ -1494,7 +1498,7 @@ async function insertPaymentRental(sqlData) {
 
 // 렌탈 주문 정보 수정
 async function updatePaymentRental(sqlData) {
-    var sql = "update payment set rtMonth = ?, rtType = ?, rtMemo = ?, rtName = ?, rtAddr1 = ?, rtAddr2 = ?, rtUserPhoneNum = ?, rtUserCellNum = ?, buyerEmail = ?, buyerName = ?, " +
+    var sql = "update payment set rtType = ?, rtMemo = ?, rtName = ?, rtAddr1 = ?, rtAddr2 = ?, rtUserPhoneNum = ?, rtUserCellNum = ?, buyerEmail = ?, buyerName = ?, " +
             "addr1 = ?, addr2 = ?, rtRcpntPhoneNum = ?, buyerTel = ?, requireMents = ?, payMethod = ?, rtUserSMSOpt = ?, rtRcpntSMSOpt = ?, orderStatus = ?, adminUID = ? "  +
             "where UID = ?";
 
@@ -1502,10 +1506,10 @@ async function updatePaymentRental(sqlData) {
 }
 
 // 렌탈 주문 옵션 정보 수정
-async function updatePaymentOption(optionUID, paymentUID) {
-    var sql = "update payment_product_list set optionUID = ? " +
+async function updatePaymentOption(productUID, optionUID, paymentUID) {
+    var sql = "update payment_product_list set productUID = ?, optionUID = ? " +
             "where paymentUID = ?";
-    const sqlData = [optionUID, paymentUID];
+    const sqlData = [productUID, optionUID, paymentUID];
 
     await con.query(sql, sqlData);
 }
