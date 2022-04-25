@@ -6,9 +6,6 @@ const api = express.Router();
 const sha256 = require('sha256');
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
-const { slackMessage } = require('./slack.js');
-const slacker = require('slacker');
-const slack = slacker(process.env.SLACK_API_KEY);
 
 // 로그인
 api.post('/',
@@ -23,36 +20,33 @@ api.post('/',
                 const email = req.body.email;
                 const password = sha256(req.body.password);
 
+                console.log("email : " , email);
+                console.log("password : ", password);
+
                 // 비밀번호 확인
                 const loginRes = await getLoginResult(email, password);
+
+                console.log("return : " , loginRes)
                 if (loginRes.length == 0) { // 비밀번호 불일치
                     res.status(403).send({
                         status: 403,
                         data: [],
-                        message: "비밀번호가 맞지 않아요!"
+                        message: "계정정보가 일치하지 않습니다."
                     });
 
-                    await slackMessage("@","yoon","Test Message");
                     return false;
                 }
 
                 const userUID = loginRes[0].UID;
-                const redirect = getRedirectPage(loginRes);
 
-                // 멤버십 소유자인지 확인
-                const membershipRes = await selectMembership(userUID);
-                var level = membershipRes.level;
-                var endDate = membershipRes.endDate;
+                console.log("userUID : ", userUID)
 
-                if (level == "normal") {
-                    // 멤버십 초대자인지 확인
-                    const membershipGroupRes = await selectMembershipGroup(userUID);
-                    level = membershipGroupRes.level;
-                    endDate = membershipGroupRes.endDate;
-                }
 
                 // jwt 토큰 생성
-                const token = makeJWT(userUID, level);
+                const token = makeJWT(userUID);
+
+
+                console.log("tokenResult : ", token);
 
                 res.status(200).send({
                     status: 200,
@@ -60,101 +54,41 @@ api.post('/',
                         UID: userUID,
                         email: email,
                         token: token,
-                        redirect: redirect,
-                        auth: level,
-                        endDate: endDate
                     }
                 });
 
                 // 토큰 이력 추가
                 insertUserLog(userUID, token);
             } catch (err) {
+                console.log("login Err : ",err);
                 throw err;
             }
         }
     }
 );
 
+
 // 비밀번호 일치 여부 확인
 async function getLoginResult(email, password) {
-    var sql = "select UID, status, nickName from user where email = ? and password = ? and status != 'delete'";
+    var sql = "select UID from user where email = ? and password = ? and stts = 1";
     const sqlData = [email, password];
     const [result] = await con.query(sql, sqlData);
 
     return result;
 }
 
-// redirect 페이지 조회
-function getRedirectPage(result){
-    if (result[0].status == "sleep") // 휴면 페이지
-        return "sleep";
-    else if (result[0].nickName.length > 0) // vod 메인 페이지
-        return "contents";
-    else // 세팅 정보 페이지
-        return "setting";
-}
-
-// 멤버십 소유자인지 확인
-async function selectMembership(userUID) {
-    var sql = "select UID, level, startDate, endDate from membership " +
-        "where date_format(startDate, '%Y-%m-%d') <= date_format(now(), '%Y-%m-%d') " +
-        "and date_format(endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') " +
-        "and userUID = ?";
-    const [result] = await con.query(sql, userUID);
-
-    if (result.length != 0)
-        return {
-            UID: result[0].UID,
-            level: result[0].level,
-            startDate: result[0].startDate,
-            endDate: result[0].endDate
-        };
-    else
-        return {
-            UID: 0,
-            level: "normal",
-            startDate: "0000-01-01 00:00:00",
-            endDate: "0000-01-01"
-        };
-}
-
-// 멤버십 초대자인지 확인
-async function selectMembershipGroup(userUID) {
-    var sql = "select b.startDate, b.endDate " +
-        "from membership_group a " +
-        "join membership b on b.userUID = a.ownerUID " +
-        "where date_format(b.startDate, '%Y-%m-%d') <= date_format(now(), '%Y-%m-%d') " +
-        "and date_format(b.endDate, '%Y-%m-%d') >= date_format(now(), '%Y-%m-%d') " +  
-        "and a.userUID = ? " +
-        "order by b.endDate desc " + // 여러 명에게 초대될 수 있으므로, 리스트 중 가장 긴 유효기간이 출력되어야 함
-        "limit 1";
-    const [result] = await con.query(sql, userUID);
-    if (result.length != 0) { //멤버십 초대자일 때
-        return {
-            level: "invited",
-            startDate: result[0].startDate,
-            endDate: result[0].endDate
-        };
-    } else
-        return {
-            level: "normal",
-            startDate: "0000-01-01 00:00:00",
-            endDate: "0000-01-01"
-        };
-}
-
 // 사용자 로그인 이력 추가
 function insertUserLog(userUID, token) {
-    var sql = "insert into user_log(userUID, token) values(?, ?)";
-    const sqlData = [userUID, token];
+    const regDate = new Date();
+    var sql = "insert into user_log(userUID, token, regDate) values(?, ?, ?)";
+    const sqlData = [userUID, token, regDate];
     con.query(sql, sqlData);
 }
 
 // jwt 생성
-function makeJWT(userUID, level) {
+function makeJWT(userUID) {
     var token = jwt.sign({
             userUID: userUID,
-            level: level
         },
         secretObj.secret, // 비밀 키
         {
@@ -163,5 +97,6 @@ function makeJWT(userUID, level) {
 
     return token;
 }
+
 
 module.exports = api;

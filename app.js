@@ -45,57 +45,11 @@ app.set('view engine', 'ejs');
 app.engine('html', require('ejs').renderFile);
 
 // API
-//app.use('/crud', require('./api/crudSample.js'));
-app.use('/login', require('./api/login.js'));
-app.use('/logout', require('./api/logout.js'));
+app.use('/crud', require('./api/crudSample.js'));
 app.use('/user', require('./api/user.js'));
-app.use('/category', require('./api/category.js'));
-app.use('/acc', require('./api/acc.js'));
-
-app.use('/my_category', require('./api/my_category.js'));
-app.use('/my_acc', require('./api/my_acc.js'));
-app.use('/my_video', require('./api/my_video.js'));
-app.use('/my_program', require('./api/my_program.js'));
-
-app.use('/video', require('./api/video.js'));
-app.use('/video_acclist', require('./api/video_acclist.js'));
-app.use('/video_list', require('./api/video_list.js'));
-app.use('/video_history', require('./api/video_history.js'));
-app.use('/teacher', require('./api/teacher.js'));
-app.use('/review', require('./api/review.js'));
-app.use('/music', require('./api/music.js'));
-
-app.use('/program', require('./api/program.js'));
-app.use('/program_list', require('./api/program_list.js'));
-app.use('/program_history', require('./api/program_history.js'));
-
-app.use('/pass', require('./api/pass.js'));
-app.use('/payment', require('./api/payment.js'));
-
-app.use('/faq', require('./api/faq.js'));
-app.use('/inquiry', require('./api/inquiry.js'));
 app.use('/notice', require('./api/notice.js'));
-
-app.use('/preorder', require('./api/preorder.js'));
-app.use('/pwd_auth', require('./api/pwd_auth.js'));
-
-app.use('/membership', require('./api/membership.js'));
-app.use('/membership_group', require('./api/membership_group.js'));
-
+app.use('/event', require('./api/event.js'));
+app.use('/login', require('./api/login.js'));
+app.use('/review', require('./api/review.js'));
+app.use('/reservation', require('./api/reservation.js'));
 app.use('/product', require('./api/product.js'));
-app.use('/product_img_list', require('./api/product_img_list.js'));
-app.use('/product_option_list', require('./api/product_option_list.js'));
-app.use('/my_basket', require('./api/my_basket.js'));
-
-app.use('/main_slide', require('./api/main_slide.js'));
-app.use('/newsletter', require('./api/newsletter.js'));
-
-app.use('/admin', require('./api/admin.js'));
-app.use('/admin_login', require('./api/admin_login.js'));
-app.use('/admin_log', require('./api/admin_log.js'));
-
-app.use('/stock', require('./api/stock.js'));
-app.use('/qt_version', require('./api/qt_version.js'));
-app.use('/vision', require('./api/vision.js'));
-
-app.use('/slack', require('./api/slack.js'));

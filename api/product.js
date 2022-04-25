@@ -1,83 +1,79 @@
 const express = require('express');
-const { con } = require('./config/database.js');
 const api = express.Router();
+const { check } = require('express-validator');
+const { getError } = require('./config/requestError.js');
+const { con } = require('./config/database.js');
 
-// 상품 전체 조회
-api.get('/',
-    async function (req, res, next) {
-        try{
-            const category = req.query.category ? req.query.category : '';
-            const buyType = req.query.buyType ? req.query.buyType : 'all';
-            var sql = "select a.UID, ifnull(b.imgPath, '') imgPath, a.buyType, a.rtMonth, a.korName, a.engName, a.originPrice, a.discountRate, a.discountPrice, a.dcShippingFee as shippingFee " +
-                "from product a " +
-                "left join product_img_list b on a.UID = b.productUID " + 
-                "where a.status='act' ";
 
-            if(category != 'membership')
-                sql += "and a.category != 'membership' ";
+// 방문 장착 리스트
+// 검색 옵션은 파라미터가 아닌 쿼리스트링 사용
+api.get('/search',
+    async function (req,res) {
+        try {
+            // const width = req.params.width;
+            // const radio = req.params.radio;
+            // const inch = req.params.inch;
+            const sqlData = width + "/" + radio + " R" + inch
+            console.log(sqlData);
 
-            if (category.length != 0) 
-                sql += `and a.category = '${category}' `;
+            var sql = "select a.UID as UID, thumbnail, b.name as modelName, c.name as mnfctName, bkmCnt, reviewCnt "
+                    + "from product a "
+                    + "join model b on b.UID = a.modelUID "
+                    + "join mnfct c on c.UID = b.mnfctUID "
+                    + "where actvt = 1 "
 
-            if(buyType != 'all')
-                sql += `and a.buyType = '${buyType}'`
-
-            sql += "group by a.UID " +
-                "order by b.UID ";
-
-            const [result] = await con.query(sql);
+            const [result] = await con.query(sql, sqlData);
 
             res.status(200).json({
-                status: 200,
-                data: result,
-                message: "success"
-            });
+                status : 200,
+                data : result,
+                message : "success"
+            })
+
         } catch (err) {
+            console.log("/:tireSize Error ::",err);
             throw err;
         }
     }
-);
+)
 
-api.get('/membership',
-    async function (req, res, next) {
-        try{
-            var sql = "select UID as productUID, engName as name, originPrice as price, composition " +
-                "from product " +
-                "where category = 'membership' and UID != 1590794060";
-
-            const [result] = await con.query(sql);
-
-            res.status(200).json({
-                status: 200,
-                data: result,
-                message: "success"
-            });
-        } catch (err) {
-            throw err;
-        }
-    }
-);
-
-// 상품 상세정보 조회
-api.get('/:productUID',
-    async function (req, res, next) {
-        try{
+// 제품 상세보기
+api.get("/:productUID",
+    async function (req, res) {
+        try {
             const productUID = req.params.productUID;
-            var sql = "select UID, buyType, korName, engName, rtMonth, rtPopImgPath, originPrice, discountRate, discountPrice, originShippingFee, dcShippingFee, " +
-                "ifnull(composition, '') as composition, ifnull(benefitInfo, '') as benefitInfo, ifnull(shippingInfo, '') as shippingInfo, detailImgPath, detailMobileImgPath " +
-                "from product " +
-                "where UID = ?";
-            const [result] = await con.query(sql, productUID);
+
+            var sql = "select a.UID as UID, b.name as modelName, c.name as mnfctName, thumbnail, contentsPath, tireSize, modesty, highSpeed, riding, breaking, pricing, price, bkmCnt, reviewCnt "
+                    + "from product a "
+                    + "join model b on b.UID = a.modelUID "
+                    + "join mnfct c on c.UID = b.mnfctUID "
+                    + "where a.UID = ? and actvt = 1"
+
+            const [productData] = await con.query(sql, productUID);
+
+            var reviewSql = "select a.UID as UID, review, b.email, a.regDate "
+                          + "from review a "
+                          + "join user b on b.UID = a.userUID "
+                          + "where a.productUID = ? "
+                          + "order by a.regDate desc, a.UID desc limit 3"
+
+            const [reviewData] = await con.query(reviewSql, productUID);
+
 
             res.status(200).json({
-                status: 200,
-                data: result,
-                message: "success"
-            });
+                status : 200,
+                data : {
+                    "productData" : productData,
+                    "reviewData" : reviewData
+                },
+                message : "success"
+            })
         } catch (err) {
+            console.log("제품 상세보기 ERROR :: ", err);
             throw err;
         }
     }
-);
+)
+
 
 module.exports = api;

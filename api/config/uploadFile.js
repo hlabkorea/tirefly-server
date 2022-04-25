@@ -3,7 +3,7 @@ const path = require('path');
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.join('..', 'motif-server', 'views', 'files'));
+        cb(null, path.join('..', 'tirefly-server', 'views', 'files'));
     },
     filename: (req, file, cb) => {
 		const extname = path.extname(file.originalname);
@@ -13,7 +13,7 @@ const storage = multer.diskStorage({
 
 const visionStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.join('..', 'motif-server', 'views', 'files', 'vision'));
+        cb(null, path.join('..', 'tirefly-server', 'views', 'files', 'vision'));
     },
     filename: (req, file, cb) => {
         const extname = path.extname(file.originalname);
@@ -23,7 +23,7 @@ const visionStorage = multer.diskStorage({
 
 const onlyUploadStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.join('..', 'motif-server', 'views', 'files'));
+        cb(null, path.join('..', 'tirefly-server', 'views', 'files'));
     },
     filename: (req, file, cb) => {
         cb(null, file.originalname);
