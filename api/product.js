@@ -2,7 +2,7 @@ const express = require('express');
 const api = express.Router();
 const { check } = require('express-validator');
 const { getError } = require('./config/requestError.js');
-const { con } = require('./config/database.js');
+const { con, commit } = require('./config/database.js');
 
 
 // 방문 장착 리스트
@@ -13,14 +13,37 @@ api.get('/search',
             // const width = req.params.width;
             // const radio = req.params.radio;
             // const inch = req.params.inch;
-            const sqlData = width + "/" + radio + " R" + inch
-            console.log(sqlData);
-
+            // const sqlData = width + "/" + radio + " R" + inch
+            
+            
+            
             var sql = "select a.UID as UID, thumbnail, b.name as modelName, c.name as mnfctName, bkmCnt, reviewCnt "
                     + "from product a "
                     + "join model b on b.UID = a.modelUID "
                     + "join mnfct c on c.UID = b.mnfctUID "
+                    + "join badge d on d.modelUID = b.UID "
                     + "where actvt = 1 "
+            
+            const width = req.query.width ? req.query.width : '';
+            const radio = req.query.radio ? req.query.radio : '';
+            const inch = req.query.inch ? req.query.inch : '';
+            const car = req.query.car ? req.query.car : '';
+            const performance = req.query.performance ? req.query.performance : '';
+            var sqlData = [];
+
+            sql += 'and a.tireSize in (?)';
+            sqlData.push(width + "/" + radio + " R" + inch);
+
+            if(car.length > 0) {
+                sql += ' and d.name in (?)';
+                sqlData.push(car);
+            }
+            if(performance.length > 0){
+                sql += ' and d.name in (?)';
+                sqlData.push(performance);
+            }
+
+
 
             const [result] = await con.query(sql, sqlData);
 

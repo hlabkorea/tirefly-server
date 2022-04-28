@@ -23,20 +23,34 @@ api.post('/certify',
             const certifyType = req.body.certifyType
             if (certifyType == "join") {
 
+                
                 var sql = "select * from user where email = ?"
                 const [result] = await con.query(sql, email);
     
-                if(result.length > 0)
+                if(result.length > 0) {
                     res.status(403).json({
                         status: 403,
                         data : "false",
                         message : "이미 가입된 이메일입니다."
                     });
+
+                } else {
+                    const certifyNo = randomNo();
+                    const returnData = await insertCertify(email, certifyNo, certifyType);
+    
+                    sendCertifyNoMail(email, certifyNo)
+    
+                    res.status(200).json({
+                        status: 200,
+                        data : certifyNo,
+                        message : "인증번호가 발송 되었습니다."
+                    })
+                }
                 
             } else {
                 
                 const certifyNo = randomNo();
-                const returnData = await insertCertify(email, certifyNo, type);
+                const returnData = await insertCertify(email, certifyNo, certifyType);
 
                 sendCertifyNoMail(email, certifyNo)
 
@@ -57,6 +71,7 @@ api.post('/join',
         check("email", "email is required").not().isEmpty(),
         check("password", "password is required").not().isEmpty(),
         check("certifyNo", "certifyNo is required").not().isEmpty(),
+        check("recommend", "recommend is required").exists(),
     ],
     async function (req, res) {
         const errors = getError(req, res);
@@ -80,38 +95,74 @@ api.post('/join',
                     message : "인증에 실패하였습니다. 인증번호를 다시 확인하십시오."
                 })
             } else {
+                console.log(certifyCheck[0])
+                if(certifyCheck[0].type !== "join"){
+                    res.status(403).json({
+                        status : 403,
+                        data : "false",
+                        message : "회원가입 인증번호가 아닙니다. 다시 확인하십시오."
+                    })
+                }
 
-                // 추천인 검증
-                var rcmndSql = "select email from user where email = ?"
-                const [rcmndCheck] = await con.query(sql, recommend);
+                if(recommend !== "") {
+                    // 추천인 검증
+                    var recommendSql = "select * from user where email = ?"
+                    const [rcmndCheck] = await con.query(recommendSql, recommend);
 
-                if(rcmndCheck.length == 0) {
+                    if(rcmndCheck.length == 0) 
                     res.status(403).json({
                         status : 403,
                         data : "false",
                         message : "존재 하지 않는 추천인입니다."
                     })
-                }
+                    
 
-                // 중복회원 검증
+                    // 중복회원 검증
+                    const overlapEmailData = await overlapEmail(email);
+                    if(overlapEmailData.length > 0) {
+                        res.status(403).json({
+                            status: 403,
+                            data: "false",
+                            message: "이미 등록된 이메일주소 입니다."
+                        });
+                    }  else {
 
-                const overlapEmail = await overlapEmail(email)
-                if(overlapEmail.length > 0) {
-                    res.status(403).json({
-                        status: 403,
-                        data: "false",
-                        message: "이미 등록된 이메일주소 입니다."
-                    });
+                        //회원가입 진행
+                        const userUID = await insertUser(email, password, recommend)
+    
+                        const token = makeJWT(userUID)
+                        insertUserLog(userUID, token);
+                        const mail = sendJoinMail(email);
+    
+    
+                        res.status(200).json({
+                            status: 200,
+                            data: {
+                                UID : userUID,
+                                email : email,
+                                token : token,
+                            },
+                            message : "success"
+                        })
+                    }
                 } else {
+                    // 중복회원 검증
+                    const overlapEmailData2 = await overlapEmail(email);
+                    if(overlapEmailData2.length > 0) {
+                        res.status(403).json({
+                            status: 403,
+                            data: "false",
+                            message: "이미 등록된 이메일주소 입니다."
+                        });
+                    } 
                     //회원가입 진행
                     const userUID = await insertUser(email, password, recommend)
-
-
+    
                     const token = makeJWT(userUID)
                     insertUserLog(userUID, token);
                     const mail = sendJoinMail(email);
-
-
+    
+    
                     res.status(200).json({
                         status: 200,
                         data: {
@@ -142,7 +193,7 @@ api.put('/password',
                 const password = sha256(req.body.password);
                 const certifyNo = req.body.certifyNo;
 
-                            //인증키 확인
+                //인증키 확인
                 var sql = "select * from certify where email = ? and certifyNo = ?"
                 const sqlData = [email, certifyNo];
                 const [certifyCheck] = await con.query(sql, sqlData);
@@ -187,8 +238,6 @@ api.delete('/:userUID',
             var sqlData = [userUID]
             await con.query(sql, sqlData);
 
-            console.log("hererrrr");
-
             res.status(200).json({
                 status: 200,
                 data : "true",
@@ -205,16 +254,7 @@ function randomNo() {
         str += Math.floor(Math.random() * 6)
     }
     return str
-}
-
-// 인증 번호 추가
-async function insertCertify (email, certifyNo) {
-    const regDate = new Date();
-    var sql = "insert into certify(email, certifyNo, regDate) values (?, ?, ?)"
-    const sqlData = [email, certifyNo, regDate];
-    const [result] = await con.query(sql, sqlData);
-    return result;
-}
+};
 
 // 중복 회원 확인
 async function overlapEmail (email) {
@@ -222,6 +262,16 @@ async function overlapEmail (email) {
     const [result] = await con.query(sql, email);
     return result;
 }
+
+// 인증 번호 추가
+async function insertCertify (email, certifyNo, certifyType) {
+    const regDate = new Date();
+    var sql = "insert into certify(email, certifyNo,type, regDate) values (?, ?, ?, ?)"
+    const sqlData = [email, certifyNo, certifyType, regDate];
+    const [result] = await con.query(sql, sqlData);
+    return result;
+};
+
 
 // 회원 추가
 async function insertUser (email, password, recommend) {

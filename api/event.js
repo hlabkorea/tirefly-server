@@ -10,7 +10,7 @@ const pageCnt10 = 10;
 // 이벤트 전체 조회
 api.get('/', async function (req, res) {
     try {
-        var sql = "select UID as UID, title, endDate, imgPath, color from event order by UID desc, UID desc"
+        var sql = "select UID as UID, title, regDate, endDate, imgPath, color from event order by UID desc, UID desc"
 
         const [result] = await con.query(sql);
 
@@ -49,7 +49,7 @@ api.get('/main', async function (req, res) {
 api.get("/:eventUID", async function (req, res) {
     try {
         const eventUID = req.params.eventUID;
-        var sql = "select title, contents, color, imgPath, linkUrl, regDate, endDate from event where UID = ?";
+        var sql = "select title, contents, color, imgPath, ifnull(linkUrl, '') as linkUrl, regDate, endDate from event where UID = ?";
         const [result] = await con.query(sql, eventUID);
 
         console.log(result);
