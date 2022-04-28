@@ -19,7 +19,6 @@ exports.verifyToken = (req, res, next) => {
 				var token_check_sql = "select token from user_log where userUID = ? "
 									+ "order by regDate desc "
 									+ "limit 1";
-                                    console.log("here1 ::::: ");
 
 				db.query(token_check_sql, decoded.userUID, function (err, result, fields) {
 					if (err) throw err;

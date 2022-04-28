@@ -55,3 +55,4 @@ app.use('/reservation', require('./api/reservation.js'));
 app.use('/product', require('./api/product.js'));
 app.use('/favorite', require('./api/favorite.js'));
 app.use('/coupon', require('./api/coupon.js'));
+app.use('/myCar', require('./api/myCar.js'));
