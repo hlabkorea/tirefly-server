@@ -202,8 +202,14 @@ api.put('/password',
                 const password = sha256(req.body.password);
                 const certifyNo = req.body.certifyNo;
 
+                console.log("email:",email);
+                console.log("password:",password);
+                console.log("certifyNo:",certifyNo);
+                
+
                 // 유저 확인
                 const userData = overlapEmail(email);
+                console.log("userData",)
                 if(userData.length == 0){
                     res.status(403).json({
                         status : 403,
@@ -218,8 +224,10 @@ api.put('/password',
                 const sqlData = [email, certifyNo];
                 const [certifyCheck] = await con.query(sql, sqlData);
 
+                console.log("certifyCheck:",certifyCheck)
+
                 //인증키 type 확인
-                if(certifyCheck[0].tpye !== "pw"){
+                if(certifyCheck[0].type !== "pw"){
                     res.status(403).json({
                         status : 403,
                         data : "false",
