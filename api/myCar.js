@@ -93,6 +93,30 @@ api.post('/',
 )
 
 
+api.post('/api',
+    async function (req, res) {
+        const carNo = req.body.carNo;
+
+        const result = await axios({
+            url : 'http://interface.autoup.net/TireFly.aspx?car_no=' + encodeURI(carNo),
+            method : "POST",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+
+        const [carInfo] = result.data.BaseInfo;
+
+        res.status(200).json({
+            status : 200,
+            data : carInfo,
+            message : "success",
+        })
+
+    }
+)
+
+
 api.get('/mnfct',
     async function (req, res) {
         var sql = "select a.UID as modelUID, b.UID as mnfctUID, b.name as mnfctName, a.name as modelName from model a join mnfct b on b.UID = a.mnfctUID"

@@ -10,7 +10,7 @@ const pageCnt10 = 10;
 // 이벤트 전체 조회
 api.get('/', async function (req, res) {
     try {
-        var sql = "select UID as UID, title, regDate, endDate, imgPath, color from event order by UID desc, UID desc"
+        var sql = "select UID as UID, title, regDate, endDate, imgPath, color from event order by regDate desc, UID desc"
 
         const [result] = await con.query(sql);
 

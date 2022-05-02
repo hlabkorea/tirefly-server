@@ -72,15 +72,24 @@ api.post('/join',
         check("password", "password is required").not().isEmpty(),
         check("certifyNo", "certifyNo is required").not().isEmpty(),
         check("recommend", "recommend is required").exists(),
+        check("notify", "notify is required").exists(),
     ],
     async function (req, res) {
         const errors = getError(req, res);
 
         if (errors.isEmpty()) {
+
+            console.log('h3e3r3e')
+
+
             const email = req.body.email
             const password = sha256(req.body.password)
             const certifyNo = req.body.certifyNo
             const recommend = req.body.recommend
+            const notify = req.body.notify
+
+            console.log("certifyNo :: ",typeof(certifyNo))
+            console.log("notify :: ",typeof(notify))
 
             //인증키 확인
             var sql = "select * from certify where email = ? and certifyNo = ?"
@@ -128,7 +137,7 @@ api.post('/join',
                     }  else {
 
                         //회원가입 진행
-                        const userUID = await insertUser(email, password, recommend)
+                        const userUID = await insertUser(email, password, recommend, notify)
     
                         const token = makeJWT(userUID)
                         insertUserLog(userUID, token);
@@ -156,7 +165,7 @@ api.post('/join',
                         });
                     } 
                     //회원가입 진행
-                    const userUID = await insertUser(email, password, recommend)
+                    const userUID = await insertUser(email, password, recommend, notify)
     
                     const token = makeJWT(userUID)
                     insertUserLog(userUID, token);
@@ -274,11 +283,11 @@ async function insertCertify (email, certifyNo, certifyType) {
 
 
 // 회원 추가
-async function insertUser (email, password, recommend) {
+async function insertUser (email, password, recommend, notify) {
     const regDate = new Date();
-    var sql = "insert into user(email , password, rcmnd, regDate) values (?, ?, ?, ?)"
-    const sqlData = [email, password, recommend, regDate]
-    const [result] = await con.query(sql, sqlData)
+    var sql = "insert into user(email , password, rcmnd, notify, regDate) values (?, ?, ?, ?, ?)"
+    const sqlData = [email, password, recommend, notify, regDate];
+    const [result] = await con.query(sql, sqlData);
     return result.insertId;
 }
 
