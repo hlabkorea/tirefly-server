@@ -6,6 +6,7 @@ const { con } = require('./config/database.js');
 const { verifyToken } = require('./config/authCheck.js');
 const axios = require('axios');
 
+// 차량 정보 등록
 api.post('/',
     verifyToken,
     [
@@ -93,6 +94,7 @@ api.post('/',
 )
 
 
+<<<<<<< HEAD
 api.post('/api',
     async function (req, res) {
         const carNo = req.body.carNo;
@@ -132,6 +134,10 @@ api.get('/mnfct',
 )
 
 api.get('/list',
+=======
+// 내 차량 리스트 조회
+api.get('/',
+>>>>>>> e98766ebf086d528389f661567639b950bb408ff
     verifyToken,
     async function (req, res){
         const userUID = req.userUID;
@@ -147,6 +153,7 @@ api.get('/list',
     }
 )
 
+// 대표 차량 선택
 api.post('/defaultCar/:myCarUID',
     verifyToken,
     async function (req, res) {
@@ -190,6 +197,7 @@ api.post('/defaultCar/:myCarUID',
     }
 )
 
+// 차량 정보 삭제
 api.delete('/:myCarUID',
     verifyToken,
     async function (req, res) {

@@ -6,12 +6,12 @@ const { con } = require('./config/database.js');
 const { verifyToken } = require("./config/authCheck.js");
 
 
-// 메인화면 예약내역 조회
+// 메인화면 예약내역 조회 // :userUID로 받는게 맞는지 확인 필요
 api.get('/main',
     verifyToken,
     async function (req, res) {
         try {
-            const userUID = req.body.userUID;
+            const userUID = req.userUID;
             var sql = "select UID as UID, rsDate, rsTime " //email 추후 차량별명으로 수정예정
                     + "from reservation "
                     + "where userUID = ? and rsDate >= now()"
@@ -31,14 +31,14 @@ api.get('/main',
     }
 )
 
-// 예약내역 조회
+// 유저 예약내역 조회
 api.get('/:userUID',
     verifyToken,
     async function (req, res) {
         try {
-            const userUID = req.params.userUID;
-            var sql = "select UID as UID, email, name, cellNo, rsDate, rsTime, carType, addr1, addr2, postalCode, memo, keepUID, stts, productUID, "
-                    + "orderCnt, antProductUID, carNo, carFullName "
+            const userUID = req.userUID;
+            var sql = "select UID, email, name, cellNo, rsDate, rsTime, carType, addr1, addr2, postalCode, memo, keepUID, stts, productUID, "
+                    + "orderCnt, ifnull(antProductUID, ''), carNo, carFullName "
                     + "from reservation "
                     + "where userUID = ? "
                     + "group by UID "
