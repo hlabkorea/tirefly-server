@@ -10,7 +10,7 @@ api.get('/productUID/:productUID', async function (req, res) {
     try {
         const productUID = Number(req.params.productUID)
         //차량정보 등록 로직 완료시 email 을 차량명으로 변경 예정
-        var sql = "select a.UID as UID, review, b.email, d.name "
+        var sql = "select a.UID as UID, review, tirePath, b.email, d.name "
                 + "from review a "
                 + "join user b on a.userUID = b.UID "
                 + "join product c on c.UID = a.productUID "
@@ -35,12 +35,14 @@ api.get('/productUID/:productUID', async function (req, res) {
 api.get('/main', async function (req, res) {
     try {
         //차량정보 등록 로직 완료시 email 을 차량명으로 변경 예정
-        var sql = "select a.UID as UID, review, b.email, d.name "
-                + "from review a "
-                + "join user b on a.userUID = b.UID "
-                + "join product c on c.UID = a.productUID "
-                + "join model d on d.UID = c.modelUID "
-                + "order by a.regDate desc, a.UID desc limit 3"
+        // var sql = "select a.UID as UID, review, b.email, d.name "
+        //         + "from review a "
+        //         + "join user b on a.userUID = b.UID "
+        //         + "join product c on c.UID = a.productUID "
+        //         + "join model d on d.UID = c.modelUID "
+        //         + "order by a.regDate desc, a.UID desc limit 3"
+
+        var sql ="select a.UID as UID, review, b.email, d.name from review a join user b on a.userUID = b.UID join product c on c.UID = a.productUID join model d on d.UID = c.modelUID order by a.regDate desc, a.UID desc limit 3"
 
         const [result] = await con.query(sql);
 

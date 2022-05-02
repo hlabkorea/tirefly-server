@@ -57,3 +57,4 @@ app.use('/favorite', require('./api/favorite.js'));
 app.use('/coupon', require('./api/coupon.js'));
 app.use('/myCoupon', require('./api/myCoupon.js'));
 app.use('/myCar', require('./api/myCar.js'));
+app.use('/mnfct', require('./api/mnfct.js'));
