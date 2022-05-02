@@ -10,23 +10,14 @@ const { con, commit } = require('./config/database.js');
 api.get('/search',
     async function (req,res) {
         try {
-            
-            
-            
-            // var sql = "select a.UID as UID, thumbnail, b.name as modelName, c.name as mnfctName, bkmCnt, reviewCnt "
-            //         + "from product a "
-            //         + "join model b on b.UID = a.modelUID "
-            //         + "join mnfct c on c.UID = b.mnfctUID "
-            //         + "join badge d on d.modelUID = b.UID "
-            //         + "where actvt = 1 "
-            // 검색 옵션에 있는 모델명을 먼저 불러 온 후 
             const width = req.query.width ? req.query.width : '';
             const radio = req.query.radio ? req.query.radio : '';
             const inch = req.query.inch ? req.query.inch : '';
             const car = req.query.car ? req.query.car : '';
             const performance = req.query.performance ? req.query.performance : '';
             const carFunction = req.query.function ? req.query.function : '';
-            var modelSql = "select modelUID from badge where "
+
+            // 검색 옵션에 있는 모델명을 먼저 불러 온 후 
             var modelSqlData = [];
 
             if(car.length > 0) {
@@ -44,8 +35,6 @@ api.get('/search',
             //해당 모델 번호 차량 사이즈 제품 호출
             sql += 'and a.tireSize in (?)';
             sqlData.push(width + "/" + radio + " R" + inch);
-
-
 
 
             const [result] = await con.query(sql, sqlData);

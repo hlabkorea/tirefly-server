@@ -193,11 +193,32 @@ api.put('/password',
                 const password = sha256(req.body.password);
                 const certifyNo = req.body.certifyNo;
 
+                // 유저 확인
+                const userData = overlapEmail(email);
+                if(userData.length == 0){
+                    res.status(403).json({
+                        status : 403,
+                        data : "false",
+                        message : "존재하지 않는 이메일입니다. 다시 확인하세요."
+                    })
+                    return false;
+                }
+
                 //인증키 확인
                 var sql = "select * from certify where email = ? and certifyNo = ?"
                 const sqlData = [email, certifyNo];
                 const [certifyCheck] = await con.query(sql, sqlData);
 
+                //인증키 type 확인
+                if(certifyCheck[0].tpye !== "pw"){
+                    res.status(403).json({
+                        status : 403,
+                        data : "false",
+                        message : "인증에 실패하였습니다. 인증번호를 다시 확인하십시오."
+                    })
+
+                    return false;
+                }
 
                 if(certifyCheck.length == 0){
                     res.status(403).json({
@@ -205,16 +226,18 @@ api.put('/password',
                         data : "false",
                         message : "인증에 실패하였습니다. 인증번호를 다시 확인하십시오."
                     })
-                } else {
-                    await updatePasswd(email, password);
-                    await pwToken(email);
-    
-                    res.status(200).json({
-                        status: 200,
-                        data: "true",
-                        message: "비밀번호가 변경되었습니다."
-                    });
-                }
+
+                    return false;
+                } 
+
+                await updatePasswd(email, password);
+                await pwToken(email);
+                res.status(200).json({
+                    status: 200,
+                    data: "true",
+                    message: "비밀번호가 변경되었습니다."
+                });
+                
 
             } catch (err) {
                 console.log(err)

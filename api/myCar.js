@@ -6,6 +6,7 @@ const { con } = require('./config/database.js');
 const { verifyToken } = require('./config/authCheck.js');
 const axios = require('axios');
 
+// 차량 정보 등록
 api.post('/',
     verifyToken,
     [
@@ -93,21 +94,8 @@ api.post('/',
 )
 
 
-api.get('/mnfct',
-    async function (req, res) {
-        var sql = "select a.UID as modelUID, b.UID as mnfctUID, b.name as mnfctName, a.name as modelName from model a join mnfct b on b.UID = a.mnfctUID"
-
-        const [result] = await con.query(sql);
-
-        res.status(200).json({
-            status : 200,
-            data : result,
-            message : "success"
-        })
-    }
-)
-
-api.get('/list',
+// 내 차량 리스트 조회
+api.get('/',
     verifyToken,
     async function (req, res){
         const userUID = req.userUID;
@@ -123,6 +111,7 @@ api.get('/list',
     }
 )
 
+// 대표 차량 선택
 api.post('/defaultCar/:myCarUID',
     verifyToken,
     async function (req, res) {
@@ -166,6 +155,7 @@ api.post('/defaultCar/:myCarUID',
     }
 )
 
+// 차량 정보 삭제
 api.delete('/:myCarUID',
     verifyToken,
     async function (req, res) {
