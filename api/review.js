@@ -10,7 +10,7 @@ const { con } = require('./config/database.js');
 api.get('/main', async function (req, res) {
     try {
         //차량정보 등록 로직 완료시 email 을 차량명으로 변경 예정
-        var sql = "select a.UID as UID, review, b.email, d.name "
+        var sql = "select a.UID as UID, review, ifnull(c.thumbnail, '') as thumbnail, b.email, d.name "
                 + "from review a "
                 + "join user b on a.userUID = b.UID "
                 + "join product c on c.UID = a.productUID "
@@ -32,7 +32,7 @@ api.get('/main', async function (req, res) {
 });
 
 // 전체 리뷰 조회
-api.get('/:productUID', async function (req, res) {
+api.get('/product/:productUID', async function (req, res) {
     try {
         const productUID = Number(req.params.productUID)
         //차량정보 등록 로직 완료시 email 을 차량명으로 변경 예정
@@ -57,11 +57,11 @@ api.get('/:productUID', async function (req, res) {
     }
 });
 
-// 공지사항 상세정보 조회
+// 리뷰 상세정보 조회
 api.get("/:reviewUID", async function (req, res) {
     try {
         const reviewUID = req.params.reviewUID;
-        var sql = "select a.modesty, a.highSpeed, a.handling, a.riding, a.braking, a.pricing, a.tirePath, a.carPath, review, b.email, d.name "
+        var sql = "select a.modesty, a.highSpeed, a.handling, a.riding, a.braking, a.pricing, ifnull(a.tirePath, '') as tirePath, ifnull(a.carPath, '') as carPath, review, b.email, d.name "
                 + "from review a join user b on b.UID = a.userUID join product c on c.UID = a.productUID join model d on d.UID = c.modelUID "
                 + "where a.UID = ?"
         const [result] = await con.query(sql, reviewUID);

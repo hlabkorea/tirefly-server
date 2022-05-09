@@ -38,7 +38,7 @@ api.get('/:userUID',
         try {
             const userUID = req.userUID;
             var sql = "select UID, email, name, cellNo, rsDate, rsTime, carType, addr1, addr2, postalCode, memo, keepUID, stts, productUID, "
-                    + "orderCnt, ifnull(antProductUID, ''), carNo, carFullName "
+                    + "orderCnt, ifnull(antProductUID, '') as antProductUID, carNo, carFullName "
                     + "from reservation "
                     + "where userUID = ? "
                     + "group by UID "

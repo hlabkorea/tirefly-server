@@ -19,6 +19,7 @@ api.post('/',
         const error = getError(req, res);
         if (error.isEmpty()){
             try {
+                console.log('here');
                 const userUID = req.userUID;
                 const carNo = req.body.carNo;
                 const carNick = req.body.carNick;
@@ -33,18 +34,21 @@ api.post('/',
                         "Content-Type": "application/json"
                     }
                 })
+                console.log('result ::' , result);
 
                 const [carInfo] = result.data.BaseInfo;
 
-                console.log(carInfo)
+                console.log('carInfo :: ', typeof(carInfo.return_msg))``
 
-                if(result.length == 0){
+                if(carInfo.return_msg == '201'){
                     res.status(403).json({
                         status: 403,
                         data : "false",
-                        message : "차량정보 호출에 실패하였습니다. 다시 시도하세요."
+                        message : "차량정보가 없습니다. 차량정보를 다시 확인하세요."
                     })
-                } else {
+                    return false
+                } 
+                    console.log('pass')
                     var overlapMyCarSql = "select * from myCar where carNo = ?"
                     const [overlapMyCarResult] = await con.query(overlapMyCarSql, carNo);
                     
@@ -63,14 +67,14 @@ api.post('/',
                         const carFullName = companyName + " " + modelName + " " + gradeName + " " + subGradeName
                         const tireSize = carInfo.Tire ? carInfo.Tire : "";
     
-                        console.log("userUID :: ",typeof(userUID));
-                        console.log("carNick :: ",typeof(carNick));
-                        console.log("carFullName :: ",typeof(carFullName));
-                        console.log("carNo :: ",typeof(carNo));
-                        console.log("tireSize :: ",typeof(tireSize));
-                        console.log("mnfctUID :: ",typeof(mnfctUID));
-                        console.log("modelUID :: ",typeof(modelUID));
-                        console.log("regDate :: ",typeof(regDate));
+                        // console.log("userUID :: ",typeof(userUID));
+                        // console.log("carNick :: ",typeof(carNick));
+                        // console.log("carFullName :: ",typeof(carFullName));
+                        // console.log("carNo :: ",typeof(carNo));
+                        // console.log("tireSize :: ",typeof(tireSize));
+                        // console.log("mnfctUID :: ",typeof(mnfctUID));
+                        // console.log("modelUID :: ",typeof(modelUID));
+                        // console.log("regDate :: ",typeof(regDate));
                         var sql = "insert myCar(userUID, carNick, carFullName, carNo, tireSize, mnfctUID, modelUID, regDate, `default`) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     
                         const sqlData = [userUID, carNick, carFullName, carNo, tireSize, mnfctUID, modelUID, regDate, 0]
@@ -84,7 +88,6 @@ api.post('/',
                             message : "차량 정보 등록에 성공하였습니다!"
                         })
                     }
-                }
             } catch (err) {
                 console.log(err);
                 throw err;

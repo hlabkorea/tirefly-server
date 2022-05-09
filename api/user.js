@@ -78,18 +78,12 @@ api.post('/join',
         const errors = getError(req, res);
 
         if (errors.isEmpty()) {
-
-            console.log('h3e3r3e')
-
-
             const email = req.body.email
             const password = sha256(req.body.password)
             const certifyNo = req.body.certifyNo
             const recommend = req.body.recommend
             const notify = req.body.notify
 
-            console.log("certifyNo :: ",typeof(certifyNo))
-            console.log("notify :: ",typeof(notify))
 
             //인증키 확인
             var sql = "select * from certify where email = ? and certifyNo = ?"
@@ -118,41 +112,41 @@ api.post('/join',
                     var recommendSql = "select * from user where email = ?"
                     const [rcmndCheck] = await con.query(recommendSql, recommend);
 
-                    if(rcmndCheck.length == 0) 
-                    res.status(403).json({
-                        status : 403,
-                        data : "false",
-                        message : "존재 하지 않는 추천인입니다."
-                    })
-                    
-
-                    // 중복회원 검증
-                    const overlapEmailData = await overlapEmail(email);
-                    if(overlapEmailData.length > 0) {
-                        res.status(403).json({
-                            status: 403,
-                            data: "false",
-                            message: "이미 등록된 이메일주소 입니다."
-                        });
-                    }  else {
-
-                        //회원가입 진행
-                        const userUID = await insertUser(email, password, recommend, notify)
-    
-                        const token = makeJWT(userUID)
-                        insertUserLog(userUID, token);
-                        const mail = sendJoinMail(email);
-    
-    
-                        res.status(200).json({
-                            status: 200,
-                            data: {
-                                UID : userUID,
-                                email : email,
-                                token : token,
-                            },
-                            message : "success"
+                    if(rcmndCheck.length == 0) {
+                        res.status(402).json({
+                            status : 402,
+                            data : "false",
+                            message : "존재 하지 않는 추천인입니다."
                         })
+                    } else {
+                        // 중복회원 검증
+                        const overlapEmailData = await overlapEmail(email);
+                        if(overlapEmailData.length > 0) {
+                            res.status(403).json({
+                                status: 403,
+                                data: "false",
+                                message: "이미 등록된 이메일주소 입니다."
+                            });
+                        }  else {
+    
+                            //회원가입 진행
+                            const userUID = await insertUser(email, password, recommend, notify)
+        
+                            const token = makeJWT(userUID)
+                            insertUserLog(userUID, token);
+                            const mail = sendJoinMail(email);
+        
+        
+                            res.status(200).json({
+                                status: 200,
+                                data: {
+                                    UID : userUID,
+                                    email : email,
+                                    token : token,
+                                },
+                                message : "success"
+                            })
+                        }
                     }
                 } else {
                     // 중복회원 검증
@@ -180,7 +174,7 @@ api.post('/join',
                             token : token,
                         },
                         message : "success"
-                    })
+                    });
                 }
             }
         }
@@ -264,6 +258,23 @@ api.put('/password',
     }
 );
 
+api.delete('/deletetest',
+    async function (req, res) {
+        const error = getError(req, res);
+        if(error.isEmpty()){
+            const email = req.body.email;
+
+            var sql = "update user set stts = 0, email = '', password = '' where email = ?"
+            await con.query(sql, email);
+
+            res.status(200).json({
+                status : 200,
+                data : "true",
+                message : "success"
+            })
+        }
+    }
+)
 
 // 회원 탈퇴
 api.delete('/:userUID',
