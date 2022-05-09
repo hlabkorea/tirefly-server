@@ -78,10 +78,6 @@ api.post('/join',
         const errors = getError(req, res);
 
         if (errors.isEmpty()) {
-
-            console.log('h3e3r3e')
-
-
             const email = req.body.email
             const password = sha256(req.body.password)
             const certifyNo = req.body.certifyNo

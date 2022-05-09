@@ -58,3 +58,6 @@ app.use('/coupon', require('./api/coupon.js'));
 app.use('/myCoupon', require('./api/myCoupon.js'));
 app.use('/myCar', require('./api/myCar.js'));
 app.use('/mnfct', require('./api/mnfct.js'));
+app.use('/order', require('./api/order.js'));
+app.use('/myPlace', require('./api/myPlace.js'));
+app.use('/push', require('./api/push.js'));

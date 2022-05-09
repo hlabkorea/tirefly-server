@@ -6,14 +6,14 @@ const { con } = require('./config/database.js');
 const { verifyToken } = require('./config/authCheck.js');
 
 
-
+// 내 쿠폰 리스트
 api.get('/',
     verifyToken,
     async function (req, res) {
         try {
             const userUID = req.userUID;
 
-            var sql = "select a.UID as UID, name, couponNo, dcType, dcAmount from myCoupon a join coupon b on b.UID = a.couponUID where userUID = ? order by a.regDate desc"
+            var sql = "select a.UID as UID, name, couponNo, dcType, dcAmount, b.endDate, b.minLimit, b.maxLimit from myCoupon a join coupon b on b.UID = a.couponUID where userUID = ? order by a.regDate desc"
             const [result] = await con.query(sql, userUID);
 
             res.status(200).json({
@@ -28,6 +28,7 @@ api.get('/',
     }
 )
 
+// 내 쿠폰 등록
 api.post('/',
     verifyToken,
     [

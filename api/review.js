@@ -10,7 +10,7 @@ const { con } = require('./config/database.js');
 api.get('/main', async function (req, res) {
     try {
         //차량정보 등록 로직 완료시 email 을 차량명으로 변경 예정
-        var sql = "select a.UID as UID, review, tirePath, b.email, d.name "
+        var sql = "select a.UID as UID, review, ifnull(tirePath, ''), b.email, d.name "
                 + "from review a "
                 + "join user b on a.userUID = b.UID "
                 + "join product c on c.UID = a.productUID "

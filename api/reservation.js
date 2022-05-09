@@ -37,7 +37,7 @@ api.get('/:userUID',
     async function (req, res) {
         try {
             const userUID = req.userUID;
-            var sql = "select UID, email, name, cellNo, rsDate, rsTime, carType, addr1, addr2, postalCode, memo, keepUID, stts, productUID, "
+            var sql = "select UID, email, code, name, cellNo, rsDate, rsTime, carType, addr1, addr2, postalCode, memo, keepUID, stts, productUID, "
                     + "orderCnt, ifnull(antProductUID, ''), carNo, carFullName "
                     + "from reservation "
                     + "where userUID = ? "
