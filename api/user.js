@@ -95,10 +95,9 @@ api.post('/join',
                 res.status(403).json({
                     status : 403,
                     data : "false",
-                    message : "인증에 실패하였습니다. 인증번호를 다시 확인하십시오."
+                    message : "회원가입에 실패하였습니다. 다시 시도 해주세요"
                 })
             } else {
-                console.log(certifyCheck[0])
                 if(certifyCheck[0].type !== "join"){
                     res.status(403).json({
                         status : 403,
@@ -119,45 +118,26 @@ api.post('/join',
                             message : "존재 하지 않는 추천인입니다."
                         })
                     } else {
-                        // 중복회원 검증
-                        const overlapEmailData = await overlapEmail(email);
-                        if(overlapEmailData.length > 0) {
-                            res.status(403).json({
-                                status: 403,
-                                data: "false",
-                                message: "이미 등록된 이메일주소 입니다."
-                            });
-                        }  else {
-    
-                            //회원가입 진행
-                            const userUID = await insertUser(email, password, recommend, notify)
+                        //회원가입 진행
+                        const userUID = await insertUser(email, password, recommend, notify)
         
-                            const token = makeJWT(userUID)
-                            insertUserLog(userUID, token);
-                            const mail = sendJoinMail(email);
+                        const token = makeJWT(userUID)
+                        insertUserLog(userUID, token);
+                        const mail = sendJoinMail(email);
         
         
-                            res.status(200).json({
-                                status: 200,
-                                data: {
-                                    UID : userUID,
-                                    email : email,
-                                    token : token,
-                                },
-                                message : "success"
-                            })
+                        res.status(200).json({
+                            status: 200,
+                            data: {
+                                UID : userUID,
+                                email : email,
+                                token : token,
+                            },
+                            message : "success"
+                        })
                         }
-                    }
-                } else {
-                    // 중복회원 검증
-                    const overlapEmailData2 = await overlapEmail(email);
-                    if(overlapEmailData2.length > 0) {
-                        res.status(403).json({
-                            status: 403,
-                            data: "false",
-                            message: "이미 등록된 이메일주소 입니다."
-                        });
-                    } 
+                    } else {
+
                     //회원가입 진행
                     const userUID = await insertUser(email, password, recommend, notify)
     

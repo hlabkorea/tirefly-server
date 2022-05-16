@@ -59,23 +59,11 @@ api.get("/:productUID",
                     + "join mnfct c on c.UID = b.mnfctUID "
                     + "where a.UID = ? and actvt = 1"
 
-            const [productData] = await con.query(sql, productUID);
-
-            var reviewSql = "select a.UID as UID, review, b.email, a.regDate "
-                          + "from review a "
-                          + "join user b on b.UID = a.userUID "
-                          + "where a.productUID = ? "
-                          + "order by a.regDate desc, a.UID desc limit 3"
-
-            const [reviewData] = await con.query(reviewSql, productUID);
-
+            const [result] = await con.query(sql, productUID);
 
             res.status(200).json({
                 status : 200,
-                data : {
-                    "productData" : productData,
-                    "reviewData" : reviewData
-                },
+                data : result,
                 message : "success"
             })
         } catch (err) {

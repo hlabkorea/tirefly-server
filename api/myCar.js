@@ -103,9 +103,9 @@ api.get('/',
     async function (req, res){
         const userUID = req.userUID;
 
-        var sql = "select * from myCar where userUID = ?"
+        var sql = "select a.UID, carNick, carFullName, carNo, tireSize, b.name as mnfctName, c.name as modelName from myCar a join mnfct b on a.mnfctUID = b.UID join model c on a.modelUID = c.UID where userUID = ?"
         const [result] = await con.query(sql, userUID);
-
+        console.log('123')
         res.status(200).json({
             status : 200,
             data : result,

@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const secretObj = require("./config/jwt.js");
 const { verifyToken } = require("./config/authCheck.js");
 const api = express.Router();
+const axios = require('axios');
 
 api.get('/', async (req, res) => {
     try{
@@ -19,6 +20,32 @@ api.get('/', async (req, res) => {
         throw err;
     }
 });
+
+api.get('/jaego/:itemNo', async function (req, res) {
+    try {
+        console.log('here');
+        const itemNo = req.params.itemNo;
+        const result = await axios({
+            url : 'https://test.blackcircles.co.kr/item/' + encodeURI(itemNo),
+            // url : 'http://interface.autoup.net/TireFly.aspx?car_no=' + encodeURI(carNo),
+            method : "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "x-api-key": "OCa3WxnPtw39IxuG6orDd9KB1syu5KQIL2xe6U53",
+            }
+        })
+
+        console.log(result.data);
+
+        res.status(200).json({
+            status : 200,
+            data : result.data,
+            message : "success",
+        })
+    } catch (err) {
+        throw err;
+    }
+})
 
 api.get('/:id', async function (req, res) {
     try{

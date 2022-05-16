@@ -11,7 +11,7 @@ exports.verifyToken = (req, res, next) => {
 
         if (decoded) {
             console.log('user token success');
-            console.log(decoded.auth);
+            // console.log(decoded.auth);
 			if(decoded.auth == "admin") // 관리자 계정일 때에는 중복로그인 체크 X
 				next();
 			else{
@@ -39,11 +39,9 @@ exports.verifyToken = (req, res, next) => {
 				});
 			}
         } else {
-            console.log("here2 ::::: ");
             res.status(403).json({"status":403, "data": "Unauthorized", message:"유효하지 않은 토큰입니다"});
         }
     } catch (err) {
-        console.log("here3 ::::: ");
         res.status(403).json({"status":403, "data": "Unauthorized", message:"유효하지 않은 토큰입니다"});
     }
 };
