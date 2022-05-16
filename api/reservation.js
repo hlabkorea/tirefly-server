@@ -42,7 +42,7 @@ api.get('/:userUID',
                     + "from reservation "
                     + "where userUID = ? "
                     + "group by UID "
-                    + "order by regDate desc";
+                    + "order by rsDate desc, rsTime desc";
 
             const [result] = await con.query(sql, userUID);
 

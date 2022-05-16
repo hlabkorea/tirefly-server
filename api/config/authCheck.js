@@ -20,6 +20,7 @@ exports.verifyToken = (req, res, next) => {
 									+ "order by regDate desc "
 									+ "limit 1";
 
+
 				db.query(token_check_sql, decoded.userUID, function (err, result, fields) {
 					if (err) throw err;
                     
