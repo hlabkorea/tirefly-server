@@ -8,7 +8,6 @@ const secretObj = require("./config/jwt.js");
 const sha256 = require('sha256');
 const { sendJoinMail, sendCertifyNoMail } = require('./config/mail.js');
 const { verifyToken } = require("./config/authCheck.js");
-const { compile } = require('ejs');
 
 //인증메일전송 (이메일 중복 확인 , 인증번호 생성 , 인증번호 메일 발송)
 api.post('/certify',
@@ -48,6 +47,20 @@ api.post('/certify',
                 }
                 
             } else {
+                
+                var sql = "select * from user where email = ?"
+                const [pwOverlapResult] = await con.query(sql, email);
+
+                if(pwOverlapResult.length == 0) {
+                    res.status(403).json({
+                        status: 403,
+                        data : "false",
+                        message : "존재하지 않는 이메일입니다. 다시 확인하세요."
+                    });
+                return false;
+                }
+
+            
                 
                 const certifyNo = randomNo();
                 const returnData = await insertCertify(email, certifyNo, certifyType);
@@ -92,6 +105,7 @@ api.post('/join',
 
 
             if(certifyCheck.length == 0){
+
                 res.status(403).json({
                     status : 403,
                     data : "false",
@@ -196,50 +210,36 @@ api.put('/password',
                 const password = sha256(req.body.password);
                 const certifyNo = req.body.certifyNo;
 
-                console.log("email:",email);
-                console.log("password:",password);
-                console.log("certifyNo:",certifyNo);
-                
-
-                // 유저 확인
-                const userData = overlapEmail(email);
-                console.log("userData",)
-                if(userData.length == 0){
-                    res.status(403).json({
-                        status : 403,
-                        data : "false",
-                        message : "존재하지 않는 이메일입니다. 다시 확인하세요."
-                    })
-                    return false;
-                }
 
                 //인증키 확인
                 var sql = "select * from certify where email = ? and certifyNo = ?"
                 const sqlData = [email, certifyNo];
                 const [certifyCheck] = await con.query(sql, sqlData);
 
-                console.log("certifyCheck:",certifyCheck)
+                console.log(certifyCheck);
 
-                //인증키 type 확인
-                if(certifyCheck[0].type !== "pw"){
-                    res.status(403).json({
-                        status : 403,
-                        data : "false",
-                        message : "인증에 실패하였습니다. 인증번호를 다시 확인하십시오."
-                    })
 
-                    return false;
-                }
-
+                
                 if(certifyCheck.length == 0){
                     res.status(403).json({
                         status : 403,
                         data : "false",
                         message : "인증에 실패하였습니다. 인증번호를 다시 확인하십시오."
                     })
-
+                    
                     return false;
                 } 
+                
+                //인증키 type 확인
+                if(certifyCheck[0].type !== "pw"){
+                    res.status(403).json({
+                        status : 403,
+                        data : "false",
+                        message : "회원가입 인증번호가 아닙니다. 다시 확인하십시오."
+                    })
+
+                    return false;
+                }
 
                 await updatePasswd(email, password);
                 await pwToken(email);
