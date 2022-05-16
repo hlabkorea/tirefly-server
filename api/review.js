@@ -11,8 +11,7 @@ const pageCnt30 = 30;
 //메인 화면 리뷰 조회
 api.get('/main', async function (req, res) {
     try {
-        const onlyPhoto = req.query.onlyPhoto;
-
+        // const onlyPhoto = req.query.onlyPhoto;
 
         //차량정보 등록 로직 완료시 email 을 차량명으로 변경 예정
         var sql = "select a.UID as UID, review, ifnull(c.thumbnail, '') as thumbnail, b.email, d.name "
@@ -22,9 +21,9 @@ api.get('/main', async function (req, res) {
                 + "join model d on d.UID = c.modelUID "
                 + "order by a.regDate desc, a.UID desc limit 3"
 
-        if ( onlyPhoto == '1'){
-            sql += '';
-        }
+        // if ( onlyPhoto == '1'){
+        //     sql += ' where tirePath is not null';
+        // }
                 
         const [result] = await con.query(sql);
 
@@ -45,16 +44,20 @@ api.get('/main', async function (req, res) {
 api.get('/product/:productUID', async function (req, res) {
     try {
         const currentPage = req.query.page ? parseInt(req.query.page) : 1;
-        const onlyPhoto = req.query.photo ? req.query.photo : '';
+        const onlyPhoto = req.query.onlyPhoto;
         const offset = parseInt(currentPage - 1) * pageCnt30;
         const productUID = Number(req.params.productUID)
         //차량정보 등록 로직 완료시 email 을 차량명으로 변경 예정
-        var sql = "select a.UID as UID, review, b.email, d.name "
+        var sql = "select a.UID as UID, review, ifnull(tirePath, '') as tirePath, b.email, d.name "
                 + "from review a "
                 + "join user b on a.userUID = b.UID "
                 + "join product c on c.UID = a.productUID "
                 + "join model d on d.UID = c.modelUID "
                 + "where a.productUID = " + `${productUID} `;
+
+        if ( onlyPhoto == '1'){
+            sql += 'and tirePath is not null ';
+        };
         var countSQL = sql + ";";
         sql += "order by a.regDate desc, a.UID desc " + `limit ${offset}, ${pageCnt30}`;
         const [result] = await con.query(countSQL+sql);
