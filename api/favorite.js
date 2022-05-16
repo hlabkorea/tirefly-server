@@ -5,7 +5,7 @@ const { getError } = require('./config/requestError.js');
 const { con } = require('./config/database.js');
 const { verifyToken } = require('./config/authCheck.js');
 
-api.post('/:productUID',
+api.put('/:productUID',
     verifyToken,
     async function (req, res) {
         const error = getError(req, res);
@@ -22,12 +22,12 @@ api.post('/:productUID',
                     var delSql = "delete from favorite where UID = ?";
                     var delSqlData = [overlapSqlData[0].UID];
                     await con.query(delSql, delSqlData);
-                    res.status(200).json({status:200, data: "true", message:"success"});
+                    res.status(200).json({status:200, data: "true", message:"즐겨찾기가 해지되었습니다."});
                 } else {
                     var sql = "insert favorite(productUID, userUID, regDate) values (?, ?, ?);"
                     var sqlData = [productUID, userUID, regDate];
                     await con.query(sql, sqlData);
-                    res.status(200).json({status:200, data: "true", message:"success"});
+                    res.status(200).json({status:200, data: "true", message:"즐겨찾기에 등록되었습니다."});
                 }
 
             } catch (err){

@@ -6,33 +6,8 @@ const { con } = require('./config/database.js');
 const { verifyToken } = require("./config/authCheck.js");
 
 
-// 메인화면 예약내역 조회 // :userUID로 받는게 맞는지 확인 필요
-api.get('/main',
-    verifyToken,
-    async function (req, res) {
-        try {
-            const userUID = req.userUID;
-            var sql = "select UID as UID, rsDate, rsTime " //email 추후 차량별명으로 수정예정
-                    + "from reservation "
-                    + "where userUID = ? and rsDate >= now()"
-                    + "order by rsDate asc limit 1"
-
-            const [result] = await con.query(sql, userUID);
-
-            res.status(200).json({
-                status :200,
-                data : result,
-                message : "success"
-            });
-        } catch (err) {
-            console.log(err);
-            throw err;
-        }
-    }
-)
-
 // 유저 예약내역 조회
-api.get('/:userUID',
+api.get('/',
     verifyToken,
     async function (req, res) {
         try {
@@ -58,6 +33,34 @@ api.get('/:userUID',
     }
 )
 
+// 메인화면 예약내역 조회 // :userUID로 받는게 맞는지 확인 필요
+api.get('/main',
+    verifyToken,
+    async function (req, res) {
+        try {
+            const userUID = req.userUID;
+            var sql = "select UID as UID, rsDate, rsTime "
+                    + "from reservation "
+                    + "where userUID = ? and rsDate >= now()"
+                    + "order by rsDate asc limit 1"
+
+            const [result] = await con.query(sql, userUID);
+
+            const returnData = result[0]
+
+            res.status(200).json({
+                status :200,
+                data : returnData,
+                message : "success"
+            });
+        } catch (err) {
+            console.log(err);
+            throw err;
+        }
+    }
+)
+
+//예약내역 상세보기
 api.get('/detail/:reservationUID',
     // verifyToken,
     async function (req, res) {
