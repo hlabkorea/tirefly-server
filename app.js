@@ -62,3 +62,6 @@ app.use('/order', require('./api/order.js'));
 app.use('/myPlace', require('./api/myPlace.js'));
 app.use('/push', require('./api/push.js'));
 app.use('/keep', require('./api/keep.js'));
+app.use('/rcmProduct', require('./api/rcmProduct.js'));
+app.use('/modelBadge', require('./api/modelBadge.js'));
+

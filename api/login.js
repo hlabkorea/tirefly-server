@@ -92,7 +92,7 @@ function makeJWT(userUID) {
         },
         secretObj.secret, // 비밀 키
         {
-            expiresIn: '1440m'    // 유효 시간은 1440분
+            expiresIn: '1440000m'    // 유효 시간은 1440분
         });
 
     return token;

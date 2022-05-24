@@ -102,10 +102,17 @@ api.get('/',
     verifyToken,
     async function (req, res){
         const userUID = req.userUID;
+        const main = req.query.main ? req.query.main : '';
 
-        var sql = "select a.UID, carNick, carFullName, carNo, tireSize, b.name as mnfctName, c.name as modelName from myCar a join mnfct b on a.mnfctUID = b.UID join model c on a.modelUID = c.UID where userUID = ?"
+        var sql = "select a.UID, carNick, carFullName, carNo, `default`, tireSize, b.name as mnfctName, b.UID as mnfctUID, c.name as modelName, c.UID as modelUID from myCar a "
+        +"join mnfct b on a.mnfctUID = b.UID "
+        +"join model c on a.modelUID = c.UID "
+        +"where userUID = ? order by `default` desc, a.regDate asc"
+        if( main != ''){
+            sql += ' limit 1';
+        }
         const [result] = await con.query(sql, userUID);
-        console.log('123')
+
         res.status(200).json({
             status : 200,
             data : result,
@@ -125,31 +132,22 @@ api.post('/defaultCar/:myCarUID',
                 const myCarUID = req.params.myCarUID;
                 const dateTime = new Date()
 
-                const checkDefaultSql = "select `default` from myCar where userUID = ? and UID = ?";
-                const checkDefaultSqlData = [userUID, myCarUID];
-                const [checkDefaultData] = await con.query(checkDefaultSql,checkDefaultSqlData)
 
-                if(checkDefaultData[0].default !== 0){
-                    var sql = 'update myCar set `default` = 0, updateDate = ? where userUID = ? and UID = ?'
-                    const sqlData = [dateTime, userUID, myCarUID];
+                var sql = 'update myCar set `default` = 0, updateDate = ? where userUID = ?'
+                const sqlData = [dateTime, userUID];
 
-                    await con.query(sql,sqlData);
-                    res.status(200).json({
-                        status: 200,
-                        data : "true",
-                        message : "대표차량에서 해지 되었습니다."
-                    })
-                } else {
-                    var sql = 'update myCar set `default` = 1, updateDate = ? where userUID = ? and UID = ?'
-                    const sqlData = [dateTime, userUID, myCarUID];
+                await con.query(sql,sqlData);
 
-                    await con.query(sql,sqlData);
-                    res.status(200).json({
-                        status: 200,
-                        data : "true",
-                        message : "대표차량으로 등록 되었습니다."
-                    })
-                }
+                var resultSql = 'update myCar set `default` = 1, updateDate = ? where userUID = ? and UID = ?'
+                const resultSqlData = [dateTime, userUID, myCarUID];
+
+                await con.query(resultSql,resultSqlData);
+
+                res.status(200).json({
+                    status : 200,
+                    data : "success",
+                    message : "대표차량 등록이 완료되었습니다."
+                })
             } catch (err) {
                 console.log(err);
                 throw err;

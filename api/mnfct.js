@@ -8,6 +8,7 @@ const { verifyToken } = require('./config/authCheck.js');
 
 // 상품 검색 용 제조사 및 모델 조회
 api.get('/',
+    verifyToken,
     async function (req, res) {
         var sql = "select a.UID as modelUID, b.UID as mnfctUID, b.name as mnfctName, a.name as modelName from model a join mnfct b on b.UID = a.mnfctUID"
 

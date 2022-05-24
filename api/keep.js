@@ -25,7 +25,7 @@ api.get('/',
     }
 )
 
-api.post('/addKeep',
+api.post('/',
     verifyToken,
     async function (req, res){
         const errors = getError(req, res);
@@ -34,23 +34,28 @@ api.post('/addKeep',
             const keepNo = req.body.keepNo;
             const updateDate = new Date();
 
-            // 비회원 예약내역 확인
+            // 비회원 보관내역 확인
             var nonUserKeepDataSql = "select * from keep where keepNo = ? and regUser = 0"
             const [nonUserKeepData] = await con.query(nonUserKeepDataSql, keepNo);
 
-            const keepUID = nonUserKeepData[0].UID;
 
-            if(nonUserKeepData == null){
+            if(nonUserKeepData.length == 0){
                 res.status(403).json({
                     status : 403,
-                    data : "null",
-                    message : "존재하지 않는 보관건입니다."
+                    data : "false",
+                    message : "해당 보관코드가 존재하지 않습니다."
                 })
             } else {
+                const keepUID = nonUserKeepData[0].UID;
                 var sql = "update keep set regUser = ?, updateDate = ? where UID = ?";
                 var sqlData = [userUID, updateDate, keepUID];
+                var orderSql = "update `order` set regUser = ?, updateDate = ?, updateUser = ? where keepUID = ?"
+                var orderSqlData = [userUID, updateDate, userUID, keepUID]
 
-                const [result] = await con.query(sql, sqlData);
+                //예약내역
+
+                await con.query(sql, sqlData);
+                await con.query(orderSql, orderSqlData);
 
                 res.status(200).json({
                     status : 200,
@@ -59,6 +64,27 @@ api.post('/addKeep',
                 })
             }
 
+        }
+    }
+)
+
+api.get('/nonUser/detail',
+    async function ( req, res ) {
+        try {
+            const keepNo = req.body.keepNo;
+
+
+            var sql = "select * from keep where keepNo = ? and regUser = 0"
+            const [result] = await con.query(sql, keepNo);
+
+            res.status(200).json({
+                status : 200,
+                data : result[0],
+                message : "success"
+            })
+
+        } catch (err) {
+            throw err;
         }
     }
 )

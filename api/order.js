@@ -28,8 +28,7 @@ api.post('/reservation',
             const email = req.body.email;
             const name = req.body.name;
             const cellNo = req.body.cellNo;
-            const rsDate = req.body.rsDate;
-            const rsTime = req.body.rsTime;
+            const rsDateTime = req.body.rsDateTime;
             const carType = req.body.carType;
             const addr1 = req.body.addr1;
             const addr2 = req.body.addr2;
@@ -73,7 +72,7 @@ api.post('/reservation',
             //import 결제
 
             //reservation insert
-            const reservationInsert = await insertOrderReservation(resCode, userUID, email, name, cellNo, rsDate, rsTime, carType, addr1, addr2, postalCode, memo, resKeepUID, resStts, productUID, orderCnt, antProductUID, carNo, carFullName, carNick, userUID)
+            const reservationInsert = await insertOrderReservation(resCode, userUID, email, name, cellNo, rsDateTime, carType, addr1, addr2, postalCode, memo, resKeepUID, resStts, productUID, orderCnt, antProductUID, carNo, carFullName, carNick, userUID)
 
 
 
@@ -186,8 +185,7 @@ api.post('/keepReservation',
                 const email = req.body.email;
                 const name = req.body.name;
                 const cellNo = req.body.cellNo;
-                const rsDate = req.body.rsDate;
-                const rsTime = req.body.rsTime;
+                const rsDateTime = req.body.rsDateTime;
                 const carType = req.body.carType;
                 const addr1 = req.body.addr1;
                 const addr2 = req.body.addr2;
@@ -238,7 +236,7 @@ api.post('/keepReservation',
                 )
                 
 
-                const reservationData = await insertOrderReservation(resCode, userUID, email, name, cellNo, rsDate, rsTime, carType, addr1, addr2, postalCode, memo, resKeepUID, resStts, productUID, orderCnt, antProductUID, carNo, carFullName, carNick, userUID);
+                const reservationData = await insertOrderReservation(resCode, userUID, email, name, cellNo, rsDateTime, carType, addr1, addr2, postalCode, memo, resKeepUID, resStts, productUID, orderCnt, antProductUID, carNo, carFullName, carNick, userUID);
             
                 res.status(200).json({
                     status : 200,
@@ -397,10 +395,10 @@ async function order (orderType){
     return result;
 }
 // 방문장착 reservation 추가
-async function insertOrderReservation (code, userUID, email, name, cellNo, rsDate, rsTime, carType, addr1, addr2, postalCode, memo, keepUID, stts, productUID, orderCnt, antProductUID, carNo, carFullName, carNick){
+async function insertOrderReservation (code, userUID, email, name, cellNo, rsDateTime, carType, addr1, addr2, postalCode, memo, keepUID, stts, productUID, orderCnt, antProductUID, carNo, carFullName, carNick){
     const regDate = new Date();
-    var sql = "insert into reservation(code, userUID, email, name, cellNo, rsDate, rsTime, carType, addr1, addr2, postalCode, memo, keepUID, stts, productUID, orderCnt, antProductUID, carNo, carFullName, carNick, regDate, regUser) values(?)"
-    const sqlData = [code, userUID, email, name, cellNo, rsDate, rsTime, carType, addr1, addr2, postalCode, memo, keepUID, stts, productUID, orderCnt, antProductUID, carNo, carFullName, carNick, regDate, userUID];
+    var sql = "insert into reservation(code, userUID, email, name, cellNo, rsDateTime, carType, addr1, addr2, postalCode, memo, keepUID, stts, productUID, orderCnt, antProductUID, carNo, carFullName, carNick, regDate, regUser) values(?)"
+    const sqlData = [code, userUID, email, name, cellNo, rsDateTime, carType, addr1, addr2, postalCode, memo, keepUID, stts, productUID, orderCnt, antProductUID, carNo, carFullName, carNick, regDate, userUID];
     const [result] = await con.query(sql,[sqlData]);
 
     return result;
